@@ -1,18 +1,13 @@
 [Version]
-AppVersion=5.3
-Version=327
-
-[General]
-Rank=0
-ColorLabel=0
-InTrash=false
+AppVersion=4.2.1
+Version=321
 
 [Exposure]
 Auto=false
 Clip=0.02
-Compensation=0.6
+Compensation=0
 Brightness=6
-Contrast=4
+Contrast=0
 Saturation=2
 Black=200
 CurveMode=WeightedStd
@@ -100,16 +95,6 @@ Enabled=false
 
 [Shadows & Highlights]
 Enabled=false
-
-[LensProfile]
-LcMode=lfmanual
-LCPFile=
-UseDistortion=true
-UseVignette=true
-UseCA=false
-LFCameraMake=Generic
-LFCameraModel=Crop-factor 2.0 (Four-Thirds)
-LFLens=Olympus OLYMPUS M.17mm F1.8
 
 [Gradient]
 Enabled=false
