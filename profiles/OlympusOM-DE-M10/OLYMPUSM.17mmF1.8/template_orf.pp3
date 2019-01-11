@@ -1,11 +1,16 @@
 [Version]
-AppVersion=4.2.1
-Version=321
+AppVersion=5.5
+Version=345
+
+[General]
+Rank=0
+ColorLabel=0
+InTrash=false
 
 [Exposure]
 Auto=false
 Clip=0.02
-Compensation=0
+Compensation=0.6
 Brightness=6
 Contrast=4
 Saturation=2
@@ -20,15 +25,37 @@ Enabled=false
 Method=Blend
 
 [Channel Mixer]
-Red=100;0;0;
-Green=0;100;0;
-Blue=0;0;100;
+Enabled=false
+Red=1000;0;0;
+Green=0;1000;0;
+Blue=0;0;1000;
 
 [Black & White]
 Enabled=false
+Method=Desaturation
+Auto=false
+ComplementaryColors=true
+Setting=RGB-Rel
+Filter=None
+MixerRed=33
+MixerOrange=33
+MixerYellow=33
+MixerGreen=33
+MixerCyan=33
+MixerBlue=33
+MixerMagenta=33
+MixerPurple=33
+GammaRed=0
+GammaGreen=0
+GammaBlue=0
+Algorithm=SP
+LuminanceCurve=0;
+BeforeCurveMode=Standard
+AfterCurveMode=Standard
+BeforeCurve=0;
+AfterCurve=0;
 
 [Luminance Curve]
-Enabled=false
 Brightness=6
 Contrast=20
 Chromaticity=8
@@ -46,7 +73,7 @@ LcCurve=0;
 ClCurve=0;
 
 [Sharpening]
-Enabled=false
+Enabled=true
 Method=usm
 Radius=0.5
 Amount=248
@@ -97,6 +124,16 @@ Enabled=false
 [Shadows & Highlights]
 Enabled=false
 
+[LensProfile]
+LcMode=lfmanual
+LCPFile=
+UseDistortion=true
+UseVignette=true
+UseCA=false
+LFCameraMake=Olympus Imaging Corp.
+LFCameraModel=E-M10
+LFLens=Olympus Olympus M.Zuiko Digital 17mm f/1.8
+
 [Gradient]
 Enabled=false
 
@@ -107,9 +144,9 @@ Enabled=false
 Enabled=true
 Gamutlab=false
 Mult0=1
-Mult1=1.2
-Mult2=1.4
-Mult3=1.3
+Mult1=1.4
+Mult2=1.7
+Mult3=1.8
 Mult4=1
 Threshold=0.20000000000000001
 Skinprotect=0
