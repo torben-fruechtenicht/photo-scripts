@@ -28,7 +28,7 @@ Blue=0;0;100;
 Enabled=false
 
 [Luminance Curve]
-Enabled=false
+Enabled=true
 Brightness=6
 Contrast=20
 Chromaticity=8
@@ -108,8 +108,8 @@ Enabled=true
 Gamutlab=false
 Mult0=1
 Mult1=1.2
-Mult2=1.4
-Mult3=1.3
+Mult2=1.3999999999999999
+Mult3=1.28
 Mult4=1
 Threshold=0.20000000000000001
 Skinprotect=0
