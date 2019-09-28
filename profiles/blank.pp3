@@ -1,0 +1,114 @@
+[Version]
+AppVersion=5.7
+Version=346
+
+[Exposure]
+
+[HLRecovery]
+
+[Retinex]
+
+[Local Contrast]
+
+[Channel Mixer]
+
+[Black & White]
+
+[Luminance Curve]
+
+[Sharpening]
+
+[Vibrance]
+
+[SharpenEdge]
+
+[SharpenMicro]
+
+[White Balance]
+
+[Color appearance]
+
+[Impulse Denoising]
+
+[Defringing]
+
+[Dehaze]
+
+[Directional Pyramid Denoising]
+
+[EPD]
+
+[FattalToneMapping]
+
+[Shadows & Highlights]
+
+[Crop]
+
+[Coarse Transformation]
+
+[Common Properties for Transformations]
+
+[Rotation]
+
+[Distortion]
+
+[LensProfile]
+
+[Perspective]
+
+[Gradient]
+
+[PCVignette]
+
+[CACorrection]
+
+[Vignetting Correction]
+
+[Resize]
+
+[PostResizeSharpening]
+
+[Color Management]
+
+[Wavelet]
+
+[Directional Pyramid Equalizer]
+
+[HSV Equalizer]
+
+[SoftLight]
+
+[Film Simulation]
+
+[RGB Curves]
+
+[ColorToning]
+
+[RAW]
+
+[RAW Bayer]
+
+[RAW X-Trans]
+
+[MetaData]
+
+[Film Negative]
+
+[IPTC]
+Caption=;
+CaptionWriter=;
+Category=;
+City=;
+Copyright=;
+Country=;
+Creator=;
+CreatorJobTitle=;
+Credit=;
+DateCreated=;
+Headline=;
+Instructions=;
+Keywords=;
+Province=;
+Source=;
+Title=;
+TransReference=;
