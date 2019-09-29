@@ -4,13 +4,13 @@ set -u
 
 declare -r BASELINE=$(readlink -e "$1")
 if [[ -z $BASELINE ]]; then
-    echo "Missing baseline parameter" >&2
+    echo "Missing baseline parameter or file" >&2
     exit 1
 fi
 
 declare -r PROFILE=$(readlink -e "$2")
 if [[ -z $PROFILE ]]; then
-    echo "Missing profile parameter" >&2
+    echo "Missing profile parameter or file" >&2
     exit 1
 fi
 
@@ -23,11 +23,11 @@ replace_in_profile() {
         # if the entry already exists, just overwrite with new value
         echo "Updating $2 with value $3" >&2        
         # https://unix.stackexchange.com/a/416126
-        sed -ie  '/\['"$section"'\]/,/^$/s/'"$property"=.*$'/'"$property"'='"$value\n"'/' "$PROFILE"    
+        sed -i  '/\['"$section"'\]/,/^$/s/'"$property"=.*$'/'"$property"'='"$value\n"'/' "$PROFILE"    
     else        
         # if the entry does not exist, append to end of section
         echo "Adding $2 with value $3" >&2
-        sed -ie  '/\['"$section"'\]/,/^$/s/^$/'"$property"'='"$value\n"'/' "$PROFILE"
+        sed -i  '/\['"$section"'\]/,/^$/s/^$/'"$property"'='"$value\n"'/' "$PROFILE"
     fi
 }
 
