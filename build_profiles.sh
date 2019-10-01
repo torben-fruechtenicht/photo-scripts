@@ -9,13 +9,16 @@ set -ue
 PATH=$(dirname "$0"):$PATH
 declare -r SELF=$(readlink -e "$0")
 
-declare -r BASELINE_PP3=$(readlink -e "$1")
-if [[ -z "$BASELINE_PP3" ]]; then
+declare -r WORKING_DIR=$(readlink -e "$1")
+if [[ -z "$WORKING_DIR" ]]; then
+    echo "Missing working dir" >&2
+    exit 1
+fi
+declare -r BASELINE_PP3=$WORKING_DIR/baseline.pp3
+if [[ -z "$(readlink -e $BASELINE_PP3)" ]]; then
     echo "Missing baseline" >&2
     exit 1
 fi
-
-declare -r WORKING_DIR=$(dirname "$BASELINE_PP3")
 
 declare -r INPUT_PROFILE=$(readlink -e "$2")
 if [[ -z "$INPUT_PROFILE" ]]; then
@@ -46,5 +49,5 @@ find "$WORKING_DIR" -mindepth 2 -maxdepth 2 -name 'baseline.pp3' |\
     while read next_baseline; do
         next_working_dir=$(dirname "$next_baseline")
         next_target_directory="$TARGET_DIR/${next_working_dir##*/}"
-        $SELF "$next_baseline" "$next_input_profile" "$next_target_directory"
+        $SELF "$next_working_dir" "$next_input_profile" "$next_target_directory"
     done
