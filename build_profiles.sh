@@ -1,9 +1,5 @@
 #! /usr/bin/env bash
 
-# TBD how to handle baselines for jpg vs raw files?
-# -> expect qualifier in baseline filename, e.g. "baseline_jpg" or "baseline_crw"
-# -> qualifier is added to output filenames, done?
-
 set -ue
 
 declare -r SELF=$(readlink -e "$0")

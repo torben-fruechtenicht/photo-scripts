@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
 
+# Replaces or adds all entries from BASELINE in the correct sections in PROFILE (i.e. PROFILE is changed).
+# PROFILE must already contain all sections with at least the header ("[section]").
+
 set -ue
 
 while getopts "v" opt; do
@@ -49,7 +52,6 @@ cat $BASELINE | while read -r line; do
 
     # end of section
     if [[ -z $line ]]; then
-        test -v VERBOSE && echo "End of section $section" >&2
         section=
         continue
     fi
