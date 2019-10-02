@@ -30,15 +30,19 @@ replace_in_profile() {
     local -r property=$2
     local -r value=$3
 
+    # about the switch of delimiters in the sed scripts: $value can contain slashes but these cannot be escaped properly.
+    # we can't switch the delimiter for the whole scripts because this only works with "s" command
+    # but the 2nd part of each script runs an "s" so we can use | as delimiters there (phew)
+
     if sed -n '/\['"$section"'\]/,/^$/p' "$PROFILE" | grep -q "$property"; then
         # if the entry already exists, just overwrite with new value
         test -v VERBOSE && echo "Updating $2 with value $3" >&2        
         # https://unix.stackexchange.com/a/416126
-        sed -i  '/\['"$section"'\]/,/^$/s/'"$property"=.*$'/'"$property"'='"$value\n"'/' "$PROFILE"    
+        sed -i  '/\['"$section"'\]/,/^$/s|'"$property"=.*$'|'"$property"'='"$value\n"'|' "$PROFILE"    
     else        
         # if the entry does not exist, append to end of section
         test -v VERBOSE && echo "Adding $2 with value $3" >&2
-        sed -i  '/\['"$section"'\]/,/^$/s/^$/'"$property"'='"$value\n"'/' "$PROFILE"
+        sed -i  '/\['"$section"'\]/,/^$/s|^$|'"$property"'='"$value\n"'|' "$PROFILE"
     fi
 }
 
