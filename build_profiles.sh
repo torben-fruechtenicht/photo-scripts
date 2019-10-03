@@ -1,5 +1,20 @@
 #! /usr/bin/env bash
 
+# HOWTO
+# =====
+#
+# - Walks a directory structure of baseline files and creates profiles by melding a baseline and an input profile.
+# - Typically, the top level directory holds the camera baselines and sub directories exist for different lenses.
+# - Baseline files are either generic ("baseline.pp3") or targeted at a specific photo filetype, e.g. 
+#   - "baseline.jpg.pp3" for JPEGs
+#   - "baseline.orf.pp3" for Olympus RAW files
+#   (Normally, there should be no more than two filetypes, one for out of camera JPEGs and one for the camera's RAW
+#   format.)
+# - The contents of a baseline are melded into the given input profile, thus forming the output profile.
+# - After processing a baseline, a check is performed if sub directories exist which also contain baselines.
+# - This script is invoked again for each of these next baselines, now using the output profile which was created
+#   in the current directory as the input profile.
+
 set -ue
 
 declare -r SELF=$(readlink -e "$0")
@@ -10,40 +25,34 @@ if [[ -z "$WORKING_DIR" ]]; then
     echo "Missing working dir" >&2
     exit 1
 fi
+echo "Working dir: $WORKING_DIR" >&2
 
 declare -r INPUT_PROFILE=$(readlink -e "$2")
 if [[ -z "$INPUT_PROFILE" ]]; then
     echo "Missing input profile" >&2
     exit 1
 fi
+echo "Input profile: $INPUT_PROFILE" >&2
 
 if [[ -z $(readlink -e "$3") ]]; then
     echo "Creating missing target directory $(readlink -f "$3")" >&2
     mkdir "$(readlink -f "$3")"
 fi
 declare -r TARGET_DIR=$(readlink -e "$3")
-declare -r OUTPUT_PROFILE=$TARGET_DIR/template.pp3
-if [[ -e "$OUTPUT_PROFILE" ]]; then
-    echo "Output profile $OUTPUT_PROFILE exists" >&2
-    exit 1
-fi
 
-# scan WORKING_DIR for baseline files, with or without filetype qualifier in the filename (e.g. both "baseline.pp3"
-# and "baseline.raw.pp3") will be processed. each baseline file is processed, afterwards filetype qualifier is used
-# when looking for more related baseline in subdirectories (i.e. only baselines with same qualifier are matched)
 find "$WORKING_DIR" -mindepth 1 -maxdepth 1 -type f -regex '.*baseline\(..*\)?.pp3' |\
     while read baseline; do
         baseline_filename=$(basename "$baseline")
+        echo "Baseline: $baseline" >&2
         output_profile=$TARGET_DIR/${baseline_filename/baseline/template}
+        echo "Output profile: $output_profile" >&2
         # TODO check if output profile exists - exit if yes? only skip? skip but recurse?
 
         # step 1: create the output profile for the current baseline
-        echo "$INPUT_PROFILE $baseline $output_profile"
         cp "$INPUT_PROFILE" "$output_profile"
-        $MELD_BASELINE -v "$baseline" "$output_profile"
+        $MELD_BASELINE "$baseline" "$output_profile"
 
-        # step 2: check if there are baselines in sub directories of WORKING_DIR. if yes, recurse to each of these directories, 
-        # passing the OUTPUT_PROFILE as the next INPUT_PROFILE
+        # step 2: descend into subdirectories which have baselines for same filetype
         next_input_profile=$output_profile
         find "$WORKING_DIR" -mindepth 2 -maxdepth 2 -name "$baseline_filename" |\
             while read next_baseline; do

@@ -36,12 +36,12 @@ replace_in_profile() {
 
     if sed -n '/\['"$section"'\]/,/^$/p' "$PROFILE" | grep -q "$property"; then
         # if the entry already exists, just overwrite with new value
-        test -v VERBOSE && echo "Updating $2 with value $3" >&2        
+        test -v VERBOSE && echo "[$section] UPDATE $2: $3" >&2        
         # https://unix.stackexchange.com/a/416126
         sed -i  '/\['"$section"'\]/,/^$/s|'"$property"=.*$'|'"$property"'='"$value\n"'|' "$PROFILE"    
     else        
         # if the entry does not exist, append to end of section
-        test -v VERBOSE && echo "Adding $2 with value $3" >&2
+        test -v VERBOSE && echo "[$section] ADD $2: $3" >&2
         sed -i  '/\['"$section"'\]/,/^$/s|^$|'"$property"'='"$value\n"'|' "$PROFILE"
     fi
 }
@@ -50,7 +50,6 @@ cat $BASELINE | while read -r line; do
     # save the section header
     if [[ $line =~ \[.*\] ]]; then
         section=$(echo $line | tr -d '[' | tr -d ']')
-        test -v VERBOSE && echo "Section $section" >&2
         continue
     fi
 
@@ -62,7 +61,6 @@ cat $BASELINE | while read -r line; do
 
     # extra blank lines (actually, all unexpected lines) are skipped
     if [[ -z $section ]]; then
-        test -v VERBOSE && echo "Skipping line: outside of section but no new section" >&2
         continue
     fi
 
