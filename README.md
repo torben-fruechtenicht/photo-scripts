@@ -1,3 +1,3 @@
 # rawtherapee
 
-My RawTherapee profiles
+Bash scripts I use in my RawTherapee workflow. 
