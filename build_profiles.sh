@@ -81,10 +81,11 @@ find "$WORKING_DIR" -mindepth 1 -maxdepth 1 -type f $baselines_pattern |\
         # TODO if no baseline with matching filetype exists, try baseline.pp3        
         next_input_profile=$target_profile
         next_baseline_filetype_pattern=$(echo $baseline_filename | sed -n 's/baseline\(.*\).pp3/\1/p')
-        find "$WORKING_DIR" -mindepth 2 -maxdepth 2 -name "baseline$next_baseline_filetype_pattern.pp3" |\
+        find "$WORKING_DIR" -mindepth 2 -maxdepth 2 -type f -name "baseline$next_baseline_filetype_pattern.pp3" |\
             while read next_baseline; do
                 next_working_dir=$(dirname "$next_baseline")
                 next_target_directory="$TARGET_DIR/${next_working_dir##*/}"
+                # FIXME add -f $next_baseline_filetype_pattern - but without leading .
                 $SELF "$next_working_dir" "$next_input_profile" "$next_target_directory"
             done
     done
