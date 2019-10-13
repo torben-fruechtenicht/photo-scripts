@@ -101,7 +101,6 @@ fi
 # 
 # Copied from http://stackoverflow.com/a/7892650
 path_relative_to_ancestor() {
-    # set -x
     local -r PARENT=$(readlink -f ${1})
     local -r CHILD=$(readlink -f ${2})
 
@@ -146,12 +145,10 @@ path_relative_to_ancestor() {
     fi
 
     echo $relative_path
-    # set +x
 }
 
 
 photos_rootdir_from_photofile() {
-    # set -x
     local -r file=$1
     local parent_basename=$(basename "$(dirname "$file")")
     if [[ $parent_basename == "converted" ]]; then
@@ -159,7 +156,6 @@ photos_rootdir_from_photofile() {
     else 
         dirname "$(dirname "$(dirname "$(dirname "$file")")")"
     fi
-    # set +x
 }
 
 
@@ -175,7 +171,6 @@ target_basename_from_sourcefile() {
 
 
 target_relativepath_from_sourcefile() {
-    # set -x
     local -r sourcefile=$1
     local -r sources_rootdir=$2
 
@@ -186,11 +181,11 @@ target_relativepath_from_sourcefile() {
     else
         dirname "$(path_relative_to_ancestor "$sources_rootdir" "$sourcefile")"
     fi
-    # set +x
 }
 
 
 targetfile_from_sourcefile() {
+    
     local -r sourcefile=$1
     local -r sources_rootdir=$2
 
@@ -209,7 +204,7 @@ targetfile_from_sourcefile() {
 
 
     # TODO test no target dir given, does -z work?
-    if [[ -z $TARGET_DIRECTORY_ROOT ]]; then
+    if [[ -n $TARGET_DIRECTORY_ROOT ]]; then
         local -r target_directory_root=$TARGET_DIRECTORY_ROOT
     else 
         local -r target_directory_root=$sources_rootdir
