@@ -1,0 +1,357 @@
+#! /usr/bin/env bash
+
+set -eu
+shopt -s nocasematch
+
+
+print_help() {
+    cat <<EOF
+Usage:
+    $(basename "$0") [-v] [-s] [-h] [-r NEW_NAME] [-R RENAME_MODE] -t TARGET_DIRECTORY_ROOT PHOTO_FILES...
+
+    PHOTO_FILES..
+        A list of photo files (any non-image files are skipped), to be exact: the original files as saved 
+        from the camera.
+    -t TARGET_DIRECTORY_ROOT
+        Path of the target directory, mandatory. See below for expected format
+    -r NEW_NAME
+        Change name of target files and album directories to NEW_NAME. Besides renaming files metadata pertaining
+        to the name is changed, too. See also -R
+    -R RENAME_MODE
+        Valid values are "a" (rename only albums), "p" (rename only photos), "b" (rename both albums and photos)
+        The default mode (if "-R" is not given) is "b".
+    -v
+        Verbose logging, print full path of each moved file to error out
+    -s
+        Simulate only, no files are moved or renamed/changed
+    -h 
+        Print help page
+
+    General purpose command for moving photos to another directory. 
+    For each given photo files, all associated files (output, variants, sidecar files) are moved alongside 
+    the actual photo file. 
+    Assumes that photos are from a year/album/dateTaken directory structure which is retained when moved. TARGET_DIRECTORY_ROOT is the
+    root directory of this structure.
+    In non-verbose mode (i.e. no "-v"), prints the path of each target file to standard out.
+
+    Usecases:
+        - renaming files: move_photos.sh -t <TARGET_DIR> -r <NEW_NAME> -R "p" <PHOTOS>
+        - archiving files: move_photos.sh -t <ARCHIVE_DIR> <PHOTOS>
+        - moving files to a different album: move_photos.sh -t <TARGET_DIR> -r <TARGET_ALBUM> -R a <PHOTOS> 
+EOF
+}
+
+
+
+while getopts ":vshr:R:t:" opt; do
+    case $opt in
+        r ) 
+            declare -r RENAME=${OPTARG};;   
+        R ) 
+            declare -r RENAME_MODE=$OPTARG;;
+        v ) 
+            declare -r VERBOSE=;;
+        t )
+            declare -r TARGET_DIRECTORY_ROOT=$(readlink -m "${OPTARG}")
+            if [[ -z $TARGET_DIRECTORY_ROOT || ! -d $TARGET_DIRECTORY_ROOT ]]; then
+                echo "[EXITING] target directory $OPTARG does not exist" >&2
+                print_help
+	            exit 1
+            fi;;
+        s ) 
+            echo "[SIMULATE ONLY]" >&2
+            declare -r SIMULATE=;;
+        \? | h | *)
+            print_help; exit;;
+	esac
+done
+shift $(expr $OPTIND - 1)
+
+
+
+if [[ ! -v TARGET_DIRECTORY_ROOT && -v RENAME ]]; then
+    echo "No target directory when renaming: assuming renaming only" >&2
+    declare -r TARGET_DIRECTORY_ROOT=
+elif [[ ! -v TARGET_DIRECTORY_ROOT && ! -v RENAME ]]; then
+    echo "[EXITING] target directory missing" >&2
+    print_help
+	exit 1
+fi
+
+
+if [[ -v RENAME && ! -v RENAME_MODE ]]; then
+    declare -r RENAME_MODE=b
+fi
+
+if [[ -v RENAME && ($RENAME_MODE == 'p' || $RENAME_MODE == 'b') ]]; then
+    declare -r RENAME_PHOTOS=
+fi
+
+if [[ -v RENAME && ($RENAME_MODE == 'a' || $RENAME_MODE == 'b') ]]; then
+    declare -r RENAME_ALBUMS=
+fi
+
+
+
+# Print the path of a file or directory (the child) relative to an ancestor directory. 
+# For a directory, the relative path ends with an "/".
+# FIXME which corner cases are covered?
+# $1 - the parent directory
+# $2 - a child of parent
+# 
+# Copied from http://stackoverflow.com/a/7892650
+path_relative_to_ancestor() {
+    # set -x
+    local -r PARENT=$(readlink -f ${1})
+    local -r CHILD=$(readlink -f ${2})
+
+    local -r OLDIFS=$IFS
+    IFS="/"
+
+    local -r PARENT_ARRAY=($PARENT)
+    local -r PARENT_ARRAY_LENGTH=$(echo ${PARENT_ARRAY[@]} | wc -w)
+
+    local -r CHILD_ARRAY=($CHILD)
+    local -r CHILD_ARRAY_LENGTH=$(echo ${CHILD_ARRAY[@]} | wc -w)
+
+    local length=0
+    test $PARENT_ARRAY_LENGTH -gt $CHILD_ARRAY_LENGTH && length=$PARENT_ARRAY_LENGTH || length=$CHILD_ARRAY_LENGTH
+
+    local relative_path=""
+    local append_to_end=""
+
+    IFS=$OLDIFS
+    set +u
+
+    for (( i = 0; i <= $length + 1 ; i++ ))
+    do
+            if [[ "${PARENT_ARRAY[$i]}" = "${CHILD_ARRAY[$i]}" ]]; then
+                continue    
+            elif [[ "${PARENT_ARRAY[$i]}" != "" ]] && [[ "${CHILD_ARRAY[$i]}" != "" ]]; then
+                append_to_end="${append_to_end}${CHILD_ARRAY[${i}]}/"
+                relative_path="${relative_path}../"               
+            elif [[ "${PARENT_ARRAY[$i]}" = "" ]]; then
+                relative_path="${relative_path}${CHILD_ARRAY[${i}]}/"
+            else
+                relative_path="${relative_path}../"
+            fi
+    done
+
+    set -u
+
+    relative_path="${relative_path}${append_to_end}"
+
+    if ! [[ -d $CHILD ]]; then
+        relative_path=${relative_path%/}
+    fi
+
+    echo $relative_path
+    # set +x
+}
+
+
+photos_rootdir_from_photofile() {
+    # set -x
+    local -r file=$1
+    local parent_basename=$(basename "$(dirname "$file")")
+    if [[ $parent_basename == "converted" ]]; then
+        dirname "$(dirname "$(dirname "$(dirname "$(dirname "$file")")")")"
+    else 
+        dirname "$(dirname "$(dirname "$(dirname "$file")")")"
+    fi
+    # set +x
+}
+
+
+target_basename_from_sourcefile() {
+    local -r sourcefile=$1
+    if (( $# == 2 )); then
+        local -r rename_to=$2
+        basename "$sourcefile" | sed -e 's/[a-zA-ZßäÄöÖüÜ-]\+\(_.*\)/'"$rename_to"'\1/'
+    else
+        basename "$sourcefile"
+    fi
+}
+
+
+target_relativepath_from_sourcefile() {
+    # set -x
+    local -r sourcefile=$1
+    local -r sources_rootdir=$2
+
+    if [[ $# == 3 ]]; then
+        local -r new_album_name=$3
+        dirname "$(path_relative_to_ancestor "$sources_rootdir" "$sourcefile")" |\
+            sed -e 's|\([0-9]\+\)/[^/]*/\(.*\)|\1/'"${new_album_name}"'/\2|'
+    else
+        dirname "$(path_relative_to_ancestor "$sources_rootdir" "$sourcefile")"
+    fi
+    # set +x
+}
+
+
+targetfile_from_sourcefile() {
+    local -r sourcefile=$1
+    local -r sources_rootdir=$2
+
+
+    if [[ -v RENAME_PHOTOS ]]; then
+        local -r target_basename=$(target_basename_from_sourcefile "$sourcefile" "$RENAME")
+    else 
+        local -r target_basename=$(target_basename_from_sourcefile "$sourcefile")
+    fi
+
+    if [[ -v RENAME_ALBUMS ]]; then
+        local -r target_relativepath=$(target_relativepath_from_sourcefile "$sourcefile" "$sources_rootdir" "$RENAME")
+    else 
+        local -r target_relativepath=$(target_relativepath_from_sourcefile "$sourcefile" "$sources_rootdir" )
+    fi    
+
+
+    # TODO test no target dir given, does -z work?
+    if [[ -z $TARGET_DIRECTORY_ROOT ]]; then
+        local -r target_directory_root=$TARGET_DIRECTORY_ROOT
+    else 
+        local -r target_directory_root=$sources_rootdir
+    fi
+    
+
+    echo "${target_directory_root}/${target_relativepath}/${target_basename}"    
+}
+
+
+declare -r TITLE_PATTERN="([^_]+)" # \1
+declare -r DATE_PATTERN="([0-9]{8})" # \2
+declare -r TIME_PATTERN="([0-9]{4})" # \3
+declare -r CAMERA_PATTERN="([a-zA-Z0-9]+)" # \4
+declare -r NUMBER_PATTERN="([0-9]+(-[a-ZA-Z0-9-]+)?)" # \5
+declare -r FILE_EXT_PATTERN="([a-ZA-Z0-9]{3})" # \6
+declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
+
+function fullname_from_filename() {
+    local -r basename=$(basename "$sourcephoto")
+    echo "${basename%%.*}"
+}
+
+function iptc_headline_from_fullname() {
+    local -r fullname=$1
+	echo "$fullname" | sed -r 's/'"$PHOTO_FULLNAME_PATTERN"'/\1 #\5/'
+}
+
+
+function iptc_entries_param_to_sed_replacements() {
+	local -r iptc_entries=$1
+	OLD_IFS=$IFS
+	IFS="|"
+	for entry in $iptc_entries; do
+		key=$(echo $entry | cut -d'=' -f1)
+		value=$(echo $entry | cut -d'=' -f2)
+		echo -n "s|$key=.*$|$key=$value| "
+	done
+	IFS=OLD_IFS
+}
+
+function set_iptc_in_sidecar() {
+	local -r iptc_entries=$1
+    local -r sidecar_file=$2
+    sed -i  '/\['"[IPTC]"'\]/,/^$/ '$(iptc_entries_param_to_sed_replacements "$iptc_entries") "$sidecar_file"
+}
+
+
+function iptc_entries_param_to_exiv2_mods() {
+	local -r iptc_entries=$1
+	OLD_IFS=$IFS
+	IFS="|"
+	for entry in $iptc_entries; do
+		key=$(echo $entry | cut -d'=' -f1)
+		value=$(echo $entry | cut -d'=' -f2)
+		echo -n "-M'set Iptc.Application2.$key String $value’ "
+	done
+	IFS=OLD_IFS
+}
+
+function set_iptc_in_jpeg() {
+    local -r iptc_entries=$1
+    local -r sidecar_file=$2
+    exiv2 $(iptc_entries_param_to_exiv2_mods "$iptc_entries")
+}
+
+
+
+declare -r SOURCE_PHOTOS=$@
+for sourcephoto in $SOURCE_PHOTOS; do
+    
+    sourcephoto=$(readlink -e "$sourcephoto")
+
+    if ! [[ -f $sourcephoto ]]; then
+        echo "[SKIPPING] $sourcephoto does not exist or is not a file" >&2
+        continue
+    fi
+
+    if ! [[ $sourcephoto =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]]; then
+		echo "[SKIPPING] $sourcephoto is not a photo" >&2
+		continue
+	fi
+
+    # TBD really skip any source photos from a converted dir?
+    # TBD what would happen if sourcephoto is an output file?
+    # TBD what to do with a file from a converted dir? only move the file? or collect
+    # all other files incl original and move all?
+    if [[ $sourcephoto =~ .+/converted/^/+$ ]]; then
+        echo "[SKIPPING] $sourcephoto is an output file, only originals expected" >&2
+        continue
+    fi
+
+    # FIXME check that parent directories of sourcephoto are year/album/date
+
+    sourcephoto_fullname=$(fullname_from_filename "$sourcephoto")
+    sources_rootdir=$(photos_rootdir_from_photofile "$sourcephoto")  
+    
+    # Find all files, i.e. actual photo file and all associated files: search for the basename without
+    # extensions in the directory of $sourcephoto and below. Move each file and rename if enabled
+	find $(dirname "$sourcephoto") -type f -path "*/${sourcephoto_fullname}*" | while read -r file_to_move; do        
+
+        targetfile=$(targetfile_from_sourcefile "$file_to_move" "$sources_rootdir")
+        if [[ -e "$targetfile" ]]; then
+            echo "[SKIPPING] $targetfile exists" >&2
+            continue
+        fi
+
+
+        # TBD FIXME can't we do this in the outer loop?
+        if ! [[ -e $(dirname "$targetfile") ]]; then
+            test -v SIMULATE || mkdir --parents "$(dirname "$targetfile")"
+        fi
+
+        # FIXME if we're only renaming (i.e. targetdir is identical to sourcedir): check if RENAME is same as 
+        # sourcephoto_fullname. if yes skip + log
+        # TODO for this, we should determine the target root here (rather than in targetfile_from_sourcefile)
+        # so that we can do the required check
+
+        # TBD change to "rsync -a --remove-source-files source/data target/"? what are pros+cons?
+        test -v SIMULATE || mv -u "$file_to_move" "$targetfile"
+
+        # FIXME only change metadata (and output file name) if file was actually moved (because of "-u")
+
+        if [[ -v RENAME_PHOTOS ]]; then
+
+            if [[ $file_to_move =~ .*\.pp[23]$ ]]; then
+
+                test -v SIMULATE || set_iptc_in_sidecar \
+                    "Headline=$(iptc_headline_from_fullname "$sourcephoto_fullname")|Caption=$sourcephoto_fullname" \
+                    "$file_to_move"
+
+            elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
+
+                test -v SIMULATE || set_iptc_in_jpeg \
+                    "Headline=$(iptc_headline_from_fullname "$sourcephoto_fullname")|Caption=$sourcephoto_fullname" \
+                    "$file_to_move"
+
+            fi
+        fi   
+
+        (test -v VERBOSE && echo "$file_to_move $targetfile" >&2) || echo "$targetfile"
+
+    done # END OF INDIVIDUAL FILES LOOP
+    
+done # END OF SOURCE PHOTOS LOOP
