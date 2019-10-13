@@ -120,6 +120,7 @@ path_relative_to_ancestor() {
     local append_to_end=""
 
     IFS=$OLDIFS
+    # disable variable checking because the following loop depends on this
     set +u
 
     for (( i = 0; i <= $length + 1 ; i++ ))
@@ -135,8 +136,6 @@ path_relative_to_ancestor() {
                 relative_path="${relative_path}../"
             fi
     done
-
-    set -u
 
     relative_path="${relative_path}${append_to_end}"
 
@@ -283,6 +282,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
         continue
     fi
 
+    # skip all non-photo files, e.g. sidecars
     if ! [[ $sourcephoto =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]]; then
 		echo "[SKIPPING] $sourcephoto is not a photo" >&2
 		continue
