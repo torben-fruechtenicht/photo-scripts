@@ -42,12 +42,11 @@ EOF
 }
 
 
-
-while getopts ":vshr:R:t:" opt; do
+while getopts ":vshr:m:t:" opt; do
     case $opt in
         r ) 
             declare -r RENAME=${OPTARG};;   
-        R ) 
+        m ) 
             declare -r RENAME_MODE=$OPTARG;;
         v ) 
             declare -r VERBOSE=;;
@@ -66,7 +65,6 @@ while getopts ":vshr:R:t:" opt; do
 	esac
 done
 shift $(expr $OPTIND - 1)
-
 
 
 if [[ ! -v TARGET_DIRECTORY_ROOT && -v RENAME ]]; then
