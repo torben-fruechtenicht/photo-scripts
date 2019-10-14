@@ -274,13 +274,13 @@ for sourcephoto in $SOURCE_PHOTOS; do
     
     sourcephoto=$(readlink -e "$sourcephoto")
 
-    if ! [[ -f $sourcephoto ]]; then
-        echo "[SKIPPING] $sourcephoto does not exist or is not a file" >&2
+    if ! [[ -e $sourcephoto ]]; then
+        echo "[SKIPPING] $sourcephoto does not exist" >&2
         continue
     fi
 
-    # skip all non-photo files, e.g. sidecars
-    if ! [[ $sourcephoto =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]]; then
+    # skip directories and all non-photo files, e.g. sidecars
+    if ! [[ $sourcephoto =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ && -f $sourcephoto ]]; then
 		test -v VERBOSE && echo "[SKIPPING] $sourcephoto is not a photo" >&2
 		continue
 	fi
