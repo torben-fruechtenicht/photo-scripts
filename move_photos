@@ -202,14 +202,13 @@ targetfile_from_sourcefile() {
     fi    
 
 
-    # TODO test no target dir given, does -z work?
     if [[ -n $TARGET_DIRECTORY_ROOT ]]; then
         local -r target_directory_root=$TARGET_DIRECTORY_ROOT
     else 
         local -r target_directory_root=$sources_rootdir
     fi
-    
 
+    
     echo "${target_directory_root}/${target_relativepath}/${target_basename}"    
 }
 
@@ -284,7 +283,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
     # skip all non-photo files, e.g. sidecars
     if ! [[ $sourcephoto =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]]; then
-		echo "[SKIPPING] $sourcephoto is not a photo" >&2
+		test -v VERBOSE && echo "[SKIPPING] $sourcephoto is not a photo" >&2
 		continue
 	fi
 
@@ -318,15 +317,8 @@ for sourcephoto in $SOURCE_PHOTOS; do
             test -v SIMULATE || mkdir --parents "$(dirname "$targetfile")"
         fi
 
-        # FIXME if we're only renaming (i.e. targetdir is identical to sourcedir): check if RENAME is same as 
-        # sourcephoto_fullname. if yes skip + log
-        # TODO for this, we should determine the target root here (rather than in targetfile_from_sourcefile)
-        # so that we can do the required check
-
         # TBD change to "rsync -a --remove-source-files source/data target/"? what are pros+cons?
         test -v SIMULATE || mv -u "$file_to_move" "$targetfile"
-
-        # FIXME only change metadata (and output file name) if file was actually moved (because of "-u")
 
         if [[ -v RENAME_PHOTOS ]]; then
 
