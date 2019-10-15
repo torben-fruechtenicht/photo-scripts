@@ -68,7 +68,6 @@ shift $(expr $OPTIND - 1)
 
 
 if [[ ! -v TARGET_DIRECTORY_ROOT && -v RENAME ]]; then
-    echo "No target directory when renaming: assuming renaming only" >&2
     declare -r TARGET_DIRECTORY_ROOT=
 elif [[ ! -v TARGET_DIRECTORY_ROOT && ! -v RENAME ]]; then
     echo "[EXITING] target directory missing" >&2
@@ -245,7 +244,15 @@ function iptc_entries_param_to_sed_replacements() {
 function set_iptc_in_sidecar() {
 	local -r iptc_entries=$1
     local -r sidecar_file=$2
-    sed -i  '/\['"[IPTC]"'\]/,/^$/ '$(iptc_entries_param_to_sed_replacements "$iptc_entries") "$sidecar_file"
+
+    OLD_IFS=$IFS
+	IFS="|"
+	for entry in $iptc_entries; do
+		key=$(echo $entry | cut -d'=' -f1)
+		value=$(echo $entry | cut -d'=' -f2)
+        sed -i '/\[IPTC\]/,/^$/ s|$key=.*$|$key=$value|' "$sidecar_file"
+	done
+	IFS=$OLD_IFS
 }
 
 
@@ -324,13 +331,13 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
                 test -v SIMULATE || set_iptc_in_sidecar \
                     "Headline=$(iptc_headline_from_fullname "$sourcephoto_fullname")|Caption=$sourcephoto_fullname" \
-                    "$file_to_move"
+                    "$targetfile"
 
-            elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
+            # elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
 
-                test -v SIMULATE || set_iptc_in_jpeg \
-                    "Headline=$(iptc_headline_from_fullname "$sourcephoto_fullname")|Caption=$sourcephoto_fullname" \
-                    "$file_to_move"
+            #     test -v SIMULATE || set_iptc_in_jpeg \
+            #         "Headline=$(iptc_headline_from_fullname "$sourcephoto_fullname")|Caption=$sourcephoto_fullname" \
+            #         "$targetfile"
 
             fi
         fi   
