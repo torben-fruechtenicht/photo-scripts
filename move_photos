@@ -219,7 +219,7 @@ declare -r FILE_EXT_PATTERN="([a-ZA-Z0-9]{3})" # \6
 declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
 
 function fullname_from_filename() {
-    local -r basename=$(basename "$sourcephoto")
+    local -r basename=$(basename "$1")
     echo "${basename%%.*}"
 }
 
@@ -250,7 +250,7 @@ function set_iptc_in_sidecar() {
 	for entry in $iptc_entries; do
 		key=$(echo $entry | cut -d'=' -f1)
 		value=$(echo $entry | cut -d'=' -f2)
-        sed -i '/\[IPTC\]/,/^$/ s|$key=.*$|$key=$value|' "$sidecar_file"
+        sed -i '/\[IPTC\]/,/^$/ s|'"$key"'=.*$|'"$key"'='"$value"';|' "$sidecar_file"
 	done
 	IFS=$OLD_IFS
 }
@@ -316,7 +316,6 @@ for sourcephoto in $SOURCE_PHOTOS; do
             continue
         fi
 
-
         # TBD FIXME can't we do this in the outer loop?
         if ! [[ -e $(dirname "$targetfile") ]]; then
             test -v SIMULATE || mkdir --parents "$(dirname "$targetfile")"
@@ -327,10 +326,12 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
         if [[ -v RENAME_PHOTOS ]]; then
 
+            target_fullname=$(fullname_from_filename "$targetfile")
+
             if [[ $file_to_move =~ .*\.pp[23]$ ]]; then
 
                 test -v SIMULATE || set_iptc_in_sidecar \
-                    "Headline=$(iptc_headline_from_fullname "$sourcephoto_fullname")|Caption=$sourcephoto_fullname" \
+                    "Headline=$(iptc_headline_from_fullname "$target_fullname")|Caption=[$target_fullname]" \
                     "$targetfile"
 
             # elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
