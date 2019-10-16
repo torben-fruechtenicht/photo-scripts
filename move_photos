@@ -329,7 +329,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
             elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
 
                 test -v SIMULATE || set_iptc_in_jpeg \
-                    "Headline=$(iptc_headline_from_fullname "$target_fullname")|Caption=$target_fullname" \
+                    "Headline=$(iptc_headline_from_fullname "$target_fullname")|Caption=[$target_fullname]" \
                     "$targetfile"
 
             fi
