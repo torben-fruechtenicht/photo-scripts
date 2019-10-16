@@ -213,33 +213,23 @@ targetfile_from_sourcefile() {
 declare -r TITLE_PATTERN="([^_]+)" # \1
 declare -r DATE_PATTERN="([0-9]{8})" # \2
 declare -r TIME_PATTERN="([0-9]{4})" # \3
-declare -r CAMERA_PATTERN="([a-zA-Z0-9]+)" # \4
+declare -r CAMERA_PATTERN="([a-zA-Z0-9-]+)" # \4
 declare -r NUMBER_PATTERN="([0-9]+(-[a-ZA-Z0-9-]+)?)" # \5
 declare -r FILE_EXT_PATTERN="([a-ZA-Z0-9]{3})" # \6
-declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
+declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}"
+declare -r PHOTO_FILENAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
 
 function fullname_from_filename() {
     local -r basename=$(basename "$1")
     echo "${basename%%.*}"
 }
 
+
 function iptc_headline_from_fullname() {
     local -r fullname=$1
-	echo "$fullname" | sed -r 's/'"$PHOTO_FULLNAME_PATTERN"'/\1 #\5/'
+	echo "$fullname" | sed -r 's/'"$PHOTO_FULLNAME_PATTERN"'/\1 \5/'
 }
 
-
-function iptc_entries_param_to_sed_replacements() {
-	local -r iptc_entries=$1
-	OLD_IFS=$IFS
-	IFS="|"
-	for entry in $iptc_entries; do
-		key=$(echo $entry | cut -d'=' -f1)
-		value=$(echo $entry | cut -d'=' -f2)
-		echo -n "s|$key=.*$|$key=$value| "
-	done
-	IFS=OLD_IFS
-}
 
 function set_iptc_in_sidecar() {
 	local -r iptc_entries=$1
@@ -297,7 +287,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
     # TBD what to do with a file from a converted dir? only move the file? or collect
     # all other files incl original and move all?
     if [[ $sourcephoto =~ .+/converted/^/+$ ]]; then
-        echo "[SKIPPING] $sourcephoto is an output file, only originals expected" >&2
+        echo "[SKIPPING] $sourcephoto is an output file, only originals accepted" >&2
         continue
     fi
 
@@ -309,14 +299,13 @@ for sourcephoto in $SOURCE_PHOTOS; do
     # Find all files, i.e. actual photo file and all associated files: search for the basename without
     # extensions in the directory of $sourcephoto and below. Move each file and rename if enabled
 	find $(dirname "$sourcephoto") -type f -path "*/${sourcephoto_fullname}*" | while read -r file_to_move; do        
-
+    
         targetfile=$(targetfile_from_sourcefile "$file_to_move" "$sources_rootdir")
         if [[ -e "$targetfile" ]]; then
             echo "[SKIPPING] $targetfile exists" >&2
             continue
         fi
 
-        # TBD FIXME can't we do this in the outer loop?
         if ! [[ -e $(dirname "$targetfile") ]]; then
             test -v SIMULATE || mkdir --parents "$(dirname "$targetfile")"
         fi
@@ -326,6 +315,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
         if [[ -v RENAME_PHOTOS ]]; then
 
+            # TBD FIXME can't we do this in the outer loop?
             target_fullname=$(fullname_from_filename "$targetfile")
 
             if [[ $file_to_move =~ .*\.pp[23]$ ]]; then
