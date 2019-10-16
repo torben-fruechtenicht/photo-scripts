@@ -213,7 +213,7 @@ targetfile_from_sourcefile() {
 declare -r TITLE_PATTERN="([^_]+)" # \1
 declare -r DATE_PATTERN="([0-9]{8})" # \2
 declare -r TIME_PATTERN="([0-9]{4})" # \3
-declare -r CAMERA_PATTERN="([a-zA-Z0-9-]+)" # \4
+    declare -r CAMERA_PATTERN="([a-zA-Z0-9-]+)" # \4
 declare -r NUMBER_PATTERN="([0-9]+(-[a-ZA-Z0-9-]+)?)" # \5
 declare -r FILE_EXT_PATTERN="([a-ZA-Z0-9]{3})" # \6
 declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}"
@@ -246,23 +246,20 @@ function set_iptc_in_sidecar() {
 }
 
 
-function iptc_entries_param_to_exiv2_mods() {
-	local -r iptc_entries=$1
-	OLD_IFS=$IFS
+function set_iptc_in_jpeg() {
+    local -r iptc_entries=$1
+    local -r jpeg_file=$2
+
+    OLD_IFS=$IFS
 	IFS="|"
 	for entry in $iptc_entries; do
 		key=$(echo $entry | cut -d'=' -f1)
 		value=$(echo $entry | cut -d'=' -f2)
-		echo -n "-M'set Iptc.Application2.$key String $value’ "
+        exiv2 -M"set Iptc.Application2.$key String '$value'" "$jpeg_file" 2> /dev/null
 	done
-	IFS=OLD_IFS
+	IFS=$OLD_IFS
 }
 
-function set_iptc_in_jpeg() {
-    local -r iptc_entries=$1
-    local -r sidecar_file=$2
-    exiv2 $(iptc_entries_param_to_exiv2_mods "$iptc_entries")
-}
 
 
 
@@ -317,6 +314,11 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
             # TBD FIXME can't we do this in the outer loop?
             target_fullname=$(fullname_from_filename "$targetfile")
+            
+            if ! [[ -w $targetfile ]]; then
+                chmod u+w "$targetfile"
+                declare restore_write_protection=
+            fi
 
             if [[ $file_to_move =~ .*\.pp[23]$ ]]; then
 
@@ -324,13 +326,16 @@ for sourcephoto in $SOURCE_PHOTOS; do
                     "Headline=$(iptc_headline_from_fullname "$target_fullname")|Caption=[$target_fullname]" \
                     "$targetfile"
 
-            # elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
+            elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
 
-            #     test -v SIMULATE || set_iptc_in_jpeg \
-            #         "Headline=$(iptc_headline_from_fullname "$sourcephoto_fullname")|Caption=$sourcephoto_fullname" \
-            #         "$targetfile"
+                test -v SIMULATE || set_iptc_in_jpeg \
+                    "Headline=$(iptc_headline_from_fullname "$target_fullname")|Caption=$target_fullname" \
+                    "$targetfile"
 
             fi
+
+            test -v restore_write_protection && \
+                chmod u-w "$targetfile" && unset restore_write_protection
         fi   
 
         (test -v VERBOSE && echo "$file_to_move $targetfile" >&2) || echo "$targetfile"
