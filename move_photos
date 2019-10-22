@@ -89,6 +89,10 @@ if [[ -v RENAME && ($RENAME_MODE == 'a' || $RENAME_MODE == 'b') ]]; then
 fi
 
 
+# TBD TODO would this fail because of "set -u" if no files are given?
+declare -r SOURCE_PHOTOS=$@
+
+
 
 # Print the path of a file or directory (the child) relative to an ancestor directory. 
 # For a directory, the relative path ends with an "/".
@@ -147,6 +151,8 @@ path_relative_to_ancestor() {
 photos_rootdir_from_photofile() {
     local -r file=$1
     local parent_basename=$(basename "$(dirname "$file")")
+    # check for files from converted dir is actually not needed because we're skipping these
+    # files anyway
     if [[ $parent_basename == "converted" ]]; then
         dirname "$(dirname "$(dirname "$(dirname "$(dirname "$file")")")")"
     else 
@@ -262,8 +268,6 @@ function set_iptc_in_jpeg() {
 
 
 
-
-declare -r SOURCE_PHOTOS=$@
 for sourcephoto in $SOURCE_PHOTOS; do
     
     sourcephoto=$(readlink -e "$sourcephoto")
