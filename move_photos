@@ -3,6 +3,7 @@
 set -eu
 shopt -s nocasematch
 
+source "$(dirname "$(readlink -e $0)")/lib/metadata.sh"
 
 print_help() {
     cat <<EOF
@@ -224,11 +225,6 @@ declare -r NUMBER_PATTERN="([0-9]+(-[a-ZA-Z0-9-]+)?)" # \5
 declare -r FILE_EXT_PATTERN="([a-ZA-Z0-9]{3})" # \6
 declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}"
 declare -r PHOTO_FILENAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
-
-function fullname_from_filename() {
-    local -r basename=$(basename "$1")
-    echo "${basename%%.*}"
-}
 
 
 function iptc_headline_from_fullname() {
