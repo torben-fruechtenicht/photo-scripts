@@ -68,6 +68,9 @@ done
 shift $(expr $OPTIND - 1)
 
 
+declare -r SOURCE_PHOTOS=$@
+
+
 if [[ ! -v TARGET_DIRECTORY_ROOT && -v RENAME ]]; then
     declare -r TARGET_DIRECTORY_ROOT=
 elif [[ ! -v TARGET_DIRECTORY_ROOT && ! -v RENAME ]]; then
@@ -88,10 +91,6 @@ fi
 if [[ -v RENAME && ($RENAME_MODE == 'a' || $RENAME_MODE == 'b') ]]; then
     declare -r RENAME_ALBUMS=
 fi
-
-
-# TBD TODO would this fail because of "set -u" if no files are given?
-declare -r SOURCE_PHOTOS=$@
 
 
 
@@ -265,7 +264,7 @@ function set_iptc_in_jpeg() {
 
 
 for sourcephoto in $SOURCE_PHOTOS; do
-    
+
     sourcephoto=$(readlink -e "$sourcephoto")
 
     if ! [[ -e $sourcephoto ]]; then
@@ -278,7 +277,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
 		test -v VERBOSE && echo "[SKIPPING] $sourcephoto is not a photo" >&2
 		continue
 	fi
-
+    
     # TBD really skip any source photos from a converted dir?
     # TBD what would happen if sourcephoto is an output file?
     # TBD what to do with a file from a converted dir? only move the file? or collect
@@ -316,7 +315,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
             target_fullname=$(fullname_from_filename "$targetfile")
             
             if ! [[ -w $targetfile ]]; then
-                chmod u+w "$targetfile"
+                test -v SIMULATE || chmod u+w "$targetfile"
                 declare restore_write_protection=
             fi
 
@@ -335,7 +334,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
             fi
 
             test -v restore_write_protection && \
-                chmod u-w "$targetfile" && unset restore_write_protection
+                test -v SIMULATE || chmod u-w "$targetfile" && unset restore_write_protection
         fi   
 
         (test -v VERBOSE && echo "$file_to_move $targetfile" >&2) || echo "$targetfile"

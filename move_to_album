@@ -1,0 +1,31 @@
+#! /bin/bash
+
+set -e
+
+export PATH="$(dirname "$(readlink -e "$0")"):$PATH"
+
+while getopts "r" opt; do
+    case $opt in
+        r ) declare -r RENAME_PHOTOS=;;
+	esac
+done
+shift $(expr $OPTIND - 1)
+
+declare -r TARGET_ALBUM_PATH=$(readlink -f "$1")
+
+if [[ -z $TARGET_ALBUM_PATH ]]; then
+    echo "Path of target album directory does not exist" >&2
+    exit 1
+fi
+
+declare -r TARGET_ALBUM_NAME=$(basename "$TARGET_ALBUM_PATH")
+declare -r TARGET_DIRECTORY_ROOT=$(dirname "$(dirname "$TARGET_ALBUM_PATH")")
+
+shift 1
+declare -r PHOTOS_TO_MOVE=$@
+
+declare -r RENAME_MODE=$(test -v RENAME_PHOTOS && echo "b" || echo "a")
+
+set -u
+
+move_photos -t "$TARGET_DIRECTORY_ROOT" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE $PHOTOS_TO_MOVE 
