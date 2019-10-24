@@ -1,0 +1,14 @@
+#! /usr/bin/env bash
+
+set -e
+
+export PATH="$(dirname $(readlink -f "$0")):$PATH"
+
+declare -r NEW_NAME=$1
+
+shift 1
+declare -r PHOTOS_TO_RENAME=$@
+
+set -u
+
+move_photos -r "$NEW_NAME" -m "p" $PHOTOS_TO_RENAME
