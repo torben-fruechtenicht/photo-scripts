@@ -1,0 +1,65 @@
+#! /usr/bin/env bash
+
+set -e
+shopt -s nocasematch
+
+declare -r COLLECTOR_CMD=$(dirname "$0")/lib/collect_associated_files.sh
+
+declare -r KEYWORDS=$1
+if [[ -z $KEYWORDS ]]; then
+	echo "No keywords" >&2
+	exit 1
+fi
+
+if [[ -f $KEYWORDS || -d $KEYWORDS ]]; then
+	echo "Keywords parameter seems to be a file - actual keywords parameter is missing?"
+	exit 1
+fi
+
+shift 1
+declare -r FILES=$@
+
+set -u
+
+set_iptc_in_sidecar() {
+	local -r sidecar_file=$1
+	echo "sidecar $sidecar_file" >&2
+
+	local new_keywords=$KEYWORDS
+	local old_keywords=$(sed -rn '/\[IPTC\]/,/^$/s/Keywords=(.+);+$/\1/p' "$sidecar_file")
+
+	local -r OLD_IFS=$IFS
+	IFS=;
+	for old_keyword in $old_keywords; do 
+		if ! [[ $new_keywords =~ .*$old_keywords.* ]]; then
+			# TODO quote if needed (any spaces)
+			new_keywords="$new_keywords;$old_keyword"
+		fi		
+	done
+	IFS=$OLD_IFS
+
+	sed -i '/\[IPTC\]/,/^$/ s|Keywords=.*$|Keywords='"$new_keywords"';|' "$sidecar_file"
+}
+
+set_iptc_in_jpeg() {
+	local -r jpeg_file=$1
+	echo "output jpg $jpeg_file" >&2
+}
+
+
+"$COLLECTOR_CMD" $FILES | while read -r file; do
+
+	echo "file $file" >&2
+	if [[ $file =~ .*\.pp[23]$ ]]; then
+
+		if ! grep "^[IPTC]$" "$file"; then
+			echo -e "\n[IPTC]\nKeywords=;\n" >> $file			
+		fi
+
+		set_iptc_in_sidecar "$file"
+
+	elif [[ $file =~ .*/converted/.*\.jpg$ ]]; then
+		set_iptc_in_jpeg "$file"
+	fi
+	
+done
