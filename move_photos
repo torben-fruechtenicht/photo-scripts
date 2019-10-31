@@ -54,7 +54,7 @@ while getopts ":vshr:m:t:" opt; do
         t )
             declare -r TARGET_DIRECTORY_ROOT=$(readlink -m "${OPTARG}")
             if [[ -z $TARGET_DIRECTORY_ROOT || ! -d $TARGET_DIRECTORY_ROOT ]]; then
-                echo "[EXITING] target directory $OPTARG does not exist" >&2
+                echo "[ERROR] target directory $OPTARG does not exist" >&2
                 print_help
 	            exit 1
             fi;;
@@ -74,7 +74,7 @@ declare -r SOURCE_PHOTOS=$@
 if [[ ! -v TARGET_DIRECTORY_ROOT && -v RENAME ]]; then
     declare -r TARGET_DIRECTORY_ROOT=
 elif [[ ! -v TARGET_DIRECTORY_ROOT && ! -v RENAME ]]; then
-    echo "[EXITING] target directory missing" >&2
+    echo "[ERROR] target directory missing" >&2
     print_help
 	exit 1
 fi
@@ -268,13 +268,13 @@ for sourcephoto in $SOURCE_PHOTOS; do
     sourcephoto=$(readlink -e "$sourcephoto")
 
     if ! [[ -e $sourcephoto ]]; then
-        echo "[SKIPPING] $sourcephoto does not exist" >&2
+        echo "[SKIP] $sourcephoto does not exist" >&2
         continue
     fi
 
     # skip directories and all non-photo files, e.g. sidecars
     if ! [[ $sourcephoto =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ && -f $sourcephoto ]]; then
-		test -v VERBOSE && echo "[SKIPPING] $sourcephoto is not a photo" >&2
+		test -v VERBOSE && echo "[SKIP] $sourcephoto is not a photo" >&2
 		continue
 	fi
     
@@ -283,7 +283,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
     # TBD what to do with a file from a converted dir? only move the file? or collect
     # all other files incl original and move all?
     if [[ $sourcephoto =~ .+/converted/^/+$ ]]; then
-        echo "[SKIPPING] $sourcephoto is an output file, only originals accepted" >&2
+        echo "[SKIP] $sourcephoto is an output file, only originals accepted" >&2
         continue
     fi
 
@@ -298,7 +298,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
     
         targetfile=$(targetfile_from_sourcefile "$file_to_move" "$sources_rootdir")
         if [[ -e "$targetfile" ]]; then
-            echo "[SKIPPING] $targetfile exists" >&2
+            echo "[SKIP] $targetfile exists" >&2
             continue
         fi
 

@@ -26,7 +26,7 @@ set_iptc_in_sidecar() {
 	local -r OLD_IFS=$IFS
 	IFS=";"
 
-	local old_keywords=$(sed -rn '/\[IPTC\]/,/^$/s/Keywords=(.+);+$/\1/p' "$sidecar_file")
+	local old_keywords=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+);+$/\1/p' "$sidecar_file")
 	for old_keyword in $old_keywords; do 
 		if ! [[ $KEYWORDS =~ .*$old_keyword.* ]]; then
 			new_keywords="$new_keywords;$old_keyword"
@@ -42,11 +42,12 @@ set_iptc_in_sidecar() {
 
 	IFS=$OLD_IFS
 
-	sed -i '/\[IPTC\]/,/^$/ s/Keywords=.*;$/Keywords='"$new_keywords"'/' "$sidecar_file"
+	if [[ -n $new_keywords ]]; then
+		sed -i '/\[IPTC\]/,/^$/ s/Keywords=.*;$/Keywords='"$new_keywords"'/' "$sidecar_file"
+	fi
 }
 
 set_iptc_in_jpeg() {
-	set -x
 	local -r jpeg_file=$1
 	local -r old_keywords=$(exiv2 -PIt -K Iptc.Application2.Keywords $jpeg_file 2> /dev/null)
 
@@ -54,8 +55,8 @@ set_iptc_in_jpeg() {
 	IFS=";"
 
 	for new_keyword in $KEYWORDS; do
-		if [[ $old_keywords =~ .*$new_keyword.* ]]; then
-			echo "[SKIP] Keyword '$old_keyword'" >&2
+		if [[ "$old_keywords" =~ .*$new_keyword.* ]]; then
+			continue
 		fi
 
 		if [[ $new_keyword =~ .+[[:space:]].+ ]]; then
@@ -65,7 +66,6 @@ set_iptc_in_jpeg() {
 	done
 
 	IFS=$OLD_IFS
-	set +x
 }
 
 
@@ -76,13 +76,14 @@ set_iptc_in_jpeg() {
 		if ! grep "^[IPTC]$" "$file"; then
 			echo -e "\n[IPTC]\nKeywords=;\n" >> $file			
 		fi
-
 		# FIXME remove write-protection and restore afterwards
 		set_iptc_in_sidecar "$file"
 
 	elif [[ $file =~ .*/converted/.*\.jpg$ ]]; then
+
 		# FIXME remove write-protection and restore afterwards
 		set_iptc_in_jpeg "$file"
+
 	fi
 	
 done

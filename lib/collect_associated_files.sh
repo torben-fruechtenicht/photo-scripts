@@ -14,13 +14,13 @@ for sourcephoto in $SOURCE_PHOTOS; do
     sourcephoto=$(readlink -e "$sourcephoto")
 
     if ! [[ -e $sourcephoto ]]; then
-        echo "[SKIPPING] $sourcephoto does not exist" >&2
+        echo "[SKIP] $sourcephoto does not exist" >&2
         continue
     fi
 
     # skip directories and all non-photo files, e.g. sidecars
     if ! [[ $sourcephoto =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ && -f $sourcephoto ]]; then
-		echo "[SKIPPING] $sourcephoto is not a photo" >&2
+		echo "[SKIP] $sourcephoto is not a photo" >&2
 		continue
 	fi
     
@@ -29,7 +29,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
     # TBD what to do with a file from a converted dir? only move the file? or collect
     # all other files incl original and move all?
     if [[ $sourcephoto =~ .+/converted/^/+$ ]]; then
-        echo "[SKIPPING] $sourcephoto is an output file, only originals accepted" >&2
+        echo "[SKIP] $sourcephoto is an output file, only originals accepted" >&2
         continue
     fi
 
