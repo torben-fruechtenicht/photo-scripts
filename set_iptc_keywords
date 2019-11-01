@@ -19,6 +19,15 @@ declare -r FILES=$@
 
 set -u
 
+quote_if_spaces_exist() {
+	local -r keyword=$1
+	if [[ $keyword =~ .+[[:space:]].+ ]]; then
+		echo "\"$keyword\""
+	else
+		echo $keyword
+	fi	
+}
+
 set_iptc_in_sidecar() {
 	local -r sidecar_file=$1
 	local new_keywords=
@@ -34,10 +43,7 @@ set_iptc_in_sidecar() {
 	done
 
 	for new_keyword in $KEYWORDS; do
-		if [[ $new_keyword =~ .+[[:space:]].+ ]]; then
-			new_keyword="\"$new_keyword\""
-		fi
-		new_keywords="$new_keywords$new_keyword;"
+		new_keywords="$new_keywords$(quote_if_spaces_exist "$new_keyword");"
 	done
 
 	IFS=$OLD_IFS
@@ -73,16 +79,29 @@ set_iptc_in_jpeg() {
 
 	if [[ $file =~ .*\.pp[23]$ ]]; then
 
+		if ! [[ -w $file ]]; then
+			chmod u+w "$file"
+			declare restore_write_protection=
+		fi
+
 		if ! grep "^[IPTC]$" "$file"; then
 			echo -e "\n[IPTC]\nKeywords=;\n" >> $file			
 		fi
-		# FIXME remove write-protection and restore afterwards
+
 		set_iptc_in_sidecar "$file"
+
+		test -v restore_write_protection && chmod u-w "$file" && unset restore_write_protection
 
 	elif [[ $file =~ .*/converted/.*\.jpg$ ]]; then
 
-		# FIXME remove write-protection and restore afterwards
+		if ! [[ -w $file ]]; then
+			test -v SIMULATE || chmod u+w "$file"
+			declare restore_write_protection=
+		fi
+
 		set_iptc_in_jpeg "$file"
+
+		test -v restore_write_protection && chmod u-w "$file" && unset restore_write_protection
 
 	fi
 	
