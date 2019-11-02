@@ -19,6 +19,7 @@ declare -r FILES=$@
 
 set -u
 
+
 quote_if_spaces_exist() {
 	local -r keyword=$1
 	if [[ $keyword =~ .+[[:space:]].+ ]]; then
@@ -29,7 +30,6 @@ quote_if_spaces_exist() {
 }
 
 set_iptc_in_sidecar() {
-	set -x
 	local -r sidecar_file=$1
 	local new_keywords=
 
@@ -37,10 +37,9 @@ set_iptc_in_sidecar() {
 	IFS=";"
 
 	local old_keywords=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")
-	set +x
 	for old_keyword in $old_keywords; do 
-		if ! [[ $KEYWORDS =~ .*$old_keyword.* ]]; then
-			new_keywords="$new_keywords;$old_keyword"
+		if ! [[ $KEYWORDS =~ .*${old_keyword//[\"]/}\;.* ]]; then
+			new_keywords="$new_keywords$old_keyword;"
 		fi		
 	done
 
@@ -54,6 +53,7 @@ set_iptc_in_sidecar() {
 		sed -i '/\[IPTC\]/,/^$/ s/Keywords=.*;$/Keywords='"$new_keywords"'/' "$sidecar_file"
 	fi
 }
+
 
 set_iptc_in_jpeg() {
 	local -r jpeg_file=$1
@@ -77,6 +77,7 @@ set_iptc_in_jpeg() {
 }
 
 
+
 "$COLLECTOR_CMD" $FILES | while read -r file; do
 
 	if [[ $file =~ .*\.pp[23]$ ]]; then
@@ -86,7 +87,7 @@ set_iptc_in_jpeg() {
 			declare restore_write_protection=
 		fi
 
-		if ! grep "^\[IPTC\]$" "$file"; then
+		if ! grep -q "^\[IPTC\]$" "$file"; then
 			echo -e "\n[IPTC]\nKeywords=;\n" >> $file			
 		fi
 
