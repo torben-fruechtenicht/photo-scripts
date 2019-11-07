@@ -7,10 +7,10 @@ declare -r SET_IPTC_KEYWORDS="$(dirname "$(readlink -e "$0")")/set_iptc_keywords
 
 . "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
 
-while getopts "a:t:o" opt; do
+while getopts "c:t:o" opt; do
     case $opt in
         a ) 
-			declare -r AUTHOR=$OPTARG;;   
+			declare -r CREATOR=$OPTARG;;   
 		
 		t ) 
 			# CSV string, using ";"
@@ -117,12 +117,12 @@ for file in $FILES; do
 
  	# cp "$sidecar_template" "$sidecar_file"
 
-	if [[ -v AUTHOR ]]; then
+	if [[ -v CREATOR ]]; then
 
-		# set_iptc_property "Creator" "$AUTHOR" "$sidecar_file"
+		# set_iptc_property "Creator" "$CREATOR" "$sidecar_file"
 
 		year_from_exif=year=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
-		# set_iptc_property "Copyright" "Copyright (c) $AUTHOR 2005-$year_from_exif" "$sidecar_file"
+		# set_iptc_property "Copyright" "Copyright (c) $CREATOR 2005-$year_from_exif" "$sidecar_file"
 
 	fi
 
