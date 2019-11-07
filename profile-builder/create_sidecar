@@ -1,0 +1,137 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/../lib/is_original.sh"
+declare -r SET_IPTC_KEYWORDS="$(dirname "$(readlink -e "$0")")/set_iptc_keywords"
+
+. "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
+
+while getopts "a:t:o" opt; do
+    case $opt in
+        a ) 
+			declare -r AUTHOR=$OPTARG;;   
+		
+		t ) 
+			# CSV string, using ";"
+			declare -r KEYWORDS=$OPTARG;;
+		o ) 
+			declare OVERWRITE_EXISTING=;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+declare -r TEMPLATES_DIR=$(readlink -e "$1")
+if [[ -z $TEMPLATES_DIR ]]; then
+	echo "[ERROR] Templates directory does not exist" >&2
+	exit 1
+elif ! [[ -d $TEMPLATES_DIR ]]; then
+	echo "[ERROR] Templates directory (first parameter) is not a directory" >&2
+	exit 1
+fi
+shift 1
+
+declare -r FILES=$@
+
+set_iptc_property() {	
+	local -r property_name=$1
+	local -r property_value=$2
+	local -r sidecar_file=$3
+	sed -i '/\[IPTC\]/,/^$/ s/'"$property_name"'=.*;$/'"$property_name"'='"$property_value"'/' "$sidecar_file"
+}
+
+lookup_camera_from_exif() {
+	local -r file=$1
+	local -r file_type=$(echo ${file##*.} | tr '[:upper:]' '[:lower:]')
+
+	case $file_type in 
+		raw )
+			exiv2 pr -Pt -g "Exif.PanasonicRaw.Model" "$file" 2> /dev/null;;
+		*) 
+			exiv2 pr -Pt -g 'Exif.Image.Model' "$file" 2> /dev/null;;
+	esac
+}
+
+lookup_lens_from_exif() {
+	local -r file=$1
+	local -r file_type=$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')
+
+	case $file_type in 
+		raw|crw|cr2 )
+			;; # do nothing, the only cameras we have with these types are compact cameras
+		orf)
+			exiv2 pr -Pt -g "Exif.OlympusEq.LensModel" "$file" 2> /dev/null;;
+		jpg )
+			exiv2 pr -Pt -g  "Exif.Photo.LensModel" "$file" 2> /dev/null;;
+		*) 
+			echo "[WARN] Unknown filetype $file_type of $file, cannot lookup lens info" >&2;;
+	esac
+}
+
+select_template() {
+	declare -r filetype=$1
+	declare -r camera=$2
+	declare -r lens=$3
+
+	if [[ -e "$TEMPLATES_DIR/$camera/$lens/template.$filetype.pp3" ]]; then
+		echo "$TEMPLATES_DIR/$camera/$lens/template.$filetype.pp3"
+	elif [[ -e "$TEMPLATES_DIR/$camera/template.$filetype.pp3" ]]; then
+		echo "$TEMPLATES_DIR/$camera/template.$filetype.pp3"
+	elif [[ -e "$TEMPLATES_DIR/template.pp3" ]]; then
+		echo "$TEMPLATES_DIR/template.pp3"
+	fi
+}
+
+
+for file in $FILES; do
+
+	file=$(readlink -e "$file")
+	! test -z "$file" || continue
+
+	"$IS_ORIGINAL" $file || continue
+
+	sidecar_file="$file.pp3"
+
+	if [[ -e $sidecar_file ]] && ! [[ -v OVERWRITE_EXISTING ]]; then
+		echo "[SKIP] Sidecar $sidecar_file exists" >&2
+		continue
+	fi
+
+	camera_from_exif=$(lookup_camera_from_exif $file)
+	if [[ -z $camera_from_exif ]]; then
+		echo "[ERROR] No camera info found in EXIF data of $file" >&2
+		continue
+	fi
+
+	lens_from_exif=$(lookup_lens_from_exif "$file" "$camera_from_exif")
+
+	echo "[CAMERA] $camera_from_exif" >&2
+	test -n "$lens_from_exif" && echo "[LENS] $lens_from_exif" >&2
+
+
+ 	sidecar_template=$(select_template "$file_type" "$camera_from_exif" "$lens_from_exif")
+	if [[ -z $sidecar_template ]]; then
+		echo "[ERROR] No sidecar template found for $file"
+		continue
+	fi
+
+ 	# cp "$sidecar_template" "$sidecar_file"
+
+	if [[ -v AUTHOR ]]; then
+
+		# set_iptc_property "Creator" "$AUTHOR" "$sidecar_file"
+
+		year_from_exif=year=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
+		# set_iptc_property "Copyright" "Copyright (c) $AUTHOR 2005-$year_from_exif" "$sidecar_file"
+
+	fi
+
+	fullname=$(fullname_from_filename "$file")
+	# set_iptc_property "Headline" "$(echo "$fullname" | cut -d"_" -f1 -f5)" "$sidecar_file"
+	# set_iptc_property "Caption" "[$fullname]" "$sidecar_file"
+
+	iptc_keywords="RawTherapee;$camera_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")$KEYWORDS"
+	# "$SET_IPTC_KEYWORDS" "$iptc_keywords" "$sidecar_file"
+
+ 	# MAYBE echo sidecar_file if needed	
+done
