@@ -15,13 +15,13 @@ shift $(($OPTIND - 1))
 
 declare -r BASELINE=$(readlink -e "$1")
 if [[ -z $BASELINE ]]; then
-    echo "Missing baseline parameter or file" >&2
+    echo "[ERROR] Missing baseline parameter or file" >&2
     exit 1
 fi
 
 declare -r PROFILE=$(readlink -e "$2")
 if [[ -z $PROFILE ]]; then
-    echo "Missing profile parameter or file" >&2
+    echo "[ERROR] Missing profile parameter or file" >&2
     exit 1
 fi
 
