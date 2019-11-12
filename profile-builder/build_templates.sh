@@ -42,7 +42,7 @@ echo "[BASELINES] $BASELINES" >&2
 
 phototype_from_baseline() {
     local -r baseline=$1
-    local -r photo_type=$(echo "$baseline" | cut -d'.' -f2)
+    local -r photo_type=$(echo "$baseline" | sed -rn 's/.+\.([a-z]{3}).pp3/\1/p')
     if ! [[ $photo_type == "pp3" ]]; then 
         echo "$photo_type"
     fi
@@ -71,13 +71,16 @@ for baseline in $BASELINES; do
     photo_type=$(phototype_from_baseline "$baseline")
     find "$(dirname "$baseline")" -mindepth 2 -maxdepth 2 -type f -regex '.*baseline\(..*\)?.pp3' |\
         while read -r child_baseline; do
+            set -x
             child_type=$(phototype_from_baseline "$child_baseline")
             if ([[ -z $photo_type ]] && [[ -z $child_type ]]) || \
                 ([[ -z $photo_type ]] && [[ -n $child_type ]] && ! has_sibling_of_type "$baseline" "$child_type") || \
                 ([[ -n $photo_type ]] && [[ -n $child_type ]] && [[ $photo_type == $child_type ]]); then
                 next_working_dir=$(dirname "$child_baseline")
                 next_target_directory="$TARGET_DIR/${next_working_dir##*/}"
+                set +x
                 $SELF "$target_profile" "$next_target_directory" "$child_baseline"
             fi
+            set +x
         done  
 done
