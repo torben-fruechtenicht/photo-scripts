@@ -33,6 +33,7 @@ shift 1
 
 declare -r FILES=$@
 
+
 set_iptc_property() {	
 	local -r property_name=$1
 	local -r property_value=$2
@@ -79,8 +80,6 @@ lookup_manufacturer_from_exif() {
 		*) 
 			exiv2 pr -Pt -g "Exif.Image.Make" "$file" 2> /dev/null;;
 	esac
-	
-	
 }
 
 select_template() {
@@ -104,13 +103,15 @@ for file in $FILES; do
 	! test -z "$file" || continue
 
 	"$IS_ORIGINAL" $file || continue
-
+	
 	sidecar_file="$file.pp3"
 
 	if [[ -e $sidecar_file ]] && ! [[ -v OVERWRITE_EXISTING ]]; then
 		echo "[SKIP] Sidecar $sidecar_file exists" >&2
 		continue
 	fi
+
+	echo "[PHOTO] $file" >&2
 
 	camera_from_exif=$(lookup_camera_from_exif $file)
 	if [[ -z $camera_from_exif ]]; then
@@ -150,6 +151,4 @@ for file in $FILES; do
 
 	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")${KEYWORDS-}"
 	# "$SET_IPTC_KEYWORDS" "$iptc_keywords" "$sidecar_file"
-
- 	# MAYBE echo sidecar_file if needed	
 done
