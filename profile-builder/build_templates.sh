@@ -23,7 +23,7 @@ echo "[INPUT PROFILE] $INPUT_PROFILE" >&2
 
 declare -r TARGET_DIR=$(readlink -f "$2")
 if ! [[ -e $TARGET_DIR ]]; then
-    echo "[INFO] Creating missing target directory $3" >&2
+    echo "[INFO] Creating missing target directory $2" >&2
     mkdir "$TARGET_DIR"
 fi
 echo "[TARGET DIRECTORY] $TARGET_DIR" >&2

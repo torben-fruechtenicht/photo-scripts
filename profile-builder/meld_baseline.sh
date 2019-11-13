@@ -38,7 +38,7 @@ replace_in_profile() {
         # if the entry already exists, just overwrite with new value
         test -v VERBOSE && echo "[$section] UPDATE $2: $3" >&2        
         # https://unix.stackexchange.com/a/416126
-        sed -i  '/\['"$section"'\]/,/^$/s|'"$property"=.*$'|'"$property"'='"$value\n"'|' "$PROFILE"    
+        sed -i  '/\['"$section"'\]/,/^$/s|^'"$property"=.*$'|'"$property"'='"$value"'|' "$PROFILE"    
     else        
         # if the entry does not exist, append to end of section
         test -v VERBOSE && echo "[$section] ADD $2: $3" >&2
