@@ -22,7 +22,7 @@ done
 shift $(expr $OPTIND - 1 )
 
 declare -r TEMPLATES_DIR=$(readlink -e "$1")
-if [[ -z $TEMPLATES_DIR ]]; then
+if [[ -z $TEMPLATES_DIR ]]; then	
 	echo "[ERROR] Templates directory does not exist" >&2
 	exit 1
 elif ! [[ -d $TEMPLATES_DIR ]]; then
@@ -48,7 +48,8 @@ lookup_camera_from_exif() {
 		raw )
 			exiv2 pr -Pt -g "Exif.PanasonicRaw.Model" "$file" 2> /dev/null;;
 		*) 
-			exiv2 pr -Pt -g 'Exif.Image.Model' "$file" 2> /dev/null;;
+			camera=$(exiv2 pr -Pt -g 'Exif.Image.Model' "$file" 2> /dev/null)
+			echo "${camera//[[:space:]]/}";;
 	esac
 }
 
@@ -66,6 +67,20 @@ lookup_lens_from_exif() {
 		*) 
 			echo "[WARN] Unknown filetype $file_type of $file, cannot lookup lens info" >&2;;
 	esac
+}
+
+lookup_manufacturer_from_exif() {
+	local -r file=$1
+	local -r file_type=$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')
+
+	case $file_type in 
+		raw )
+			exiv2 pr -Pt -g "Exif.PanasonicRaw.Make" "$file" 2> /dev/null;;
+		*) 
+			exiv2 pr -Pt -g "Exif.Image.Make" "$file" 2> /dev/null;;
+	esac
+	
+	
 }
 
 select_template() {
@@ -103,17 +118,20 @@ for file in $FILES; do
 		continue
 	fi
 
-	lens_from_exif=$(lookup_lens_from_exif "$file" "$camera_from_exif")
+	lens_from_exif=$(lookup_lens_from_exif "$file")
+	manufacturer_from_exif=$(lookup_manufacturer_from_exif "$file")
 
 	echo "[CAMERA] $camera_from_exif" >&2
+	echo "[MANUFACTURER] $manufacturer_from_exif" >&2
 	test -n "$lens_from_exif" && echo "[LENS] $lens_from_exif" >&2
 
-
+	file_type=$(echo ${file##*.} | tr '[:upper:]' '[:lower:]')
  	sidecar_template=$(select_template "$file_type" "$camera_from_exif" "$lens_from_exif")
 	if [[ -z $sidecar_template ]]; then
 		echo "[ERROR] No sidecar template found for $file"
 		continue
 	fi
+	echo "[INFO] Using template $sidecar_template" >&2
 
  	# cp "$sidecar_template" "$sidecar_file"
 
@@ -130,7 +148,7 @@ for file in $FILES; do
 	# set_iptc_property "Headline" "$(echo "$fullname" | cut -d"_" -f1 -f5)" "$sidecar_file"
 	# set_iptc_property "Caption" "[$fullname]" "$sidecar_file"
 
-	iptc_keywords="RawTherapee;$camera_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")$KEYWORDS"
+	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")${KEYWORDS-}"
 	# "$SET_IPTC_KEYWORDS" "$iptc_keywords" "$sidecar_file"
 
  	# MAYBE echo sidecar_file if needed	
