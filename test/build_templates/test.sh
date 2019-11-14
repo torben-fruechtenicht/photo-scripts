@@ -10,6 +10,7 @@ declare -r BASELINES_ROOT="$TESTDIR/baselines"
 declare -r GENERATED_TEMPLATES_DIR="$TESTDIR/generated_templates"
 declare -r BLANK_TEMPLATE="$TESTDIR/blank.pp3"
 
+test -d "$GENERATED_TEMPLATES_DIR" || mkdir "$GENERATED_TEMPLATES_DIR"
 find "$GENERATED_TEMPLATES_DIR" -type f -name '*.pp3' -delete
 
 "$BUILD_TEMPLATES" "$BLANK_TEMPLATE" "$GENERATED_TEMPLATES_DIR" "$BASELINES_ROOT"
