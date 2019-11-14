@@ -1,7 +1,5 @@
 [Version]
-AppVersion=346
-
-
+AppVersion=5.7
 Version=346
 
 [Exposure]
@@ -80,7 +78,6 @@ LcMode=lfmanual
 LFCameraMake=Olympus Imaging Corp.
 LFCameraModel=E-M10
 LFLens=Olympus Olympus M.Zuiko Digital ED 14-42mm f/3.5-5.6 II R
-
 
 [Perspective]
 
