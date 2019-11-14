@@ -5,10 +5,12 @@ set -ue
 declare -r SELF=$(readlink -e "$0")
 declare -r MELD_BASELINE=$(dirname "$SELF")/meld_baseline.sh
 
-while getopts "t:" opt; do
+while getopts "ov" opt; do
     case $opt in
-        t )    
-            declare -r FILE_TYPE=$OPTARG;;
+        o ) 
+            declare -r OVERWRITE=;;
+        v ) 
+            declare -r VERBOSE=;;
     esac
 done
 shift $(($OPTIND - 1))
@@ -19,14 +21,14 @@ if [[ -z "$INPUT_PROFILE" ]]; then
     echo "[ERROR] Missing input profile" >&2
     exit 1
 fi
-echo "[INPUT PROFILE] $INPUT_PROFILE" >&2
+test -v VERBOSE && echo "[INPUT PROFILE] $INPUT_PROFILE" >&2
 
 declare -r TARGET_DIR=$(readlink -f "$2")
 if ! [[ -e $TARGET_DIR ]]; then
-    echo "[INFO] Creating missing target directory $2" >&2
+    test -v VERBOSE && echo "[INFO] Creating missing target directory $2" >&2
     mkdir "$TARGET_DIR"
 fi
-echo "[TARGET DIRECTORY] $TARGET_DIR" >&2
+test -v VERBOSE && echo "[TARGET DIRECTORY] $TARGET_DIR" >&2
 
 
 if [[ $# = 3 ]] && [[ -d $3 ]]; then
@@ -37,7 +39,7 @@ else
     shift 2
     declare -r BASELINES=$@
 fi
-echo "[BASELINES] $BASELINES" >&2
+# echo "[BASELINES] $BASELINES" >&2
 
 
 phototype_from_baseline() {
@@ -55,15 +57,16 @@ has_sibling_of_type() {
 }
 
 
-for baseline in $BASELINES; do
+for baseline in "$BASELINES"; do
     baseline_filename=$(basename "$baseline")
-    echo "[BASELINE] $baseline" >&2
+    test -v VERBOSE && echo "[BASELINE] $baseline" >&2
     target_profile=$TARGET_DIR/${baseline_filename/baseline/template}
-    echo "[TARGET] $target_profile" >&2
+    test -v VERBOSE && echo "[TARGET] $target_profile" >&2
 
-    if ! [[ -e $target_profile ]]; then
+    if [[ -v OVERWRITE ]] || ! [[ -e $target_profile ]]; then
         cp "$INPUT_PROFILE" "$target_profile"
         $MELD_BASELINE "$baseline" "$target_profile"
+        test -v VERBOSE || echo $target_profile
     else 
         echo "[WARN] Target profile $target_profile exists" >&2
     fi
@@ -77,7 +80,7 @@ for baseline in $BASELINES; do
                 ([[ -n $photo_type ]] && [[ -n $child_type ]] && [[ $photo_type == $child_type ]]); then
                 next_working_dir=$(dirname "$child_baseline")
                 next_target_directory="$TARGET_DIR/${next_working_dir##*/}"
-                $SELF "$target_profile" "$next_target_directory" "$child_baseline"
+                $SELF ${OVERWRITE+-o} ${VERBOSE+-v} "$target_profile" "$next_target_directory" "$child_baseline"
             fi
         done  
 done

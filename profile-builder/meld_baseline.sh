@@ -46,7 +46,7 @@ replace_in_profile() {
     fi
 }
 
-cat $BASELINE | while read -r line; do
+cat "$BASELINE" | while read -r line; do
     # save the section header
     if [[ $line =~ \[.*\] ]]; then
         section=$(echo $line | tr -d '[' | tr -d ']')
