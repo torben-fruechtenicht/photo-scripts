@@ -9,9 +9,8 @@ declare -r SET_IPTC_KEYWORDS="$(dirname "$(readlink -e "$0")")/set_iptc_keywords
 
 while getopts "c:t:o" opt; do
     case $opt in
-        a ) 
+        c ) 
 			declare -r CREATOR=$OPTARG;;   
-		
 		t ) 
 			# CSV string, using ";"
 			declare -r KEYWORDS=$OPTARG;;
@@ -38,7 +37,12 @@ set_iptc_property() {
 	local -r property_name=$1
 	local -r property_value=$2
 	local -r sidecar_file=$3
-	sed -i '/\[IPTC\]/,/^$/ s/'"$property_name"'=.*;$/'"$property_name"'='"$property_value"'/' "$sidecar_file"
+	# FIXME quote if needed!
+	if sed -n '/\[IPTC\]/,/^$/p' "$sidecar_file" | grep -q "$property_name"; then
+        sed -i  '/\[IPTC\]/,/^$/ s|^'"$property_name"=.*$'|'"$property_name"'='"$property_value"'|' "$sidecar_file"    
+    else        
+        sed -i  '/\[IPTC\]/,/^$/ a '"$property_name"'='"$property_value\n" "$sidecar_file"
+    fi
 }
 
 lookup_camera_from_exif() {
@@ -138,7 +142,7 @@ for file in $FILES; do
 
 	if [[ -v CREATOR ]]; then
 
-		# set_iptc_property "Creator" "$CREATOR" "$sidecar_file"
+		set_iptc_property "Creator" "$CREATOR" "$sidecar_file"
 
 		year_from_exif=year=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
 		# set_iptc_property "Copyright" "Copyright (c) $CREATOR 2005-$year_from_exif" "$sidecar_file"
