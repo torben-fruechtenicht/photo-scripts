@@ -134,7 +134,7 @@ for file in $FILES; do
 	fi
 	echo "[INFO] Using template $sidecar_template" >&2
 
- 	# cp "$sidecar_template" "$sidecar_file"
+ 	cp "$sidecar_template" "$sidecar_file"
 
 	if [[ -v CREATOR ]]; then
 

@@ -1,7 +1,5 @@
 [Version]
-AppVersion=346
-
-
+AppVersion=5.7
 Version=346
 
 [Exposure]
@@ -79,7 +77,6 @@ Guide=Rule of thirds
 LcMode=lfmanual
 LFCameraMake=Panasonic
 LFCameraModel=DMC FZ-50
-
 
 [Perspective]
 
