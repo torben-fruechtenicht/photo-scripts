@@ -5,9 +5,10 @@ set -eu
 declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/../lib/is_original.sh"
 declare -r SET_IPTC_KEYWORDS="$(dirname "$(readlink -e "$0")")/set_iptc_keywords"
 
+. "$(dirname "$(readlink -e "$0")")/sidecar.sh"
 . "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
 
-while getopts "c:t:o" opt; do
+while getopts "c:t:ov" opt; do
     case $opt in
         c ) 
 			declare -r CREATOR=$OPTARG;;   
@@ -15,7 +16,9 @@ while getopts "c:t:o" opt; do
 			# CSV string, using ";"
 			declare -r KEYWORDS=$OPTARG;;
 		o ) 
-			declare OVERWRITE_EXISTING=;;
+			declare -r OVERWRITE_EXISTING=;;
+		v )
+			declare -r VERBOSE=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -32,18 +35,6 @@ shift 1
 
 declare -r FILES=$@
 
-
-set_iptc_property() {	
-	local -r property_name=$1
-	local -r property_value=$2
-	local -r sidecar_file=$3
-	# FIXME quote if needed!
-	if sed -n '/\[IPTC\]/,/^$/p' "$sidecar_file" | grep -q "$property_name"; then
-        sed -i  '/\[IPTC\]/,/^$/ s|^'"$property_name"=.*$'|'"$property_name"'='"$property_value"'|' "$sidecar_file"    
-    else        
-        sed -i  '/\[IPTC\]/,/^$/ a '"$property_name"'='"$property_value\n" "$sidecar_file"
-    fi
-}
 
 lookup_camera_from_exif() {
 	local -r file=$1
@@ -142,16 +133,16 @@ for file in $FILES; do
 
 	if [[ -v CREATOR ]]; then
 
-		set_iptc_property "Creator" "$CREATOR" "$sidecar_file"
+		replace_in_sidecar "$sidecar_file" "IPTC" "Creator" "$CREATOR" 
 
-		year_from_exif=year=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
-		# set_iptc_property "Copyright" "Copyright (c) $CREATOR 2005-$year_from_exif" "$sidecar_file"
+		year_from_exif=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
+		replace_in_sidecar "$sidecar_file" "IPTC" "Copyright" "Copyright (c) $CREATOR 2005-$year_from_exif"
 
 	fi
 
 	fullname=$(fullname_from_filename "$file")
-	# set_iptc_property "Headline" "$(echo "$fullname" | cut -d"_" -f1 -f5)" "$sidecar_file"
-	# set_iptc_property "Caption" "[$fullname]" "$sidecar_file"
+	# replace_in_sidecar "$sidecar_file" "IPTC" "Headline" "$(echo "$fullname" | cut -d"_" -f1 -f5)"
+	# replace_in_sidecar "$sidecar_file" "IPTC" "Caption" "[$fullname]"
 
 	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")${KEYWORDS-}"
 	# "$SET_IPTC_KEYWORDS" "$iptc_keywords" "$sidecar_file"

@@ -14,7 +14,7 @@ declare -r CREATOR="Me myself and I"
 
 find "$WORKING_DIR" -type f -name '*.pp3' -delete
 
-"$CREATE_SIDECAR" -c "$CREATOR" "$TEMPLATES_DIR" "$WORKING_DIR/*"
+"$CREATE_SIDECAR" -v -c "$CREATOR" "$TEMPLATES_DIR" "$WORKING_DIR/*"
 
 echo "---"
 find "$WORKING_DIR" -type f 

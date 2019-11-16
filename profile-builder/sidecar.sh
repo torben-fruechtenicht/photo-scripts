@@ -13,10 +13,10 @@ replace_in_sidecar() {
         # the section is only two lines long, i.e. there are no entries: just replace the whole section + added 
         # new entry
         test -v VERBOSE && echo "[INFO] ADD $section $property=$value (1st entry)" >&2
-        sed -i '/\['"$section"'\]/ a '"$property"'='"$value"'\n' "$sidecar"
+        sed -i '/\['"$section"'\]/ a '"$property"'='"$value"'' "$sidecar"
     else 
         # section has entries but not the current one
         test -v VERBOSE && echo "[INFO] ADD $section $property=$value" >&2
-        sed -i 's|\['"$section"'\]|\['"$section"'\]\n'"$property"'='"$value"'\n|' "$sidecar"
+        sed -i 's|\['"$section"'\]|\['"$section"'\]\n'"$property"'='"$value"'|' "$sidecar"
     fi
 }
