@@ -43,10 +43,10 @@ Version=346
 [Shadows & Highlights]
 
 [Crop]
-Enabled=false
-FixedRatio=true
-Orientation=As Image
 Guide=Rule of thirds
+Orientation=As Image
+FixedRatio=true
+Enabled=false
 
 [Coarse Transformation]
 
@@ -90,8 +90,8 @@ LcMode=lfauto
 [ColorToning]
 
 [RAW]
-HotPixelFilter=true
 DeadPixelFilter=true
+HotPixelFilter=true
 
 [RAW Bayer]
 

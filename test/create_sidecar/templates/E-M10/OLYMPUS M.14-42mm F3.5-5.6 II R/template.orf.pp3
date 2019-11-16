@@ -3,8 +3,8 @@ AppVersion=5.7
 Version=346
 
 [Exposure]
-Black=200
 CurveMode=WeightedStd
+Black=200
 
 [HLRecovery]
 
@@ -17,21 +17,21 @@ CurveMode=WeightedStd
 [Black & White]
 
 [Luminance Curve]
-Enabled=false
-Brightness=10
-Contrast=20
-Chromaticity=10
 LCurve=1;0;0;0.20999999999999999;0.16;0.68999999999999995;0.72999999999999998;1;1;
+Chromaticity=10
+Contrast=20
+Brightness=10
+Enabled=false
 
 [Sharpening]
-Enabled=false
-Contrast=0
-Method=usm
-Radius=0.5
-BlurRadius=0.20000000000000001
-Amount=248
-Threshold=20;80;2000;1200;
 OnlyEdges=false
+Threshold=20;80;2000;1200;
+Amount=248
+BlurRadius=0.20000000000000001
+Radius=0.5
+Method=usm
+Contrast=0
+Enabled=false
 
 [Vibrance]
 
@@ -40,8 +40,8 @@ OnlyEdges=false
 [SharpenMicro]
 
 [White Balance]
-Enabled=true
 Setting=Camera
+Enabled=true
 
 [Color appearance]
 
@@ -60,10 +60,10 @@ Setting=Camera
 [Shadows & Highlights]
 
 [Crop]
-Enabled=false
-FixedRatio=true
-Orientation=As Image
 Guide=Rule of thirds
+Orientation=As Image
+FixedRatio=true
+Enabled=false
 
 [Coarse Transformation]
 
@@ -74,10 +74,10 @@ Guide=Rule of thirds
 [Distortion]
 
 [LensProfile]
-LcMode=lfmanual
-LFCameraMake=Olympus Imaging Corp.
-LFCameraModel=E-M10
 LFLens=Olympus Olympus M.Zuiko Digital ED 14-42mm f/3.5-5.6 II R
+LFCameraModel=E-M10
+LFCameraMake=Olympus Imaging Corp.
+LcMode=lfmanual
 
 [Perspective]
 
@@ -98,13 +98,13 @@ LFLens=Olympus Olympus M.Zuiko Digital ED 14-42mm f/3.5-5.6 II R
 [Wavelet]
 
 [Directional Pyramid Equalizer]
-Enabled=false
-Mult0=1
-Mult1=1.8
-Mult2=1.8
-Mult3=2
-Mult4=1.2
 Mult5=1
+Mult4=1.2
+Mult3=2
+Mult2=1.8
+Mult1=1.8
+Mult0=1
+Enabled=false
 
 [HSV Equalizer]
 
@@ -117,8 +117,8 @@ Mult5=1
 [ColorToning]
 
 [RAW]
-HotPixelFilter=true
 DeadPixelFilter=true
+HotPixelFilter=true
 
 [RAW Bayer]
 
