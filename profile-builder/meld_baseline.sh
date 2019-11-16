@@ -5,6 +5,8 @@
 
 set -ue
 
+. "$(dirname "$(readlink -e "$0")")/sidecar.sh"
+
 while getopts "v" opt; do
 	case $opt in
 		v )    
@@ -25,27 +27,6 @@ if [[ -z $PROFILE ]]; then
     exit 1
 fi
 
-replace_in_profile() {    
-    local -r section=$1
-    local -r property=$2
-    local -r value=$3
-
-    # about the switch of delimiters in the sed scripts: $value can contain slashes but these cannot be escaped properly.
-    # we can't switch the delimiter for the whole scripts because this only works with "s" command
-    # but the 2nd part of each script runs an "s" so we can use | as delimiters there (phew)
-
-    if sed -n '/\['"$section"'\]/,/^$/p' "$PROFILE" | grep -q "$property"; then
-        # if the entry already exists, just overwrite with new value
-        test -v VERBOSE && echo "[$section] UPDATE $2: $3" >&2        
-        # https://unix.stackexchange.com/a/416126
-        sed -i  '/\['"$section"'\]/,/^$/s|^'"$property"=.*$'|'"$property"'='"$value"'|' "$PROFILE"    
-    else        
-        # if the entry does not exist, append to end of section
-        test -v VERBOSE && echo "[$section] ADD $2: $3" >&2
-        sed -i  '/\['"$section"'\]/,/^$/s|^$|'"$property"'='"$value\n"'|' "$PROFILE"
-    fi
-}
-
 cat "$BASELINE" | while read -r line; do
     # save the section header
     if [[ $line =~ \[.*\] ]]; then
@@ -53,7 +34,7 @@ cat "$BASELINE" | while read -r line; do
         continue
     fi
 
-    # end of section
+    # end of section, switch to scanning for next section mode (i.e. section is not set)
     if [[ -z $line ]]; then
         section=
         continue
@@ -68,6 +49,5 @@ cat "$BASELINE" | while read -r line; do
 
     property=$(echo $line | cut -d'=' -f1)
     value=$(echo $line | cut -d'=' -f2)
-    replace_in_profile "$section" "$property" "$value"
-
+    replace_in_sidecar "$PROFILE" "$section" "$property" "$value"
 done
