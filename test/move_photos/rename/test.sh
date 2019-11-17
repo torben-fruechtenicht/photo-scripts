@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -ex
+set -e
 
 declare -r TESTDIR="$(dirname "$(readlink -e "$0")")"
 
@@ -12,10 +12,10 @@ declare -r WORKING_DIR="$TESTDIR/renamed"
 declare -r NEW_NAME="Great-Photos"
 
 ! test -e "$WORKING_DIR" && mkdir "$WORKING_DIR"
-rm -rf "$WORKING_DIR/*"
+find "$WORKING_DIR" -type f -delete
 rsync -a "$ORIG_PHOTOS/" "$WORKING_DIR"
 
-find "$WORKING_DIR" -type f | xargs "$RENAME" "$NEW_NAME" 
+find "$WORKING_DIR" -type f -name '*.ORF' | xargs "$RENAME" "$NEW_NAME" 
 
 echo "---"
 find "$WORKING_DIR" -type f 

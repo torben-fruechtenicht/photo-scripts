@@ -9,9 +9,9 @@ declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTE
 
 declare -r PHOTO_FILENAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
 
-function fullname_from_filename() {
-    local -r basename=$(basename "$1")
-    echo "${basename%%.*}"
+function fullname_from_photofile() {
+    local -r photo_filename=$(basename "$1")
+    echo "${photo_filename%%.*}"
 }
 
 function headline_from_photofile() {

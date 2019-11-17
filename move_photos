@@ -216,23 +216,7 @@ targetfile_from_sourcefile() {
 }
 
 
-declare -r TITLE_PATTERN="([^_]+)" # \1
-declare -r DATE_PATTERN="([0-9]{8})" # \2
-declare -r TIME_PATTERN="([0-9]{4})" # \3
-    declare -r CAMERA_PATTERN="([a-zA-Z0-9-]+)" # \4
-declare -r NUMBER_PATTERN="([0-9]+(-[a-ZA-Z0-9-]+)?)" # \5
-declare -r FILE_EXT_PATTERN="([a-ZA-Z0-9]{3})" # \6
-declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}"
-declare -r PHOTO_FILENAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
-
-
-function iptc_headline_from_fullname() {
-    local -r fullname=$1
-	echo "$fullname" | sed -r 's/'"$PHOTO_FULLNAME_PATTERN"'/\1 \5/'
-}
-
-
-function set_iptc_in_sidecar() {
+set_iptc_in_sidecar() {
 	local -r iptc_entries=$1
     local -r sidecar_file=$2
 
@@ -247,7 +231,7 @@ function set_iptc_in_sidecar() {
 }
 
 
-function set_iptc_in_jpeg() {
+set_iptc_in_jpeg() {
     local -r iptc_entries=$1
     local -r jpeg_file=$2
 
@@ -289,7 +273,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
     # FIXME check that parent directories of sourcephoto are year/album/date
 
-    sourcephoto_fullname=$(fullname_from_filename "$sourcephoto")
+    sourcephoto_fullname=$(fullname_from_photofile "$sourcephoto")
     sources_rootdir=$(photos_rootdir_from_photofile "$sourcephoto")  
     
     # Find all files, i.e. actual photo file and all associated files: search for the basename without
@@ -311,8 +295,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
         if [[ -v RENAME_PHOTOS ]]; then
 
-            # TBD FIXME can't we do this in the outer loop?
-            target_fullname=$(fullname_from_filename "$targetfile")
+            target_fullname=$(fullname_from_photofile "$targetfile")
             
             if ! [[ -w $targetfile ]]; then
                 test -v SIMULATE || chmod u+w "$targetfile"
@@ -322,13 +305,13 @@ for sourcephoto in $SOURCE_PHOTOS; do
             if [[ $file_to_move =~ .*\.pp[23]$ ]]; then
 
                 test -v SIMULATE || set_iptc_in_sidecar \
-                    "Headline=$(iptc_headline_from_fullname "$target_fullname")|Caption=[$target_fullname]" \
+                    "Headline=$(headline_from_photofile "$targetfile")|Caption=[$target_fullname]" \
                     "$targetfile"
 
             elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
 
                 test -v SIMULATE || set_iptc_in_jpeg \
-                    "Headline=$(iptc_headline_from_fullname "$target_fullname")|Caption=[$target_fullname]" \
+                    "Headline=$(headline_from_photofile "$targetfile")|Caption=[$target_fullname]" \
                     "$targetfile"
 
             fi
