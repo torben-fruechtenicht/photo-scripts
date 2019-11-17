@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -ex
+set -e
 
 declare -r TESTDIR="$(dirname "$(readlink -e "$0")")"
 

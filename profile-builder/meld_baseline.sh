@@ -5,7 +5,7 @@
 
 set -ue
 
-. "$(dirname "$(readlink -e "$0")")/sidecar.sh"
+. "$(dirname "$(readlink -e "$0")")/../lib/sidecar.sh"
 
 while getopts "v" opt; do
 	case $opt in

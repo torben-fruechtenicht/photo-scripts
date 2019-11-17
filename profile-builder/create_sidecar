@@ -3,9 +3,9 @@
 set -eu
 
 declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/../lib/is_original.sh"
-declare -r SET_IPTC_KEYWORDS="$(dirname "$(readlink -e "$0")")/set_iptc_keywords"
+declare -r SET_IPTC_KEYWORDS="$(dirname "$(readlink -e "$0")")/../set_iptc_keywords"
 
-. "$(dirname "$(readlink -e "$0")")/sidecar.sh"
+. "$(dirname "$(readlink -e "$0")")/../lib/sidecar.sh"
 . "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
 
 while getopts "c:t:ov" opt; do
