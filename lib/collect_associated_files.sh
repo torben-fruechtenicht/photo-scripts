@@ -35,7 +35,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
     # FIXME check that parent directories of sourcephoto are year/album/date
 
-    sourcephoto_fullname=$(fullname_from_filename "$sourcephoto")
+    sourcephoto_fullname=$(fullname_from_photofile "$sourcephoto")
     
     # Find all files, i.e. actual photo file and all associated files: search for the basename without
     # extensions in the directory of $sourcephoto and below. Move each file and rename if enabled
