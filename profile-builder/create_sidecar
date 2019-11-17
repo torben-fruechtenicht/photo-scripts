@@ -141,8 +141,8 @@ for file in $FILES; do
 	fi
 
 	fullname=$(fullname_from_filename "$file")
-	# replace_in_sidecar "$sidecar_file" "IPTC" "Headline" "$(echo "$fullname" | cut -d"_" -f1 -f5)"
-	# replace_in_sidecar "$sidecar_file" "IPTC" "Caption" "[$fullname]"
+	replace_in_sidecar "$sidecar_file" "IPTC" "Headline" "$(headline_from_photofile "$file" )"
+	replace_in_sidecar "$sidecar_file" "IPTC" "Caption" "[$fullname]"
 
 	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")${KEYWORDS-}"
 	# "$SET_IPTC_KEYWORDS" "$iptc_keywords" "$sidecar_file"

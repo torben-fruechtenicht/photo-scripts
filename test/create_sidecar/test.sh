@@ -18,3 +18,7 @@ find "$WORKING_DIR" -type f -name '*.pp3' -delete
 
 echo "---"
 find "$WORKING_DIR" -type f 
+
+# TODO
+# save correct output files in expected dir, retain directory structure (relative to TESTDIR)
+# after completion, check if all files from expected match their respective counterparts in WORKING_DIR
