@@ -8,6 +8,7 @@ declare -r NEW_NAME=$1
 
 shift 1
 declare -r PHOTOS_TO_RENAME=$@
+# TODO check if all are photo files, exit if not
 
 set -u
 

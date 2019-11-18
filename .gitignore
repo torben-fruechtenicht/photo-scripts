@@ -2,4 +2,5 @@ test/build_templates/generated_templates/
 test/create_sidecar/photos/*.pp3
 test/move_photos/rename/renamed
 test/set_iptc_keywords/output
-test/move_photos/move_to_album
+test/move_photos/move_to_album/output
+test/move_photos/archive_processed/output
