@@ -5,10 +5,11 @@ set -e
 export PATH="$(dirname $(readlink -f "$0")):$PATH"
 
 declare -r NEW_NAME=$1
+# FIXME check that NEW_NAME is not empty
 
 shift 1
 declare -r PHOTOS_TO_RENAME=$@
-# TODO check if all are photo files, exit if not
+# FIXME check if all are photo files, exit if not
 
 set -u
 

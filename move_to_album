@@ -17,12 +17,14 @@ if [[ -z $TARGET_ALBUM_PATH ]]; then
     echo "Path of target album directory does not exist" >&2
     exit 1
 fi
+# FIXME check that TARGET_ALBUM_PATH is a directory
 
 declare -r TARGET_ALBUM_NAME=$(basename "$TARGET_ALBUM_PATH")
 declare -r TARGET_DIRECTORY_ROOT=$(dirname "$(dirname "$TARGET_ALBUM_PATH")")
 
 shift 1
 declare -r PHOTOS_TO_MOVE=$@
+# FIXME check that all entries in PHOTOS_TO_MOVE are photo files
 
 declare -r RENAME_MODE=$(test -v RENAME_PHOTOS && echo "b" || echo "a")
 

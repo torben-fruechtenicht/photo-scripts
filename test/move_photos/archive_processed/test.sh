@@ -10,15 +10,14 @@ declare -r INPUT_DIR="$TESTDIR/input"
 declare -r OUTPUT_DIR="$TESTDIR/output"
 declare -r INCOMING_DIR="$OUTPUT_DIR/incoming"
 declare -r ARCHIVE_DIR="$OUTPUT_DIR/archive"
-set -x
+
 ! test -e "$OUTPUT_DIR" && mkdir "$OUTPUT_DIR"
 find "$OUTPUT_DIR" -mindepth 1 -delete
 mkdir "$INCOMING_DIR"
 mkdir "$ARCHIVE_DIR"
 rsync -a "$INPUT_DIR/" "$INCOMING_DIR"
 
-"$ARCHIVE_PROCESSED" "$ARCHIVE_DIR" "$INCOMING_DIR"
+"$ARCHIVE_PROCESSED" "$INCOMING_DIR" "$ARCHIVE_DIR"
 
 echo "---"
 find "$OUTPUT_DIR" -type f 
-

@@ -320,7 +320,8 @@ for sourcephoto in $SOURCE_PHOTOS; do
                 test -v SIMULATE || chmod u-w "$targetfile" && unset restore_write_protection
         fi   
 
-        (test -v VERBOSE && echo "$file_to_move $targetfile" >&2) || echo "$targetfile"
+        test -v VERBOSE && echo "[INFO] $file_to_move $targetfile" >&2
+        echo "$targetfile"
 
     done # END OF INDIVIDUAL FILES LOOP
     
