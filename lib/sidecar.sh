@@ -40,13 +40,13 @@ set_iptc_in_sidecar() {
 	IFS=";"
 
 	local old_keywords=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")
-	for old_keyword in $old_keywords; do 
+	for old_keyword in "$old_keywords"; do 
 		if ! [[ $keywords =~ .*${old_keyword//[\"]/}\;.* ]]; then
 			new_keywords="$new_keywords$old_keyword;"
 		fi		
 	done
 
-	for new_keyword in $keywords; do
+	for new_keyword in "$keywords"; do
 		new_keywords="$new_keywords$(quote_if_spaces_exist "$new_keyword");"
 	done
 
