@@ -3,22 +3,23 @@
 set -e
 
 declare -r TESTDIR="$(dirname "$(readlink -e "$0")")"
+declare -r INPUT_DIR="$TESTDIR/input"
+declare -r OUTPUT_DIR="$TESTDIR/output"
 
 declare -r CREATE_SIDECAR="$TESTDIR/../../profile-builder/create_sidecar"
 
-declare -r WORKING_DIR="$TESTDIR/photos"
-declare -r TEMPLATES_DIR="$TESTDIR/templates"
+declare -r TEMPLATES_DIR="$INPUT_DIR/templates"
 
 declare -r CREATOR="Me myself and I"
 declare -r KEYWORDS="keywordA;keyword b"
 
+! test -e "$OUTPUT_DIR" && mkdir "$OUTPUT_DIR" || find "$OUTPUT_DIR" -type f -delete
+rsync -a "$INPUT_DIR/photos/" "$OUTPUT_DIR/"
 
-find "$WORKING_DIR" -type f -name '*.pp3' -delete
-
-"$CREATE_SIDECAR" -v -c "$CREATOR" -k "$KEYWORDS" "$TEMPLATES_DIR" "$WORKING_DIR/*"
+"$CREATE_SIDECAR" -v -c "$CREATOR" -k "$KEYWORDS" "$TEMPLATES_DIR" "$OUTPUT_DIR/*"
 
 echo "---"
-find "$WORKING_DIR" -type f 
+find "$OUTPUT_DIR" -type f | sort
 
 # TODO
 # save correct output files in expected dir, retain directory structure (relative to TESTDIR)
