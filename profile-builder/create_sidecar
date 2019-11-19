@@ -3,16 +3,15 @@
 set -eu
 
 declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/../lib/is_original.sh"
-declare -r SET_IPTC_KEYWORDS="$(dirname "$(readlink -e "$0")")/../set_iptc_keywords"
 
 . "$(dirname "$(readlink -e "$0")")/../lib/sidecar.sh"
 . "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
 
-while getopts "c:t:ov" opt; do
+while getopts "c:k:ov" opt; do
     case $opt in
         c ) 
 			declare -r CREATOR=$OPTARG;;   
-		t ) 
+		k ) 
 			# CSV string, using ";"
 			declare -r KEYWORDS=$OPTARG;;
 		o ) 
@@ -33,7 +32,7 @@ elif ! [[ -d $TEMPLATES_DIR ]]; then
 fi
 shift 1
 
-declare -r FILES=$@
+declare -r PHOTO_FILES=$@
 
 
 lookup_camera_from_exif() {
@@ -92,7 +91,7 @@ select_template() {
 }
 
 
-for file in $FILES; do
+for file in $PHOTO_FILES; do
 
 	file=$(readlink -e "$file")
 	! test -z "$file" || continue
@@ -145,5 +144,5 @@ for file in $FILES; do
 	replace_in_sidecar "$sidecar_file" "IPTC" "Caption" "[$fullname]"
 
 	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")${KEYWORDS-}"
-	"$SET_IPTC_KEYWORDS" "$iptc_keywords" "$sidecar_file"
+	set_iptc_in_sidecar "$sidecar_file" "$iptc_keywords"
 done

@@ -10,11 +10,12 @@ declare -r WORKING_DIR="$TESTDIR/photos"
 declare -r TEMPLATES_DIR="$TESTDIR/templates"
 
 declare -r CREATOR="Me myself and I"
+declare -r KEYWORDS="keywordA;keyword b"
 
 
 find "$WORKING_DIR" -type f -name '*.pp3' -delete
 
-"$CREATE_SIDECAR" -v -c "$CREATOR" "$TEMPLATES_DIR" "$WORKING_DIR/*"
+"$CREATE_SIDECAR" -v -c "$CREATOR" -k "$KEYWORDS" "$TEMPLATES_DIR" "$WORKING_DIR/*"
 
 echo "---"
 find "$WORKING_DIR" -type f 
