@@ -13,7 +13,8 @@ declare -r OUTPUT="$TESTDIR/output"
 
 rsync -a "$INPUT/" "$OUTPUT"
 
-declare -r KEYWORDS="TODO"
+declare -r KEYWORDS="TODO;TODO 2"
+
 find "$OUTPUT" -type f -name '*.ORF' | xargs "$SET_IPTC_KEYWORDS" "$KEYWORDS" 
 
 echo "---"

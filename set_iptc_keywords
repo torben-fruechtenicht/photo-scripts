@@ -22,41 +22,6 @@ declare -r FILES=$@
 set -u
 
 
-quote_if_spaces_exist() {
-	local -r keyword=$1
-	if [[ $keyword =~ .+[[:space:]].+ ]]; then
-		echo "\"$keyword\""
-	else
-		echo $keyword
-	fi	
-}
-
-set_iptc_in_sidecar() {
-	local -r sidecar_file=$1
-	local new_keywords=
-
-	local -r OLD_IFS=$IFS
-	IFS=";"
-
-	local old_keywords=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")
-	for old_keyword in $old_keywords; do 
-		if ! [[ $KEYWORDS =~ .*${old_keyword//[\"]/}\;.* ]]; then
-			new_keywords="$new_keywords$old_keyword;"
-		fi		
-	done
-
-	for new_keyword in $KEYWORDS; do
-		new_keywords="$new_keywords$(quote_if_spaces_exist "$new_keyword");"
-	done
-
-	IFS=$OLD_IFS
-
-	if [[ -n $new_keywords ]]; then
-		replace_in_sidecar "$sidecar_file" "IPTC" "Keywords" "$new_keywords"
-	fi
-}
-
-
 set_iptc_in_jpeg() {
 	local -r jpeg_file=$1
 	local -r old_keywords=$(exiv2 -PIt -K Iptc.Application2.Keywords $jpeg_file 2> /dev/null)
@@ -93,7 +58,7 @@ set_iptc_in_jpeg() {
 			echo -e "\n[IPTC]\nKeywords=;\n" >> $file			
 		fi
 
-		set_iptc_in_sidecar "$file"
+		set_iptc_in_sidecar "$file" "$KEYWORDS"
 
 		test -v restore_write_protection && chmod u-w "$file" && unset restore_write_protection
 
