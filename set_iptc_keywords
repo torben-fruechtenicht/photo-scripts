@@ -7,9 +7,17 @@ declare -r COLLECTOR_CMD=$(dirname "$0")/lib/collect_associated_files.sh
 
 . "$(dirname "$0")/lib/sidecar.sh"
 
+while getopts "v" opt; do
+    case $opt in
+		v )
+			declare -r VERBOSE=;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
 declare -r KEYWORDS=$1
 if [[ -z $KEYWORDS ]]; then
-	echo "No keywords" >&2
+	echo "[ERROR] No keywords" >&2
 	exit 1
 elif [[ -f $KEYWORDS || -d $KEYWORDS ]]; then
 	echo "[ERROR] Keywords parameter seems to be a file or directory - actual keywords parameter is missing?" >&2
@@ -62,6 +70,8 @@ set_iptc_in_jpeg() {
 
 		test -v restore_write_protection && chmod u-w "$file" && unset restore_write_protection
 
+		test -v VERBOSE && echo "[INFO] $file" >&2
+
 	elif [[ $file =~ .*/converted/.*\.jpg$ ]]; then
 
 		if ! [[ -w $file ]]; then
@@ -72,6 +82,8 @@ set_iptc_in_jpeg() {
 		set_iptc_in_jpeg "$file"
 
 		test -v restore_write_protection && chmod u-w "$file" && unset restore_write_protection
+
+		test -v VERBOSE && echo "[INFO] $file" >&2
 
 	fi
 	

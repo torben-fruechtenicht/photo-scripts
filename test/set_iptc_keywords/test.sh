@@ -1,21 +1,15 @@
 #! /usr/bin/env bash
 
 set -e
+. ../setup.sh
 
-declare -r TESTDIR="$(dirname "$(readlink -e "$0")")"
+rsync -a "$INPUT_DIR/" "$OUTPUT_DIR"
 
-declare -r SET_IPTC_KEYWORDS="$TESTDIR/../../set_iptc_keywords"
-
-declare -r INPUT="$TESTDIR/input"
-
-declare -r OUTPUT="$TESTDIR/output"
-(! test -e "$OUTPUT" && mkdir "$OUTPUT") || find "$OUTPUT" -type f -delete
-
-rsync -a "$INPUT/" "$OUTPUT"
+declare -r SET_IPTC_KEYWORDS="$PROJECT_ROOT/set_iptc_keywords"
 
 declare -r KEYWORDS="TODO;TODO 2"
 
-find "$OUTPUT" -type f -name '*.ORF' | xargs "$SET_IPTC_KEYWORDS" "$KEYWORDS" 
+find "$OUTPUT_DIR" -type f -name '*.ORF' | xargs "$SET_IPTC_KEYWORDS" -v "$KEYWORDS" 
 
 echo "---"
-find "$OUTPUT" -type f 
+find "$OUTPUT_DIR" -type f 
