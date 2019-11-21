@@ -70,9 +70,9 @@ lookup_manufacturer_from_exif() {
 
 	case $file_type in 
 		raw )
-			exiv2 pr -Pt -g "Exif.PanasonicRaw.Make" "$file" 2> /dev/null;;
+			exiv2 pr -Pt -g "Exif.PanasonicRaw.Make" "$file" 2> /dev/null | xargs;;
 		*) 
-			exiv2 pr -Pt -g "Exif.Image.Make" "$file" 2> /dev/null;;
+			exiv2 pr -Pt -g "Exif.Image.Make" "$file" 2> /dev/null | xargs;;
 	esac
 }
 
