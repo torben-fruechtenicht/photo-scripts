@@ -1,19 +1,17 @@
 #! /usr/bin/env bash
 
 set -e
+. "$(dirname "$(readlink -e "$0")")/../setup.sh"
 
-declare -r TESTDIR="$(dirname "$(readlink -e "$0")")"
 
-declare -r BUILD_TEMPLATES="$TESTDIR/../../profile-builder/build_templates.sh"
+declare -r BUILD_TEMPLATES="$PROJECT_ROOT/profile-builder/build_templates.sh"
 
-declare -r BASELINES_ROOT="$TESTDIR/baselines"
-declare -r GENERATED_TEMPLATES_DIR="$TESTDIR/generated_templates"
-declare -r BLANK_TEMPLATE="$TESTDIR/blank.pp3"
+declare -r BASELINES_ROOT="$INPUT_DIR/baselines"
+declare -r GENERATED_TEMPLATES_DIR="$OUTPUT_DIR"
+declare -r BLANK_TEMPLATE="$INPUT_DIR/blank.pp3"
 
-test -d "$GENERATED_TEMPLATES_DIR" || mkdir "$GENERATED_TEMPLATES_DIR"
-find "$GENERATED_TEMPLATES_DIR" -type f -name '*.pp3' -delete
 
-"$BUILD_TEMPLATES" "$BLANK_TEMPLATE" "$GENERATED_TEMPLATES_DIR" "$BASELINES_ROOT"
+"$BUILD_TEMPLATES" "$BLANK_TEMPLATE" "$OUTPUT_DIR" "$BASELINES_ROOT"
 
-echo "---"
-find "$GENERATED_TEMPLATES_DIR" -type f -name '*.pp3'
+
+assert_actual_output_matches_expected "pp3"

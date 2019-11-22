@@ -1,0 +1,104 @@
+[Version]
+AppVersion=5.7
+Version=346
+
+[Exposure]
+
+[HLRecovery]
+
+[Retinex]
+
+[Local Contrast]
+
+[Channel Mixer]
+
+[Black & White]
+
+[Luminance Curve]
+
+[Sharpening]
+
+[Vibrance]
+
+[SharpenEdge]
+
+[SharpenMicro]
+
+[White Balance]
+
+[Color appearance]
+
+[Impulse Denoising]
+
+[Defringing]
+
+[Dehaze]
+
+[Directional Pyramid Denoising]
+
+[EPD]
+
+[FattalToneMapping]
+
+[Shadows & Highlights]
+
+[Crop]
+Guide=Rule of thirds
+Orientation=As Image
+FixedRatio=true
+Enabled=false
+
+[Coarse Transformation]
+
+[Common Properties for Transformations]
+
+[Rotation]
+
+[Distortion]
+
+[LensProfile]
+LcMode=lfauto
+
+[Perspective]
+
+[Gradient]
+
+[PCVignette]
+
+[CACorrection]
+
+[Vignetting Correction]
+
+[Resize]
+
+[PostResizeSharpening]
+
+[Color Management]
+
+[Wavelet]
+
+[Directional Pyramid Equalizer]
+
+[HSV Equalizer]
+
+[SoftLight]
+
+[Film Simulation]
+
+[RGB Curves]
+
+[ColorToning]
+
+[RAW]
+DeadPixelFilter=true
+HotPixelFilter=true
+
+[RAW Bayer]
+
+[RAW X-Trans]
+
+[MetaData]
+
+[Film Negative]
+
+[IPTC]

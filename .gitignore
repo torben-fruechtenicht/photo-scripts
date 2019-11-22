@@ -1,4 +1,4 @@
-test/build_templates/generated_templates/
+test/build_templates/output
 test/move_photos/rename/renamed
 test/set_iptc_keywords/output
 test/move_photos/move_to_album/output

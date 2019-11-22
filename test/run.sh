@@ -9,10 +9,10 @@ find "$TESTS_ROOT" -type f -name 'test.sh' | while read -r test_cmd; do
     echo "=========================================================" 
     "$test_cmd"
     if (( $? == 0 )); then
-        echo "---"
+        echo "-----"
         echo "[SUCCESS] All tests passed"
     else 
-        echo "---"
+        echo "-----"
         echo "[FAIL] There were failures"
     fi
 done

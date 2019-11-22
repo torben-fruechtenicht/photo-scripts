@@ -12,13 +12,13 @@ assert_actual_output_matches_expected() {
     cd "$EXPECTED_DIR" && find . -type f ${filetype+-name '*.'$filetype} | while read -r expected_file; do
 
         if ! [[ -f "$OUTPUT_DIR/$expected_file" ]]; then
-            echo "Expected file $expected_file missing"
+            echo "[FAIL] Expected file $expected_file missing"
             exit 1
         fi
 
         # cmp does a byte-wise check
         if ! cmp -s "$EXPECTED_DIR/$expected_file" "$OUTPUT_DIR/$expected_file"; then
-            echo "Actual file does not match $expected_file"
+            echo "[FAIL] Actual file does not match $expected_file"
             exit 1
         fi
     done
@@ -29,7 +29,7 @@ assert_correct_actual_sidecar_count() {
     local -r actual_count=$(find "$OUTPUT_DIR" -type f -name '*.pp3' | wc -l)
 
     if (( $actual_count != $expected_count )); then
-        echo "Not all or too many sidecars were created: $actual_count"
+        echo "[FAIL] Not all or too many sidecars were created: $actual_count"
         exit 1
     fi
 }
