@@ -16,7 +16,7 @@ declare -r TARGET_ALBUM_PATH=$(readlink -f "$1")
 if [[ -z $TARGET_ALBUM_PATH ]]; then
     echo "Path of target album directory does not exist" >&2
     exit 1
-elif [[ -d $TARGET_ALBUM_PATH ]]; then
+elif ! [[ -d $TARGET_ALBUM_PATH ]]; then
     echo "Path of target directory is not a directory" >&2
     exit 1
 fi
