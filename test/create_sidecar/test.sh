@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 set -e
-. ../setup.sh
+. "$(dirname "$(readlink -e "$0")")/../setup.sh"
 
 declare -r CREATE_SIDECAR="$PROJECT_ROOT/profile-builder/create_sidecar"
 

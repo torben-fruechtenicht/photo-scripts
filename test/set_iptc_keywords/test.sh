@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 set -e
-. ../setup.sh
+. "$(dirname "$(readlink -e "$0")")/../setup.sh"
 
 assert_jpg_itpc_matches_expected() {
     cd "$EXPECTED_DIR" && find . -type f -name '*.jpg.iptc' | while read -r expected_file; do
