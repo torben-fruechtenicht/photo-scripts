@@ -33,3 +33,17 @@ assert_correct_actual_sidecar_count() {
         exit 1
     fi
 }
+
+assert_created_files_match_expected() {
+
+    if ! [[ -f "$EXPECTED_DIR/files" ]]; then
+        echo "[FAIL] $EXPECTED_DIR/files missing"
+        exit 1
+    fi
+
+    if ! cmp -s "$EXPECTED_DIR/files" <(cd "$OUTPUT_DIR" && find . -mindepth 1); then
+        local diff_result=$(diff "$EXPECTED_DIR/files" <(cd "$OUTPUT_DIR" && find . -mindepth 1))
+        echo -e "[FAIL] Actual files do not match expected:\n$diff_result" 
+        exit 1
+    fi
+}
