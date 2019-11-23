@@ -1,6 +1,1 @@
-test/build_templates/output
-test/move_photos/rename/renamed
-test/set_iptc_keywords/output
-test/move_photos/move_to_album/output
-test/move_photos/archive_processed/output
-test/create_sidecar/output/
+test/*/output
