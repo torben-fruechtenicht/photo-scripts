@@ -1,6 +1,7 @@
 #! /usr/bin/env bash
 
 declare -r TESTS_ROOT=$(dirname "$(readlink "$0")")
+export VERBOSE=
 
 find "$TESTS_ROOT" -type f -name 'test.sh' | while read -r test_cmd; do
     echo 
