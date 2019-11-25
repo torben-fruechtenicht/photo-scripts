@@ -32,27 +32,27 @@ replace_in_sidecar() {
 
 set_iptc_in_sidecar() {
 	local -r sidecar_file=$1
-    local -r keywords=$2
+    local -r new_keywords=$2
 
-	local new_keywords=
+	local keywords=
 
 	local -r OLD_IFS=$IFS
 	IFS=";"
 
 	local old_keywords=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")
 	for old_keyword in $old_keywords; do 
-		if ! [[ $keywords =~ .*${old_keyword//[\"]/}\;.* ]]; then
-			new_keywords="$new_keywords$old_keyword;"
+		if ! [[ $new_keywords =~ .*${old_keyword//[\"]/}\;.* ]]; then
+			keywords="$keywords$old_keyword;"
 		fi		
 	done
 
-	for new_keyword in "$keywords"; do
-		new_keywords="$new_keywords$(quote_if_spaces_exist "$new_keyword");"
+	for new_keyword in $new_keywords; do
+		keywords="$keywords$(quote_if_spaces_exist "$new_keyword");"
 	done
 
 	IFS=$OLD_IFS
 
-	if [[ -n $new_keywords ]]; then
-		replace_in_sidecar "$sidecar_file" "IPTC" "Keywords" "$new_keywords"
+	if [[ -n $keywords ]]; then
+		replace_in_sidecar "$sidecar_file" "IPTC" "Keywords" "$keywords"
 	fi
 }
