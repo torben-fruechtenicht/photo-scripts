@@ -17,8 +17,8 @@ assert_actual_output_matches_expected() {
         fi
 
         # cmp does a byte-wise check
-        if ! cmp -s "$EXPECTED_DIR/$expected_file" "$OUTPUT_DIR/$expected_file"; then
-            echo "[FAIL] Actual file does not match $expected_file"
+        if ! cmp -s "$OUTPUT_DIR/$expected_file" "$EXPECTED_DIR/$expected_file"; then
+            echo -e "[FAIL] Actual file does not match expected $expected_file:\n$(diff "$OUTPUT_DIR/$expected_file" "$EXPECTED_DIR/$expected_file")"
             exit 1
         fi
     done

@@ -6,6 +6,7 @@ shopt -s nocasematch
 declare -r COLLECTOR_CMD=$(dirname "$0")/lib/collect_associated_files.sh
 
 . "$(dirname "$0")/lib/sidecar.sh"
+. "$(dirname "$0")/lib/jpeg.sh"
 
 while getopts "v" opt; do
     case $opt in
@@ -30,29 +31,6 @@ declare -r FILES=$@
 set -u
 
 
-set_iptc_in_jpeg() {
-	local -r jpeg_file=$1
-	local -r old_keywords=$(exiv2 -PIt -K Iptc.Application2.Keywords $jpeg_file 2> /dev/null)
-
-	local -r OLD_IFS=$IFS
-	IFS=";"
-
-	for new_keyword in $KEYWORDS; do
-		if [[ "$old_keywords" =~ .*$new_keyword.* ]]; then
-			continue
-		fi
-
-		if [[ $new_keyword =~ .+[[:space:]].+ ]]; then
-			new_keyword="\"$new_keyword\""
-		fi
-		exiv2 -M "add Iptc.Application2.Keywords $new_keyword" "$jpeg_file" 2> /dev/null
-	done
-
-	IFS=$OLD_IFS
-}
-
-
-
 "$COLLECTOR_CMD" $FILES | while read -r file; do
 
 	if [[ $file =~ .*\.pp[23]$ ]]; then
@@ -73,13 +51,13 @@ set_iptc_in_jpeg() {
 		test -v VERBOSE && echo "[INFO] $file" >&2
 
 	elif [[ $file =~ .*/converted/.*\.jpg$ ]]; then
-
+		
 		if ! [[ -w $file ]]; then
 			test -v SIMULATE || chmod u+w "$file"
 			declare restore_write_protection=
 		fi
 
-		set_iptc_in_jpeg "$file"
+		jpeg_set_iptc_keywords "$KEYWORDS" "$file"
 
 		test -v restore_write_protection && chmod u-w "$file" && unset restore_write_protection
 

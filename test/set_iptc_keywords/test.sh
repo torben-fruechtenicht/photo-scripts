@@ -5,12 +5,14 @@ set -e
 
 assert_jpg_itpc_matches_expected() {
     cd "$EXPECTED_DIR" && find . -type f -name '*.jpg.iptc' | while read -r expected_file; do
-        actual_file=${expected_file%.*}
-        actual_iptc=$(exiv2 -PIkt $actual_file 2> /dev/null)
-        if ! cmp -s <(echo "$actual_iptc") "$expected_file"; then
-            echo "[FAIL] Actual JPEG IPTC does not match expected: $(diff <(echo "$actual_iptc") "$expected_file")" 
+        
+        actual_file="$OUTPUT_DIR/${expected_file%.*}"        
+        if ! cmp -s <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file"; then
+            local diff_out=$(diff <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file")
+            echo -e "[FAIL] Actual JPEG IPTC does not match expected:\n$(diff <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file")" 
             exit 1
         fi
+        
     done
 } 
 
