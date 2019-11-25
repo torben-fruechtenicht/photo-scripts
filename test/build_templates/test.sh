@@ -14,4 +14,4 @@ declare -r BLANK_TEMPLATE="$INPUT_DIR/blank.pp3"
 "$BUILD_TEMPLATES" "$BLANK_TEMPLATE" "$OUTPUT_DIR" "$BASELINES_ROOT"
 
 
-assert_actual_output_matches_expected "pp3"
+assert_actual_sidecars_match_expected

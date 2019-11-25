@@ -127,7 +127,7 @@ Mode=1
 [Film Negative]
 
 [IPTC]
-Keywords="RawTherapee;E-M10;OLYMPUS IMAGING CORP.;OLYMPUS M.17mm F1.8;keywordA;keyword b";
+Keywords=RawTherapee;E-M10;OLYMPUS IMAGING CORP.;OLYMPUS M.17mm F1.8;keywordA;"keyword b";
 Caption=[land-in-sicht-weserburg_20150731_1654_e-m10_1007312062]
 Headline=land-in-sicht-weserburg 1007312062
 Copyright=Copyright (c) Me myself and I 2005-2015

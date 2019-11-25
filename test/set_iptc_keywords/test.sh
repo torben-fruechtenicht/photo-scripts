@@ -3,19 +3,6 @@
 set -e
 . "$(dirname "$(readlink -e "$0")")/../setup.sh"
 
-assert_jpg_itpc_matches_expected() {
-    cd "$EXPECTED_DIR" && find . -type f -name '*.jpg.iptc' | while read -r expected_file; do
-        
-        actual_file="$OUTPUT_DIR/${expected_file%.*}"        
-        if ! cmp -s <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file"; then
-            local diff_out=$(diff <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file")
-            echo -e "[FAIL] Actual JPEG IPTC does not match expected:\n$(diff <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file")" 
-            exit 1
-        fi
-        
-    done
-} 
-
 rsync -a "$INPUT_DIR/" "$OUTPUT_DIR"
 
 declare -r SET_IPTC_KEYWORDS="$PROJECT_ROOT/set_iptc_keywords"
@@ -26,4 +13,4 @@ find "$OUTPUT_DIR" -type f -name '*.ORF' | xargs "$SET_IPTC_KEYWORDS" -v "$KEYWO
 
 
 assert_jpg_itpc_matches_expected
-assert_actual_output_matches_expected "pp3"
+assert_actual_sidecars_match_expected

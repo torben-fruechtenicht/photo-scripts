@@ -7,9 +7,8 @@ declare -r EXPECTED_DIR="$TEST_DIR/expected"
 
 (! test -e "$OUTPUT_DIR" && mkdir "$OUTPUT_DIR") || find "$OUTPUT_DIR" -type f -delete  
 
-assert_actual_output_matches_expected() {
-    local -r filetype=$1
-    cd "$EXPECTED_DIR" && find . -type f ${filetype+-name '*.'$filetype} | while read -r expected_file; do
+assert_actual_sidecars_match_expected() {
+    cd "$EXPECTED_DIR" && find . -type f -name '*.pp3' | while read -r expected_file; do
 
         if ! [[ -f "$OUTPUT_DIR/$expected_file" ]]; then
             echo "[FAIL] Expected file $expected_file missing"
@@ -47,3 +46,16 @@ assert_created_files_match_expected() {
         exit 1
     fi
 }
+
+assert_jpg_itpc_matches_expected() {
+    cd "$EXPECTED_DIR" && find . -type f -name '*.jpg.iptc' | while read -r expected_file; do
+        
+        actual_file="$OUTPUT_DIR/${expected_file%.*}"        
+        if ! cmp -s <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file"; then
+            local diff_out=$(diff <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file")
+            echo -e "[FAIL] Actual JPEG IPTC does not match expected:\n$(diff <(exiv2 -PIkt $actual_file 2> /dev/null) "$expected_file")" 
+            exit 1
+        fi
+        
+    done
+} 

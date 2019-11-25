@@ -13,3 +13,5 @@ find "$OUTPUT_DIR" -type f -name '*.ORF' | xargs "$RENAME" "$NEW_NAME"
 
 
 assert_created_files_match_expected
+assert_jpg_itpc_matches_expected
+assert_actual_sidecars_match_expected

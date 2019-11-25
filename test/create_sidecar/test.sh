@@ -15,4 +15,4 @@ rsync -a "$INPUT_DIR/photos/" "$OUTPUT_DIR/"
 
 
 assert_correct_actual_sidecar_count 2
-assert_actual_output_matches_expected
+assert_actual_sidecars_match_expected
