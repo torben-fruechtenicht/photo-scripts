@@ -41,8 +41,8 @@ assert_created_files_match_expected() {
         exit 1
     fi
 
-    if ! cmp -s "$EXPECTED_DIR/files" <(cd "$OUTPUT_DIR" && find . -mindepth 1); then
-        local diff_result=$(diff "$EXPECTED_DIR/files" <(cd "$OUTPUT_DIR" && find . -mindepth 1))
+    if ! cmp -s "$EXPECTED_DIR/files" <(cd "$OUTPUT_DIR" && find . -mindepth 1 | sort); then
+        local diff_result=$(diff "$EXPECTED_DIR/files" <(cd "$OUTPUT_DIR" && find . -mindepth 1 | sort))
         echo -e "[FAIL] Actual files do not match expected:\n$diff_result" 
         exit 1
     fi
