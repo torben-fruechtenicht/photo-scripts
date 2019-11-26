@@ -144,5 +144,5 @@ for file in $PHOTO_FILES; do
 	replace_in_sidecar "$sidecar_file" "IPTC" "Caption" "[$fullname]"
 
 	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")${KEYWORDS-}"
-	set_iptc_in_sidecar "$sidecar_file" "$iptc_keywords"
+	sidecar_set_iptc_keywords "$sidecar_file" "$iptc_keywords"
 done

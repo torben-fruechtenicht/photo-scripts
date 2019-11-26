@@ -30,7 +30,7 @@ replace_in_sidecar() {
     fi
 }
 
-set_iptc_in_sidecar() {
+sidecar_set_iptc_keywords() {
 	local -r sidecar_file=$1
     local -r new_keywords=$2
 
