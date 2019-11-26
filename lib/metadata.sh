@@ -18,3 +18,14 @@ function headline_from_photofile() {
     local -r photo_filename=$(basename "$1")
     echo "$photo_filename" | sed -r 's/'"$PHOTO_FILENAME_PATTERN"'/\1 \5/'
 }
+
+is_original_photofile() (
+    local -r file=$1
+    shopt -s nocasematch
+
+    # TODO check that parent directories of sourcephoto are year/album/date (or move to is_valid function)
+
+    [[ -f $file ]] && \
+        [[ $file =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]] && \
+        ! [[ $file =~ .+/converted/^/+$ ]]
+)

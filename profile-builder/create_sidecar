@@ -2,8 +2,6 @@
 
 set -eu
 
-declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/../lib/is_original.sh"
-
 . "$(dirname "$(readlink -e "$0")")/../lib/sidecar.sh"
 . "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
 
@@ -96,7 +94,7 @@ for file in $PHOTO_FILES; do
 	file=$(readlink -e "$file")
 	! test -z "$file" || continue
 
-	"$IS_ORIGINAL" $file || continue
+	is_original_photofile $file || continue
 	
 	sidecar_file="$file.pp3"
 

@@ -7,8 +7,6 @@ shopt -s nocasematch
 . "$(dirname "$(readlink -e $0)")/sidecar.sh"
 . "$(dirname "$(readlink -e $0)")/jpeg.sh"
 
-declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/is_original.sh"
-
 print_help() {
     cat <<EOF
 Usage:
@@ -225,7 +223,7 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
     sourcephoto=$(readlink -e "$sourcephoto")
 
-    "$IS_ORIGINAL" "$sourcephoto" || continue
+    is_original_photofile "$sourcephoto" || continue
 
     # FIXME check that parent directories of sourcephoto are year/album/date
 
