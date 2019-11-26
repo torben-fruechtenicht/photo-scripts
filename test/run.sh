@@ -9,11 +9,18 @@ find "$TESTS_ROOT" -type f -name 'test.sh' | sort | while read -r test_cmd; do
     echo "Running $test_cmd"
     echo "=========================================================" 
     "$test_cmd"
+    echo "-----"
     if (( $? == 0 )); then
-        echo "-----"
         echo "[SUCCESS] All tests passed"
     else 
-        echo "-----"
         echo "[FAIL] There were failures"
+        declare failures_exist=
     fi
 done
+
+echo -e "\n====="
+if [[ -v failures_exist ]]; then
+    echo "[FAIL] There were failures" 
+else
+    echo "[SUCCESS] All tests passed"
+ fi
