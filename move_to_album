@@ -3,6 +3,7 @@
 set -e
 
 export PATH="$(dirname "$(readlink -e "$0")"):$PATH"
+declare -r MOVE_PHOTOS="$(dirname $(readlink -e $0))/lib/move_photos.sh"
 
 while getopts "r" opt; do
     case $opt in
@@ -33,4 +34,4 @@ set -u
 
 # TBD FIXME can't we just say that moving to another album stays in the directory hierarchy? I.e. moves will always happen
 # in the incoming or archive directories? This would mean we no have to pass TARGET_DIRECTORY_ROOT here
-move_photos -t "$TARGET_DIRECTORY_ROOT" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE $PHOTOS_TO_MOVE 
+"$MOVE_PHOTOS" -t "$TARGET_DIRECTORY_ROOT" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE $PHOTOS_TO_MOVE 

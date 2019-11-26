@@ -3,6 +3,7 @@
 set -e
 
 export PATH="$(dirname $(readlink -f "$0")):$PATH"
+declare -r MOVE_PHOTOS="$(dirname $(readlink -e $0))/lib/move_photos.sh"
 
 declare -r NEW_NAME=$1
 if [[ -z $NEW_NAME ]]; then
@@ -15,4 +16,4 @@ declare -r PHOTOS_TO_RENAME=$@
 
 set -u
 
-move_photos -r "$NEW_NAME" -m "p" $PHOTOS_TO_RENAME
+"$MOVE_PHOTOS" -r "$NEW_NAME" -m "p" $PHOTOS_TO_RENAME

@@ -3,8 +3,8 @@
 set -eu
 shopt -s nocasematch
 
-source "$(dirname "$(readlink -e $0)")/lib/metadata.sh"
-declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/lib/is_original.sh"
+source "$(dirname "$(readlink -e $0)")/metadata.sh"
+declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/is_original.sh"
 
 print_help() {
     cat <<EOF
