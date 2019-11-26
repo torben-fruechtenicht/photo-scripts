@@ -1,4 +1,4 @@
-quote_if_spaces_exist() {
+__quote_if_spaces_exist() {
 	local -r keyword=$1
 	if [[ $keyword =~ .+[[:space:]].+ ]]; then
 		echo "\"$keyword\""
@@ -7,7 +7,7 @@ quote_if_spaces_exist() {
 	fi	
 }
 
-replace_in_sidecar() {
+sidecar_set_property() {
     local -r sidecar=$1
     local -r section=$2
     local -r property=$3
@@ -47,12 +47,12 @@ sidecar_set_iptc_keywords() {
 	done
 
 	for new_keyword in $new_keywords; do
-		keywords="$keywords$(quote_if_spaces_exist "$new_keyword");"
+		keywords="$keywords$(__quote_if_spaces_exist "$new_keyword");"
 	done
 
 	IFS=$OLD_IFS
 
 	if [[ -n $keywords ]]; then
-		replace_in_sidecar "$sidecar_file" "IPTC" "Keywords" "$keywords"
+		sidecar_set_property "$sidecar_file" "IPTC" "Keywords" "$keywords"
 	fi
 }

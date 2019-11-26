@@ -3,7 +3,10 @@
 set -eu
 shopt -s nocasematch
 
-source "$(dirname "$(readlink -e $0)")/metadata.sh"
+. "$(dirname "$(readlink -e $0)")/metadata.sh"
+. "$(dirname "$(readlink -e $0)")/sidecar.sh"
+. "$(dirname "$(readlink -e $0)")/jpeg.sh"
+
 declare -r IS_ORIGINAL="$(dirname "$(readlink -e "$0")")/is_original.sh"
 
 print_help() {
@@ -217,36 +220,6 @@ targetfile_from_sourcefile() {
 }
 
 
-set_iptc_in_sidecar() {
-	local -r iptc_entries=$1
-    local -r sidecar_file=$2
-
-    OLD_IFS=$IFS
-	IFS="|"
-	for entry in $iptc_entries; do
-		key=$(echo $entry | cut -d'=' -f1)
-		value=$(echo $entry | cut -d'=' -f2)
-        sed -i '/\[IPTC\]/,/^$/ s|'"$key"'=.*$|'"$key"'='"$value"';|' "$sidecar_file"
-	done
-	IFS=$OLD_IFS
-}
-
-
-set_iptc_in_jpeg() {
-    local -r iptc_entries=$1
-    local -r jpeg_file=$2
-
-    OLD_IFS=$IFS
-	IFS="|"
-	for entry in $iptc_entries; do
-		key=$(echo $entry | cut -d'=' -f1)
-		value=$(echo $entry | cut -d'=' -f2)
-        exiv2 -M"set Iptc.Application2.$key String '$value'" "$jpeg_file" 2> /dev/null
-	done
-	IFS=$OLD_IFS
-}
-
-
 
 for sourcephoto in $SOURCE_PHOTOS; do
 
@@ -286,15 +259,17 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
             if [[ $file_to_move =~ .*\.pp[23]$ ]]; then
 
-                test -v SIMULATE || set_iptc_in_sidecar \
-                    "Headline=$(headline_from_photofile "$targetfile")|Caption=[$target_fullname]" \
-                    "$targetfile"
+                if ! [[ -v SIMULATE ]]; then
+                    sidecar_set_property "$targetfile" "IPTC" "Headline" "$(headline_from_photofile "$targetfile")"
+                    sidecar_set_property "$targetfile" "IPTC" "Caption" "[$target_fullname]"
+                fi
 
             elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
 
-                test -v SIMULATE || set_iptc_in_jpeg \
-                    "Headline=$(headline_from_photofile "$targetfile")|Caption=[$target_fullname]" \
-                    "$targetfile"
+                if ! [[ -v SIMULATE ]]; then
+                    jpeg_set_iptc "Headline" "$(headline_from_photofile "$targetfile")" "$targetfile"
+                    jpeg_set_iptc "Caption" "[$target_fullname]" "$targetfile"
+                fi
 
             fi
 

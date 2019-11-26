@@ -132,16 +132,16 @@ for file in $PHOTO_FILES; do
 
 	if [[ -v CREATOR ]]; then
 
-		replace_in_sidecar "$sidecar_file" "IPTC" "Creator" "$CREATOR" 
+		sidecar_set_property "$sidecar_file" "IPTC" "Creator" "$CREATOR" 
 
 		year_from_exif=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
-		replace_in_sidecar "$sidecar_file" "IPTC" "Copyright" "Copyright (c) $CREATOR 2005-$year_from_exif"
+		sidecar_set_property "$sidecar_file" "IPTC" "Copyright" "Copyright (c) $CREATOR 2005-$year_from_exif"
 
 	fi
 
 	fullname=$(fullname_from_photofile "$file")
-	replace_in_sidecar "$sidecar_file" "IPTC" "Headline" "$(headline_from_photofile "$file" )"
-	replace_in_sidecar "$sidecar_file" "IPTC" "Caption" "[$fullname]"
+	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(headline_from_photofile "$file" )"
+	sidecar_set_property "$sidecar_file" "IPTC" "Caption" "[$fullname]"
 
 	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")${KEYWORDS-}"
 	sidecar_set_iptc_keywords "$sidecar_file" "$iptc_keywords"

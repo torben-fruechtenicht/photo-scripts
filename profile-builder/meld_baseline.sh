@@ -49,5 +49,5 @@ cat "$BASELINE" | while read -r line; do
 
     property=$(echo $line | cut -d'=' -f1)
     value=$(echo $line | cut -d'=' -f2)
-    replace_in_sidecar "$PROFILE" "$section" "$property" "$value"
+    sidecar_set_property "$PROFILE" "$section" "$property" "$value"
 done
