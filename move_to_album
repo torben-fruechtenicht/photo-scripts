@@ -10,25 +10,12 @@ while getopts "r" opt; do
         r ) declare -r RENAME_PHOTOS=;;
 	esac
 done
+declare -r RENAME_MODE=$(test -v RENAME_PHOTOS && echo "b" || echo "a")
 shift $(expr $OPTIND - 1)
 
-declare -r TARGET_ALBUM_PATH=$(readlink -f "$1")
-
-if [[ -z $TARGET_ALBUM_PATH ]]; then
-    echo "Path of target album directory does not exist" >&2
-    exit 1
-elif ! [[ -d $TARGET_ALBUM_PATH ]]; then
-    echo "Path of target directory is not a directory" >&2
-    exit 1
-fi
-
-declare -r TARGET_ALBUM_NAME=$(basename "$TARGET_ALBUM_PATH")
-declare -r TARGET_DIRECTORY_ROOT=$(dirname "$(dirname "$TARGET_ALBUM_PATH")")
-
+declare -r TARGET_ALBUM_NAME=$1
 shift 1
 declare -r PHOTOS_TO_MOVE=$@
-
-declare -r RENAME_MODE=$(test -v RENAME_PHOTOS && echo "b" || echo "a")
 
 set -u
 
