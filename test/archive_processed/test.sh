@@ -3,9 +3,6 @@
 set -e
 . "$(dirname "$(readlink -e "$0")")/../setup.sh"
 
-
-# FIXME having to add the extra parent dir is stupid, let's just use a simple one-level
-# directory layout
 declare -r ARCHIVE_PROCESSED="$PROJECT_ROOT/archive_processed"
 
 declare -r INCOMING_DIR="$OUTPUT_DIR/incoming"

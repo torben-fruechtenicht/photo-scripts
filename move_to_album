@@ -32,6 +32,4 @@ declare -r RENAME_MODE=$(test -v RENAME_PHOTOS && echo "b" || echo "a")
 
 set -u
 
-# TBD FIXME can't we just say that moving to another album stays in the directory hierarchy? I.e. moves will always happen
-# in the incoming or archive directories? This would mean we no have to pass TARGET_DIRECTORY_ROOT here
-"$MOVE_PHOTOS" -t "$TARGET_DIRECTORY_ROOT" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE $PHOTOS_TO_MOVE 
+"$MOVE_PHOTOS" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE $PHOTOS_TO_MOVE 
