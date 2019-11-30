@@ -222,10 +222,7 @@ targetfile_from_sourcefile() {
 for sourcephoto in $SOURCE_PHOTOS; do
 
     sourcephoto=$(readlink -e "$sourcephoto")
-
     is_original_photofile "$sourcephoto" || continue
-
-    # FIXME check that parent directories of sourcephoto are year/album/date
 
     sourcephoto_fullname=$(fullname_from_photofile "$sourcephoto")
     sources_rootdir=$(photos_rootdir_from_photofile "$sourcephoto")  
