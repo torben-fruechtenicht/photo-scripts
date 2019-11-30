@@ -99,11 +99,11 @@ for file in $PHOTO_FILES; do
 	sidecar_file="$file.pp3"
 
 	if [[ -e $sidecar_file ]] && ! [[ -v OVERWRITE_EXISTING ]]; then
-		echo "[SKIP] Sidecar $sidecar_file exists" >&2
+		test -v VERBOSE && echo "[SKIP] Sidecar $sidecar_file exists" >&2
 		continue
 	fi
 
-	echo "[PHOTO] $file" >&2
+	test -v VERBOSE && echo "[PHOTO] $file" >&2
 
 	camera_from_exif=$(lookup_camera_from_exif $file)
 	if [[ -z $camera_from_exif ]]; then
@@ -114,9 +114,9 @@ for file in $PHOTO_FILES; do
 	lens_from_exif=$(lookup_lens_from_exif "$file")
 	manufacturer_from_exif=$(lookup_manufacturer_from_exif "$file")
 
-	echo "[CAMERA] $camera_from_exif" >&2
-	echo "[MANUFACTURER] $manufacturer_from_exif" >&2
-	test -n "$lens_from_exif" && echo "[LENS] $lens_from_exif" >&2
+	test -v VERBOSE && echo "[CAMERA] $camera_from_exif" >&2
+	test -v VERBOSE && echo "[MANUFACTURER] $manufacturer_from_exif" >&2
+	test -v VERBOSE && test -n "$lens_from_exif" && echo "[LENS] $lens_from_exif" >&2
 
 	file_type=$(echo ${file##*.} | tr '[:upper:]' '[:lower:]')
  	sidecar_template=$(select_template "$file_type" "$camera_from_exif" "$lens_from_exif")
@@ -124,7 +124,7 @@ for file in $PHOTO_FILES; do
 		echo "[ERROR] No sidecar template found for $file"
 		continue
 	fi
-	echo "[INFO] Using template $sidecar_template" >&2
+	test -v VERBOSE && echo "[INFO] Using template $sidecar_template" >&2
 
  	cp "$sidecar_template" "$sidecar_file"
 
@@ -140,7 +140,14 @@ for file in $PHOTO_FILES; do
 	fullname=$(fullname_from_photofile "$file")
 	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(headline_from_photofile "$file" )"
 	sidecar_set_property "$sidecar_file" "IPTC" "Caption" "[$fullname]"
-
-	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif$(test -n "$lens_from_exif" && echo ";")${KEYWORDS-}"
+	
+	if [[ -n "$lens_from_exif" ]]; then
+		iptc_lens="$lens_from_exif,"
+	else 
+		iptc_lens=""
+	fi
+	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif${KEYWORDS-}"
 	sidecar_set_iptc_keywords "$sidecar_file" "$iptc_keywords"
+
+	echo "$sidecar_file"
 done

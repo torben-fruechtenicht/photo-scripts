@@ -9,17 +9,17 @@ declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTE
 
 declare -r PHOTO_FILENAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
 
-function fullname_from_photofile() {
+fullname_from_photofile() {
     local -r photo_filename=$(basename "$1")
     echo "${photo_filename%%.*}"
 }
 
-function headline_from_photofile() {
+headline_from_photofile() {
     local -r photo_filename=$(basename "$1")
     echo "$photo_filename" | sed -r 's/'"$PHOTO_FILENAME_PATTERN"'/\1 \5/'
 }
 
-is_original_photofile() (
+is_original_photofile() ( # use "()" instead of "{}" so that the function body is executed as a subshell
     local -r file=$1
     shopt -s nocasematch
 
