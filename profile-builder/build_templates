@@ -65,7 +65,7 @@ for baseline in "$BASELINES"; do
 
     if [[ -v OVERWRITE ]] || ! [[ -e $target_profile ]]; then
         cp "$INPUT_PROFILE" "$target_profile"
-        $MELD_BASELINE "$baseline" "$target_profile"
+        $MELD_BASELINE ${VERBOSE+-v} "$baseline" "$target_profile"
         test -v VERBOSE || echo $target_profile
     else 
         echo "[WARN] Target profile $target_profile exists" >&2

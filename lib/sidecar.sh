@@ -13,7 +13,7 @@ sidecar_set_property() {
     local -r property=$3
     local -r value=$4
 
-    if sed -n '/\['"$section"'\]/,/^$/p' "$sidecar" | grep -q "$property"; then
+    if sed -n '/\['"$section"'\]/,/^$/p' "$sidecar" | grep -q "$property="; then
         # if the entry already exists, just overwrite with new value
         test -v VERBOSE && echo "[INFO] UPDATE $section $property=$value" >&2        
         # https://unix.stackexchange.com/a/416126
