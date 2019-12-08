@@ -1,0 +1,34 @@
+#! /usr/bin/env bash
+
+set -e
+
+declare -r PHOTOS_DIR=$(readlink -e "$1")
+if [[ -z $PHOTOS_DIR ]]; then
+	echo "[ERROR] $1 does not exist" >&2
+	exit 1
+fi
+
+declare -r MAIL_RECIPIENT=$2
+if [[ -z $MAIL_RECIPIENT ]]; then
+	echo "[ERROR] No mail recepient given" >&2
+	exit 1
+fi
+
+declare -r EXT_PATTERNS="-iname *.ORF -o -iname *.RAW -o -iname *.CRW -o -iname *.CR2"
+
+find $PHOTOS_DIR -regextype posix-egrep -type d -regex "$PHOTOS_DIR/[0-9]{4}$" | sort |\
+	while read -r yeardir; do
+	
+		basename "$yeardir"
+		echo "===="
+		echo "Total: $(find "$yeardir" -type f \( $EXT_PATTERNS \) | wc -l)"
+		echo
+
+		find "$yeardir" -regextype posix-egrep -type d -regex "$yeardir/[a-zA-Z0-9_\-]+$" | sort |\
+			while read -r albumdir; do
+				echo "$(basename "$albumdir"): $(find "$albumdir" -type f \( $EXT_PATTERNS \) | wc -l)"					
+			done
+		echo
+
+	done |\
+	mail -a "MIME-Version: 1.0" -a "Content-Type: text/text" -s "Statistics for $PHOTOS_DIR" "$MAIL_RECIPIENT"
