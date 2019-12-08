@@ -14,14 +14,18 @@ if [[ -z $MAIL_RECIPIENT ]]; then
 	exit 1
 fi
 
-declare -r EXT_PATTERNS="-iname *.ORF -o -iname *.RAW -o -iname *.CRW -o -iname *.CR2"
+photos_count() {
+	local -r directory=$1
+	local -r patterns="-iname *.ORF -o -iname *.RAW -o -iname *.CRW -o -iname *.CR2"
+	find "$directory" -type f \( $patterns \) | wc -l
+}
 
 title="Statistics for $PHOTOS_DIR"
 # execute in subshell: that way all output can be piped together to mail
-(	\
+( \
 	echo "$title"
 	echo "$(for (( c=1; c<= ${#title}; c++ )); do echo -n "="; done)"
-	echo "Grand total: $(find "$PHOTOS_DIR" -type f \( $EXT_PATTERNS \) | wc -l)"
+	echo "Grand total: $(photos_count "$PHOTOS_DIR")"
 	echo
 
 	find "$PHOTOS_DIR" -regextype posix-egrep -type d -regex "$PHOTOS_DIR/[0-9]{4}$" | sort |\
@@ -29,12 +33,13 @@ title="Statistics for $PHOTOS_DIR"
 	
 		basename "$yeardir"
 		echo "===="
-		echo "Total: $(find "$yeardir" -type f \( $EXT_PATTERNS \) | wc -l)"
+		echo "Total: $(photos_count "$yeardir")"
 		echo
 
 		find "$yeardir" -regextype posix-egrep -type d -regex "$yeardir/[a-zA-Z0-9_\-]+$" | sort |\
 			while read -r albumdir; do
-				echo "$(basename "$albumdir"): $(find "$albumdir" -type f \( $EXT_PATTERNS \) | wc -l)"					
+				echo "$(basename "$albumdir"): $(photos_count "$albumdir")"					
 			done
 		echo
-	done) | mail -a "MIME-Version: 1.0" -a "Content-Type: text/text" -s "$title" "$MAIL_RECIPIENT"
+	done \
+) | mail -a "MIME-Version: 1.0" -a "Content-Type: text/text" -s "$title" "$MAIL_RECIPIENT"
