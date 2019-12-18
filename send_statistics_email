@@ -2,6 +2,9 @@
 
 set -e
 
+# required for any special characters in the email text, cron will not provide a suitable value for LANG
+export LANG=en_US.UTF-8
+
 declare -r PHOTOS_DIR=$(readlink -e "$1")
 if [[ -z $PHOTOS_DIR ]]; then
 	echo "[ERROR] $1 does not exist" >&2
@@ -29,7 +32,7 @@ title="Statistics for $PHOTOS_DIR"
 	echo
 
 	find "$PHOTOS_DIR" -regextype posix-egrep -type d -regex "$PHOTOS_DIR/[0-9]{4}$" | sort |\
-	while read -r yeardir; do
+	while read -r yeardir; do	
 	
 		basename "$yeardir"
 		echo "===="
@@ -41,5 +44,6 @@ title="Statistics for $PHOTOS_DIR"
 				echo "$(basename "$albumdir"): $(photos_count "$albumdir")"					
 			done
 		echo
+
 	done \
 ) | mail -a "MIME-Version: 1.0" -a "Content-Type: text/text" -s "$title" "$MAIL_RECIPIENT"
