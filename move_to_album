@@ -14,6 +14,10 @@ declare -r RENAME_MODE=$(test -v RENAME_PHOTOS && echo "b" || echo "a")
 shift $(expr $OPTIND - 1)
 
 declare -r TARGET_ALBUM_NAME=$1
+if [[ -e $TARGET_ALBUM_NAME ]]; then
+    echo "[ERROR] $TARGET_ALBUM_NAME seems to be a file or directory but not the target album name" >&2
+    exit 1
+fi
 shift 1
 declare -r PHOTOS_TO_MOVE=$@
 
