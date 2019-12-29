@@ -23,6 +23,16 @@ assert_actual_sidecars_match_expected() {
     done
 }
 
+assert_count_of_output_files_is() {
+    local -r expected_count=$1    
+    local -r actual_count=$(find "$OUTPUT_DIR" -type f | wc -l)
+
+    if (( $actual_count != $expected_count )); then
+        echo "[FAIL] Not all or too many files were created: $actual_count"
+        exit 1
+    fi
+}
+
 assert_correct_actual_sidecar_count() {
     local -r expected_count=$1    
     local -r actual_count=$(find "$OUTPUT_DIR" -type f -name '*.pp3' | wc -l)

@@ -7,7 +7,7 @@ declare -r MOVE_PHOTOS="$(dirname $(readlink -e $0))/lib/move_photos.sh"
 
 declare -r NEW_NAME=$1
 if [[ -z $NEW_NAME ]]; then
-    echo "Parameter with new name is missing" >&2
+    echo "[ERROR] Parameter with new name is missing" >&2
     exit 1
 fi
 
