@@ -126,7 +126,7 @@ for file in $PHOTO_FILES; do
 	fi
 	test -v VERBOSE && echo "[INFO] Using template $sidecar_template" >&2
 
- 	cp "$sidecar_template" "$sidecar_file"
+ 	cp -f "$sidecar_template" "$sidecar_file"
 
 	if [[ -v CREATOR ]]; then
 
@@ -142,11 +142,11 @@ for file in $PHOTO_FILES; do
 	sidecar_set_property "$sidecar_file" "IPTC" "Caption" "[$fullname]"
 	
 	if [[ -n "$lens_from_exif" ]]; then
-		iptc_lens="$lens_from_exif,"
+		iptc_lens="$lens_from_exif;"
 	else 
 		iptc_lens=""
 	fi
-	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$lens_from_exif${KEYWORDS-}"
+	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$iptc_lens${KEYWORDS-}"
 	sidecar_set_iptc_keywords "$sidecar_file" "$iptc_keywords"
 
 	echo "$sidecar_file"
