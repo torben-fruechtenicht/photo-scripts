@@ -167,7 +167,7 @@ target_basename_from_sourcefile() {
     local -r sourcefile=$1
     if (( $# == 2 )); then
         local -r rename_to=$2
-        basename "$sourcefile" | sed -e 's/[a-zA-ZßäÄöÖüÜ-]\+\(_.*\)/'"$rename_to"'\1/'
+        basename "$sourcefile" | sed -e 's/[a-zA-Z0-9ßäÄöÖüÜ-]\+\(_.*\)/'"$rename_to"'\1/'
     else
         basename "$sourcefile"
     fi
