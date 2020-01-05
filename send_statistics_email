@@ -46,4 +46,4 @@ title="Statistics for $PHOTOS_DIR"
 		echo
 
 	done \
-) | mail -a "MIME-Version: 1.0" -a "Content-Type: text/text" -s "$title" "$MAIL_RECIPIENT"
+) | mail -a "MIME-Version: 1.0" -a "Content-Type: text/text; charset=utf-8" -s "$title" "$MAIL_RECIPIENT"
