@@ -79,10 +79,10 @@ select_template() {
 	declare -r camera=$2
 	declare -r lens=$3
 
-	if [[ -e "$TEMPLATES_DIR/$camera/$lens/template.$filetype.pp3" ]]; then
-		echo "$TEMPLATES_DIR/$camera/$lens/template.$filetype.pp3"
-	elif [[ -e "$TEMPLATES_DIR/$camera/template.$filetype.pp3" ]]; then
-		echo "$TEMPLATES_DIR/$camera/template.$filetype.pp3"
+	if [[ -e "$TEMPLATES_DIR/$camera/$lens${lens:+/}template.$filetype.pp3" ]]; then
+		echo "$TEMPLATES_DIR/$camera/$lens${lens:+/}/template.$filetype.pp3"
+	elif [[ -e "$TEMPLATES_DIR/$camera${camera:+/}/template.$filetype.pp3" ]]; then
+		echo "$TEMPLATES_DIR/$camera${camera:+/}/template.$filetype.pp3"
 	elif [[ -e "$TEMPLATES_DIR/template.pp3" ]]; then
 		echo "$TEMPLATES_DIR/template.pp3"
 	fi
