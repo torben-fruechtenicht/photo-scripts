@@ -55,7 +55,7 @@ rotate_if_needed() {
     fi 
 }
 
-cd "${ROOT_DIR}" && find . -mindepth 2 -maxdepth 2 -type d -name "Amsterdam*"|\
+cd "${ROOT_DIR}" && find . -mindepth 2 -maxdepth 2 -type d |\
     while read -r album_dir; do
         
         album=$(basename "$album_dir")
