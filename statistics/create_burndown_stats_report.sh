@@ -18,28 +18,19 @@ print_sep_by_slash() {
     echo "$*"
 }
 
-print_album_burndown() {
-    local -r album_stats_file=$1
+print_numbers() {
+    local -r source_type=$1
+    local -r intervals=$2
+    local -r album_stats_file=$3
 
-    local -r album=$(basename "$album_stats_file" | cut -d'_' -f2)
+    local -r current_value=$(current_count $source_type "$album_stats_file")
+    local -r previous_values=$(print_sep_by_slash $(
+        for interv in $intervals; do
+            echo $(previous_count $source_type $interv "$album_stats_file")
+        done
+    ))
 
-    local -r current_incoming=$(current_count "incoming" "$album_stats_file")
-    local -r previous_incoming_yesterday=$(previous_count "incoming" 1 "$album_stats_file")
-    local -r previous_incoming_week=$(previous_count "incoming" 7 "$album_stats_file")
-    local -r previous_incoming_month=$(previous_count "incoming" 30 "$album_stats_file")
-    local -r previous_incoming_quarteryear=$(previous_count "incoming" 90 "$album_stats_file")
-    
-
-    local -r current_archive=$(current_count "archive" "$album_stats_file")
-    local -r previous_archive_week=$(previous_count "archive" 7 "$album_stats_file")
-    local -r previous_archive_month=$(previous_count "archive" 30 "$album_stats_file")
-    local -r previous_archive_year=$(previous_count "archive" 90 "$album_stats_file")
-    
-
-    local -r previous_incoming="$(print_sep_by_slash $previous_incoming_yesterday $previous_incoming_week \
-        $previous_incoming_month $previous_incoming_quarteryear)"
-    local -r previous_archive="$(print_sep_by_slash $previous_archive_week $previous_archive_month $previous_archive_year)"
-    echo "$album $current_incoming ($previous_incoming) / $current_archive ($previous_archive)"
+    echo "$current_value ($previous_values)"
 }
 
 # list all albums with recent changes, each sublist sorted by largest change (no matter if more or less)
@@ -48,14 +39,23 @@ print_album_burndown() {
 # must go)
 
 cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r |\
-    while read -r year; do         
+    while read -r year; do      
+
         year=$(basename "$year")
+
         echo $year
+        echo "===="
+
+        # TODO print total count of year
+
         find -type f -name "${year}_*" | sort |\
             while read -r stats_file; do
-                # echo $stats_file >&2
-                print_album_burndown "$stats_file"
+                echo "$(basename "$stats_file" | cut -d'_' -f2)"                
+                echo "incoming: $(print_numbers "incoming" "1 7 30 90" "$stats_file")"
+                echo "archived: $(print_numbers "archive" "7 30 90" "$stats_file")"
+                echo
             done
+        echo
     done
 
 # changed in last week
@@ -63,8 +63,6 @@ cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r |\
 # changed in last month
 
 # changed in last 3 montsh
-
-# list all albums with full data
 
 # list albums with no or invalid data
 
