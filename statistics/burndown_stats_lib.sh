@@ -23,7 +23,12 @@ EOF
 current_count() {
     local -r source_type=$1
     local -r stats_file=$2
-    value_from_stats_file $source_type "$stats_file"
+    count=$(value_from_stats_file $source_type "$stats_file")
+    if [[ $count != "-" ]]; then
+        echo $count
+    else 
+        echo "0"
+    fi
 }
 
 previous_count() {
