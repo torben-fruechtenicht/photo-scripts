@@ -4,13 +4,7 @@ set -eu
 
 source "$(dirname "$(readlink -e $0)")/burndown_stats_lib.sh"
 
-declare -r ROOT_DIR=$(readlink -e "$1")
-if [[ -z $ROOT_DIR ]]; then
-    echo "[ERROR] No root dir given or dir does not exist" >&2
-    exit 1
-fi
-
-declare -r STATS_REPO=$(readlink -f "$2")
+declare -r STATS_REPO=$(readlink -f "$1")
 if [[ -z $STATS_REPO ]]; then
     echo "[ERROR] No stats repo dir given" >&2
     exit 1
@@ -36,7 +30,7 @@ rotate_if_needed() {
 
             source_value=$(grep "previous_${source_type}_$source_idx=" "$stats_file" | cut -d '=' -f 2)
             if [[ -z $source_value ]]; then
-                echo "[WARN] No value in previous_${source_type}_$source_idx, will not rotate it" >&2
+                # echo "[WARN] No value in previous_${source_type}_$source_idx, will not rotate it" >&2
                 continue
             fi
 
@@ -55,13 +49,9 @@ rotate_if_needed() {
     fi 
 }
 
-cd "${ROOT_DIR}" && find . -mindepth 2 -maxdepth 2 -type d |\
-    while read -r album_dir; do
+cd "$STATS_REPO" && find -type f |\
+    while read -r stats_file; do
         
-        album=$(basename "$album_dir")
-        year=$(basename "$(dirname "$album_dir")")
-
-        stats_file="${STATS_REPO}/${year}_${album}"
         create_stats_file_if_missing "$stats_file"
 
         last_rotate_key="last_rotate"
