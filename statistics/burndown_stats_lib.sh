@@ -30,17 +30,17 @@ previous_count() {
     local -r source_type=$1
     local -r index=$2
     local -r stats_file=$3
-    value_from_stats_file "previous_${source_type}_$index" "$stats_file" "-"
+    value_from_stats_file "previous_${source_type}_$index" "$stats_file"
 }
 
 value_from_stats_file() {
     local -r key=$1
     local -r stats_file=$2
-    local -r no_value_placeholder=$3
+    local -r no_value_placeholder=${3--}
     local -r value=$(grep "$key=" "$stats_file" | cut -d '=' -f 2)
     if [[ -n $value ]]; then
         echo $value
     else
-        echo ${no_value_placeholder--}
+        echo $no_value_placeholder
     fi
 }
