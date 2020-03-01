@@ -33,10 +33,34 @@ print_numbers() {
     echo "$current_value ($previous_values)"
 }
 
+extract_numbers() {
+    local -r pattern=$1
+    local -r source_type=$2
+    grep "current_$source_type=" $STATS_REPO/$pattern | cut -d'=' -f 2
+}
+
+count_year_photos() {
+    local -r pattern=$1
+    local -r source_type=$2
+    local count=0
+
+    for i in $(extract_numbers "$pattern" $source_type); do
+        count=$(( $count + i ))
+    done
+
+    echo $count
+}
+
 # list all albums with recent changes, each sublist sorted by largest change (no matter if more or less)
 # each sublist goes in separate variable to hold report. alternatively, echo each report at end of creation - but that is probably not
 # possible since it might be best to traverse the full data in one go (and decide for each album/year combo in which reports it
 # must go)
+
+echo "Burndown report"
+echo "==============="
+
+echo "grand total $(count_year_photos "*" "incoming") / $(count_year_photos "*" "archive")"
+echo
 
 cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r |\
     while read -r year; do      
@@ -46,7 +70,8 @@ cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r |\
         echo $year
         echo "===="
 
-        # TODO print total count of year
+        echo "total $(count_year_photos "${year}_*" "incoming") / $(count_year_photos "${year}_*" "archive")"
+        echo
 
         find -type f -name "${year}_*" | sort |\
             while read -r stats_file; do
