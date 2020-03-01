@@ -9,8 +9,11 @@ if [[ -z $STATS_REPO ]]; then
     echo "[ERROR] No stats repo dir given" >&2
     exit 1
 elif ! [[ -e $STATS_REPO ]]; then
-    echo "[INFO] Creating stats repo dir $STATS_REPO" >&2
-    mkdir "$STATS_REPO"
+    echo "[ERROR] stats repo dir $STATS_REPO does not exist" >&2
+    exit 1
+elif [[ -n $(find "$STATS_REPO" -type d -prune -empty) ]]; then
+    echo "[ERROR] no stats files in $STATS_REPO" >&2
+    exit 1
 fi
 
 print_sep_by_slash() {
@@ -83,12 +86,17 @@ cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r |\
         echo
     done
 
-# changed in last week
+# changed in last week, sorted by album with largest change
 
-# changed in last month
+# changed in last month, sorted by album with largest change
 
-# changed in last 3 montsh
+# changed in last 3 months, , sorted by album with largest change
 
 # list albums with no or invalid data
 
-# TBD what about report at year level?
+# TBD what about report at year or month level?
+# NB both added and done photos must be taken care of, i.e. add or substract from count
+
+# TODO if report should be rendered as markup (e.g. HTML):
+# output only at album/year granularity in a format readable by rendering script
+# format idea: year_album_valuekey=value where "valuekey" is current|previous_
