@@ -22,36 +22,47 @@ print_sep_by_slash() {
 }
 
 print_numbers() {
-    local -r source_type=$1
+    local -r sourcetype=$1
     local -r intervals=$2
     local -r album_stats_file=$3
 
-    local -r current_value=$(current_count $source_type "$album_stats_file")
+    local -r current_value=$(current_count $sourcetype "$album_stats_file")
     local -r previous_values=$(print_sep_by_slash $(
         for interv in $intervals; do
-            echo $(previous_count $source_type $interv "$album_stats_file")
+            echo $(previous_count $sourcetype $interv "$album_stats_file")
         done
     ))
 
     echo "$current_value ($previous_values)"
 }
 
-extract_numbers() {
+collect_current_counts() {
     local -r pattern=$1
-    local -r source_type=$2
-    grep "current_$source_type=" $STATS_REPO/$pattern | cut -d'=' -f 2
+    local -r sourcetype=$2
+    grep "current_$sourcetype=" $STATS_REPO/$pattern | cut -d'=' -f 2
 }
 
-count_year_photos() {
+count_photos() {
     local -r pattern=$1
-    local -r source_type=$2
+    local -r sourcetype=$2
     local count=0
 
-    for i in $(extract_numbers "$pattern" $source_type); do
+    for i in $(collect_current_counts "$pattern" $sourcetype); do
         count=$(( $count + i ))
     done
 
     echo $count
+}
+
+changed_since_days() {
+    local -r interval=$1
+    local -r sourcetype=$2
+    local -r statsfile=$3
+
+    local -r currentvalue=$(current_count $sourcetype "$statsfile")
+    local -r previousvalue=$(previous_count $sourcetype $interval "$statsfile" 0)
+
+    ! test $currentvalue -eq $previousvalue
 }
 
 # list all albums with recent changes, each sublist sorted by largest change (no matter if more or less)
@@ -62,7 +73,7 @@ count_year_photos() {
 echo "Burndown report"
 echo "==============="
 
-echo "grand total $(count_year_photos "*" "incoming") / $(count_year_photos "*" "archive")"
+echo "grand total $(count_photos "*" "incoming") / $(count_photos "*" "archive")"
 echo
 
 cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r | while read -r year; do      
@@ -72,15 +83,18 @@ cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r | while read -r y
     echo $year
     echo "===="
 
-    echo "total $(count_year_photos "${year}_*" "incoming") / $(count_year_photos "${year}_*" "archive")"
+    echo "total $(count_photos "${year}_*" "incoming") / $(count_photos "${year}_*" "archive")"
     echo
 
     find -type f -name "${year}_*" | sort |\
-        while read -r stats_file; do
-            echo "$(basename "$stats_file" | cut -d'_' -f2)"                
-            echo "incoming: $(print_numbers "incoming" "1 7 30 90" "$stats_file")"
-            echo "archived: $(print_numbers "archive" "7 30 90" "$stats_file")"
+        while read -r statsfile; do
+            echo "$(basename "$statsfile" | cut -d'_' -f2)"                
+            echo "incoming: $(print_numbers "incoming" "1 7 30 90" "$statsfile")"
+            echo "archived: $(print_numbers "archive" "7 30 90" "$statsfile")"
             echo
+            if changed_since_days 1 incoming "$statsfile"; then
+                echo "changed since yesterday" >&2
+            fi
         done
     echo
 done

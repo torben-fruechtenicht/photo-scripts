@@ -2,12 +2,12 @@ declare -r MAX_PREVIOUS=365
 
 create_stats_file_if_missing() {
     
-    local -r stats_file=$1
+    local -r statsfile=$1
 
-    if ! [[ -e $stats_file ]]; then
-        echo "[INFO] Creating $stats_file" >&2
-        touch "$stats_file"
-        cat << EOF > "$stats_file"
+    if ! [[ -e $statsfile ]]; then
+        echo "[INFO] Creating $statsfile" >&2
+        touch "$statsfile"
+        cat << EOF > "$statsfile"
 current_incoming=
 current_archive=
 
@@ -21,23 +21,24 @@ EOF
 } 
 
 current_count() {
-    local -r source_type=$1
-    local -r stats_file=$2
-    value_from_stats_file $source_type "$stats_file" "0"
+    local -r sourcetype=$1
+    local -r statsfile=$2
+    value_from_stats_file $sourcetype "$statsfile" "0"
 }
 
 previous_count() {
-    local -r source_type=$1
+    local -r sourcetype=$1
     local -r index=$2
-    local -r stats_file=$3
-    value_from_stats_file "previous_${source_type}_$index" "$stats_file"
+    local -r statsfile=$3
+    local -r no_value_placeholder=${4--}
+    value_from_stats_file "previous_${sourcetype}_$index" "$statsfile" "$no_value_placeholder"
 }
 
 value_from_stats_file() {
     local -r key=$1
-    local -r stats_file=$2
+    local -r statsfile=$2
     local -r no_value_placeholder=${3--}
-    local -r value=$(grep "$key=" "$stats_file" | cut -d '=' -f 2)
+    local -r value=$(grep "$key=" "$statsfile" | cut -d '=' -f 2)
     if [[ -n $value ]]; then
         echo $value
     else

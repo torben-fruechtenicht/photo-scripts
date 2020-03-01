@@ -16,36 +16,36 @@ fi
 rotate_if_needed() {
 
     local -r stats_file=$1
-    local -r source_type=$2
+    local -r sourcetype=$2
 
-    current_value=$(grep "current_$source_type=*" "$stats_file" | cut -d '=' -f 2)
+    current_value=$(grep "current_$sourcetype=*" "$stats_file" | cut -d '=' -f 2)
     if [[ -n $current_value ]]; then
 
         # rotate all except first
-        last_line_number=$(grep -n "previous_${source_type}_${MAX_PREVIOUS}" "$stats_file" | cut -d : -f 1)
+        last_line_number=$(grep -n "previous_${sourcetype}_${MAX_PREVIOUS}" "$stats_file" | cut -d : -f 1)
         for (( i=0; i<$(( $MAX_PREVIOUS - 1 )); i++ )); do 
 
             target_idx=$(($MAX_PREVIOUS - i )) 
             source_idx=$(($target_idx - 1 ))                    
 
-            source_value=$(grep "previous_${source_type}_$source_idx=" "$stats_file" | cut -d '=' -f 2)
+            source_value=$(grep "previous_${sourcetype}_$source_idx=" "$stats_file" | cut -d '=' -f 2)
             if [[ -z $source_value ]]; then
-                # echo "[WARN] No value in previous_${source_type}_$source_idx, will not rotate it" >&2
+                # echo "[WARN] No value in previous_${sourcetype}_$source_idx, will not rotate it" >&2
                 continue
             fi
 
             target_line_number=$(( $last_line_number - $i ))
-            target_key="previous_${source_type}_$target_idx"
+            target_key="previous_${sourcetype}_$target_idx"
             sed -i ''"$target_line_number"'s/.*/'"$target_key"'='"$source_value"'/' "$stats_file"
             
         done
 
         # write previous-1
-        previous_1_key="previous_${source_type}_1"
+        previous_1_key="previous_${sourcetype}_1"
         sed -i 's/'"$previous_1_key"'=.*$/'"$previous_1_key"'='"$current_value"'/' "$stats_file"
 
     else
-        echo "[WARN] No current value for $source_type, will not rotate" >&2
+        echo "[WARN] No current value for $sourcetype, will not rotate" >&2
     fi 
 }
 
