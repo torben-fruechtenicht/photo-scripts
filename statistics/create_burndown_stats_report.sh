@@ -65,26 +65,25 @@ echo "==============="
 echo "grand total $(count_year_photos "*" "incoming") / $(count_year_photos "*" "archive")"
 echo
 
-cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r |\
-    while read -r year; do      
+cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r | while read -r year; do      
 
-        year=$(basename "$year")
+    year=$(basename "$year")
 
-        echo $year
-        echo "===="
+    echo $year
+    echo "===="
 
-        echo "total $(count_year_photos "${year}_*" "incoming") / $(count_year_photos "${year}_*" "archive")"
-        echo
+    echo "total $(count_year_photos "${year}_*" "incoming") / $(count_year_photos "${year}_*" "archive")"
+    echo
 
-        find -type f -name "${year}_*" | sort |\
-            while read -r stats_file; do
-                echo "$(basename "$stats_file" | cut -d'_' -f2)"                
-                echo "incoming: $(print_numbers "incoming" "1 7 30 90" "$stats_file")"
-                echo "archived: $(print_numbers "archive" "7 30 90" "$stats_file")"
-                echo
-            done
-        echo
-    done
+    find -type f -name "${year}_*" | sort |\
+        while read -r stats_file; do
+            echo "$(basename "$stats_file" | cut -d'_' -f2)"                
+            echo "incoming: $(print_numbers "incoming" "1 7 30 90" "$stats_file")"
+            echo "archived: $(print_numbers "archive" "7 30 90" "$stats_file")"
+            echo
+        done
+    echo
+done
 
 # changed in last week, sorted by album with largest change
 

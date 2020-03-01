@@ -49,26 +49,25 @@ rotate_if_needed() {
     fi 
 }
 
-cd "$STATS_REPO" && find -type f |\
-    while read -r stats_file; do
+cd "$STATS_REPO" && find -type f | while read -r stats_file; do
         
-        create_stats_file_if_missing "$stats_file"
+    create_stats_file_if_missing "$stats_file"
 
-        last_rotate_key="last_rotate"
-        last_rotate=$(grep "last_rotate=" "$stats_file" | cut -d '=' -f 2)
-        new_rotate_begin=$(( $last_rotate + 86400 ))
-        now=$(date +%s)
+    last_rotate_key="last_rotate"
+    last_rotate=$(grep "last_rotate=" "$stats_file" | cut -d '=' -f 2)
+    new_rotate_begin=$(( $last_rotate + 86400 ))
+    now=$(date +%s)
 
-        if [[ -z $last_rotate ]] || (( $new_rotate_begin < $now )); then
+    if [[ -z $last_rotate ]] || (( $new_rotate_begin < $now )); then
 
-            echo "$stats_file"
-            rotate_if_needed "$stats_file" "incoming"
-            rotate_if_needed "$stats_file" "archive"
-            sed -i 's/'"$last_rotate_key"'=.*$/'"$last_rotate_key"'='"$(date +%s)"'/' "$stats_file"
+        echo "$stats_file"
+        rotate_if_needed "$stats_file" "incoming"
+        rotate_if_needed "$stats_file" "archive"
+        sed -i 's/'"$last_rotate_key"'=.*$/'"$last_rotate_key"'='"$(date +%s)"'/' "$stats_file"
 
-        else 
-            echo "[WARN] Last rotation was less then 24h ago, will not rotate" >&2
-        fi  
+    else 
+        echo "[WARN] Last rotation was less then 24h ago, will not rotate" >&2
+    fi  
 
-    done  
+done  
 

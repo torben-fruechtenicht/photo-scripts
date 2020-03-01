@@ -26,18 +26,17 @@ elif ! [[ -e $STATS_REPO ]]; then
 fi
 
 
-cd "${ROOT_DIR}" && find . -mindepth 2 -maxdepth 2 -type d |\
-    while read -r album_dir; do
+cd "${ROOT_DIR}" && find . -mindepth 2 -maxdepth 2 -type d | while read -r album_dir; do
         
-        album=$(basename "$album_dir")
-        year=$(basename "$(dirname "$album_dir")")
+    album=$(basename "$album_dir")
+    year=$(basename "$(dirname "$album_dir")")
 
-        stats_file="${STATS_REPO}/${year}_${album}"
-        create_stats_file_if_missing "$stats_file"
+    stats_file="${STATS_REPO}/${year}_${album}"
+    create_stats_file_if_missing "$stats_file"
 
-        patterns="-iname *.ORF -o -iname *.RAW -o -iname *.CRW -o -iname *.CR2"
-        current_value=$(find "$album_dir" -type f \( $patterns \) | wc -l)
-        current_key="current_${SOURCE_TYPE}"        
-        sed -i 's/'"$current_key"'=.*$/'"$current_key"'='"$current_value"'/' "$stats_file"
+    patterns="-iname *.ORF -o -iname *.RAW -o -iname *.CRW -o -iname *.CR2"
+    current_value=$(find "$album_dir" -type f \( $patterns \) | wc -l)
+    current_key="current_${SOURCE_TYPE}"        
+    sed -i 's/'"$current_key"'=.*$/'"$current_key"'='"$current_value"'/' "$stats_file"
 
-    done
+done
