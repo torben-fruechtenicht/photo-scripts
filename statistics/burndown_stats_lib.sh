@@ -45,3 +45,18 @@ value_from_stats_file() {
         echo $no_value_placeholder
     fi
 }
+
+write_statsfile_entry() {
+    local -r key=$1
+    local -r newvalue=$2
+    local -r file=$3
+    local -r lineno=${4-}
+
+    # echo "[INFO] writing $file $lineno $key=$newvalue" >&2
+    if [[ -z $lineno ]]; then
+        sed -i 's/'"$key"'=.*$/'"$key"'='"$newvalue"'/' "$file"   
+    else 
+        sed -i "$lineno"' s/.*/'"$key"'='"$newvalue"'/' "$file"
+    fi    
+}
+

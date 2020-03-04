@@ -11,7 +11,7 @@ if [[ -z $ROOT_DIR ]]; then
 fi
 
 declare -r SOURCE_TYPE=$2
-if [[ -z SOURCE_TYPE ]] || ! [[ $SOURCE_TYPE =~ incoming|archive ]]; then
+if [[ -z SOURCE_TYPE ]] || ! [[ $SOURCE_TYPE =~ incoming$|archive$ ]]; then
     echo "[ERROR] source type parameter missing${SOURCE_TYPE:+ or wrong type: $SOURCE_TYPE}" >&2
     exit 1
 fi
@@ -25,6 +25,7 @@ elif ! [[ -e $STATS_REPO ]]; then
     mkdir "$STATS_REPO"
 fi
 
+set -u
 
 cd "${ROOT_DIR}" && find . -mindepth 2 -maxdepth 2 -type d | while read -r album_dir; do
         
@@ -36,7 +37,7 @@ cd "${ROOT_DIR}" && find . -mindepth 2 -maxdepth 2 -type d | while read -r album
 
     patterns="-iname *.ORF -o -iname *.RAW -o -iname *.CRW -o -iname *.CR2"
     current_value=$(find "$album_dir" -type f \( $patterns \) | wc -l)
-    current_key="current_${SOURCE_TYPE}"        
-    sed -i 's/'"$current_key"'=.*$/'"$current_key"'='"$current_value"'/' "$statsfile"
+    current_key="current_${SOURCE_TYPE}"       
+    write_statsfile_entry $current_key "$current_value" "$statsfile"
 
 done
