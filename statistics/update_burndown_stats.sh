@@ -11,7 +11,7 @@ if [[ -z $ROOT_DIR ]]; then
 fi
 
 declare -r SOURCE_TYPE=$2
-if [[ -z SOURCE_TYPE ]] || ! [[ $SOURCE_TYPE =~ incoming$|archive$ ]]; then
+if [[ -z SOURCE_TYPE ]] || ! [[ $SOURCE_TYPE =~ ^incoming$|^archive$ ]]; then
     echo "[ERROR] source type parameter missing${SOURCE_TYPE:+ or wrong type: $SOURCE_TYPE}" >&2
     exit 1
 fi
