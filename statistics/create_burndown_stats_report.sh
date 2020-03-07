@@ -29,7 +29,7 @@ print_numbers() {
     local -r current_value=$(current_count $sourcetype "$album_stats_file")
     local -r previous_values=$(print_sep_by_slash $(
         for interv in $intervals; do
-            echo $(previous_count $sourcetype $interv "$album_stats_file")
+            echo $(previous_count $sourcetype $interv "$album_stats_file" "-")
         done
     ))
 
@@ -92,9 +92,9 @@ cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r | while read -r y
             echo "incoming: $(print_numbers "incoming" "1 7 30 90" "$statsfile")"
             echo "archived: $(print_numbers "archive" "7 30 90" "$statsfile")"
             echo
-            if changed_since_days 1 incoming "$statsfile"; then
-                echo "changed since yesterday" >&2
-            fi
+            # if changed_since_days 7 incoming "$statsfile"; then
+            #     echo "changed last 7 days" >&2
+            # fi
         done
     echo
 done

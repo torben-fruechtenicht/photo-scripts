@@ -23,7 +23,7 @@ EOF
 current_count() {
     local -r sourcetype=$1
     local -r statsfile=$2
-    value_from_stats_file $sourcetype "$statsfile" "0"
+    read_statsfile_entry $sourcetype "$statsfile" "0"
 }
 
 previous_count() {
@@ -31,13 +31,13 @@ previous_count() {
     local -r index=$2
     local -r statsfile=$3
     local -r no_value_placeholder=${4--}
-    value_from_stats_file "previous_${sourcetype}_$index" "$statsfile" "$no_value_placeholder"
+    read_statsfile_entry "previous_${sourcetype}_$index" "$statsfile" "$no_value_placeholder"
 }
 
-value_from_stats_file() {
+read_statsfile_entry() {
     local -r key=$1
     local -r statsfile=$2
-    local -r no_value_placeholder=${3--}
+    local -r no_value_placeholder=${3-0}
     local -r value=$(grep "$key=" "$statsfile" | cut -d '=' -f 2)
     if [[ -n $value ]]; then
         echo $value
@@ -50,13 +50,28 @@ write_statsfile_entry() {
     local -r key=$1
     local -r newvalue=$2
     local -r file=$3
-    local -r lineno=${4-}
+    local -r line=${4-}
 
     # echo "[INFO] writing $file $lineno $key=$newvalue" >&2
-    if [[ -z $lineno ]]; then
+    if [[ -z $line ]]; then
         sed -i 's/'"$key"'=.*$/'"$key"'='"$newvalue"'/' "$file"   
     else 
-        sed -i "$lineno"' s/.*/'"$key"'='"$newvalue"'/' "$file"
+        sed -i "$line"' s/.*/'"$key"'='"$newvalue"'/' "$file"
     fi    
 }
+
+sed_cmd_write_statsfile_entry() {
+    local -r key=$1
+    local -r newvalue=$2
+    local -r line=${4-}
+
+    # echo "[INFO] writing $file $lineno $key=$newvalue" >&2
+    if [[ -z $line ]]; then
+        echo 's/'"$key"'=.*$/'"$key"'='"$newvalue"'/'
+    else 
+        echo "$line"' s/.*/'"$key"'='"$newvalue"'/'
+    fi    
+}
+
+
 

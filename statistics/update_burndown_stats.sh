@@ -37,7 +37,7 @@ cd "${ROOT_DIR}" && find . -mindepth 2 -maxdepth 2 -type d | while read -r album
 
     patterns="-iname *.ORF -o -iname *.RAW -o -iname *.CRW -o -iname *.CR2"
     current_value=$(find "$album_dir" -type f \( $patterns \) | wc -l)
-    current_key="current_${SOURCE_TYPE}"       
-    write_statsfile_entry $current_key "$current_value" "$statsfile"
+    key="current_${SOURCE_TYPE}"       
+    write_statsfile_entry $key "$current_value" "$statsfile"
 
 done

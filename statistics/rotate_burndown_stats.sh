@@ -19,7 +19,7 @@ linenumber_of_last_previous_entry() {
     grep -n -m 1 "previous_${1}_${MAX_PREVIOUS}" "$2" | cut -d : -f 1        
 }
 
-rotate_if_needed() {
+rotate() {
 
     local -r statsfile=$1
     local -r sourcetype=$2
@@ -34,7 +34,7 @@ rotate_if_needed() {
             target_idx=$(($MAX_PREVIOUS - i )) 
             source_idx=$(($target_idx - 1 ))                    
 
-            source_value=$(previous_count $sourcetype $source_idx "$statsfile")
+            source_value=$(previous_count $sourcetype $source_idx "$statsfile" "")
             if [[ -z $source_value ]]; then
                 # echo "[WARN] No value in previous_${sourcetype}_$source_idx, will not rotate it" >&2
                 continue
@@ -42,36 +42,53 @@ rotate_if_needed() {
 
             target_line_number=$(( $last_line_number - $i ))
             target_key="previous_${sourcetype}_$target_idx"
-            write_statsfile_entry "$target_key" "$source_value" "$statsfile" $(( $target_line_number + 1 ))
+            sed_cmd_write_statsfile_entry "$target_key" "$source_value" $(( $target_line_number + 1 ))
             
         done
 
         # write previous-1
         previous_1_key="previous_${sourcetype}_1"
-        write_statsfile_entry "$previous_1_key" $current_value "$statsfile"
+        sed_cmd_write_statsfile_entry "$previous_1_key" $current_value 
 
     else
         echo "[WARN] No current value for $sourcetype, will not rotate" >&2
     fi 
 }
 
+# putting this check into a function has the advantage that we don't have to reset any variables, all time
+# values are scoped to the function
+needs_rotation() {
+    local -r statsfile=$1
+
+    last_rotate_ts=$(read_statsfile_entry "$LAST_ROTATE_KEY" "$statsfile")
+    new_rotate_begin=$(( $last_rotate_ts + 86400 ))
+    now=$(date +%s)
+
+    test -z $last_rotate_ts || (( $new_rotate_begin < $now ))
+}
+
 cd "$STATS_REPO" && find -type f | while read -r statsfile; do
         
     create_stats_file_if_missing "$statsfile"
 
-    last_rotate_ts=$(value_from_stats_file "$LAST_ROTATE_KEY" "$statsfile")
-    new_rotate_begin=$(( $last_rotate_ts + 86400 ))
-    now=$(date +%s)
+    # last_rotate_ts=$(read_statsfile_entry "$LAST_ROTATE_KEY" "$statsfile")
+    # new_rotate_begin=$(( $last_rotate_ts + 86400 ))
+    # now=$(date +%s)
 
-    if [[ -z $last_rotate_ts ]] || (( $new_rotate_begin < $now )); then
+    # if [[ -z $last_rotate_ts ]] || (( $new_rotate_begin < $now )); then
+    if needs_rotation "$statsfile"; then
+
+        sed_script=$(mktemp)
 
         echo "[INFO] Rotating $statsfile" >&2
 
-        rotate_if_needed "$statsfile" "incoming"
-        rotate_if_needed "$statsfile" "archive"
+        rotate "$statsfile" "incoming" >> "$sed_script"
+        rotate "$statsfile" "archive" >> "$sed_script"
 
         new_rotate_ts=$(date +%s)
-        write_statsfile_entry "$LAST_ROTATE_KEY" $new_rotate_ts "$statsfile"
+        sed_cmd_write_statsfile_entry "$LAST_ROTATE_KEY" $new_rotate_ts >> "$sed_script"
+
+        sed -i -f "$sed_script" "$statsfile" && rm "$sed_script"
 
     else 
         echo "[WARN] Last rotation was less then 24h ago, will not rotate" >&2
