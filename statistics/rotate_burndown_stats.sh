@@ -19,7 +19,7 @@ linenumber_of_last_previous_entry() {
     grep -n -m 1 "previous_${1}_${MAX_PREVIOUS}" "$2" | cut -d : -f 1        
 }
 
-rotate() {
+rotate_previous_values() {
 
     local -r statsfile=$1
     local -r sourcetype=$2
@@ -71,19 +71,14 @@ cd "$STATS_REPO" && find -type f | while read -r statsfile; do
         
     create_stats_file_if_missing "$statsfile"
 
-    # last_rotate_ts=$(read_statsfile_entry "$LAST_ROTATE_KEY" "$statsfile")
-    # new_rotate_begin=$(( $last_rotate_ts + 86400 ))
-    # now=$(date +%s)
-
-    # if [[ -z $last_rotate_ts ]] || (( $new_rotate_begin < $now )); then
     if needs_rotation "$statsfile"; then
-
-        sed_script=$(mktemp)
 
         echo "[INFO] Rotating $statsfile" >&2
 
-        rotate "$statsfile" "incoming" >> "$sed_script"
-        rotate "$statsfile" "archive" >> "$sed_script"
+        sed_script=$(mktemp)
+
+        rotate_previous_values "$statsfile" "incoming" >> "$sed_script"
+        rotate_previous_values "$statsfile" "archive" >> "$sed_script"
 
         new_rotate_ts=$(date +%s)
         sed_cmd_write_statsfile_entry "$LAST_ROTATE_KEY" $new_rotate_ts >> "$sed_script"
@@ -92,6 +87,7 @@ cd "$STATS_REPO" && find -type f | while read -r statsfile; do
 
     else 
         echo "[WARN] Last rotation was less then 24h ago, will not rotate" >&2
+        continue
     fi  
 
 done  
