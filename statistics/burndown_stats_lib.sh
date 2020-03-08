@@ -10,11 +10,8 @@ create_stats_file_if_missing() {
         cat << EOF > "$statsfile"
 current_incoming=
 current_archive=
-
 last_rotate=
-
 $(for (( i=1; i<= $MAX_PREVIOUS; i++ )); do echo "previous_incoming_$i="; done)
-
 $(for (( i=1; i<= $MAX_PREVIOUS; i++ )); do echo "previous_archive_$i="; done)
 EOF
     fi
