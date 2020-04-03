@@ -10,9 +10,10 @@ while getopts "c:k:ov" opt; do
         c ) 
 			declare -r CREATOR=$OPTARG;;   
 		k ) 
-			# CSV string, using ";"
+			# CSV string, using ";". no quoting needed for keywords with blanks
 			declare -r KEYWORDS=$OPTARG;;
 		o ) 
+			# old keywords will be kept
 			declare -r OVERWRITE_EXISTING=;;
 		v )
 			declare -r VERBOSE=;;
@@ -88,7 +89,6 @@ select_template() {
 	fi
 }
 
-
 for file in $PHOTO_FILES; do
 
 	file=$(readlink -e "$file")
@@ -101,6 +101,10 @@ for file in $PHOTO_FILES; do
 	if [[ -e $sidecar_file ]] && ! [[ -v OVERWRITE_EXISTING ]]; then
 		test -v VERBOSE && echo "[SKIP] Sidecar $sidecar_file exists" >&2
 		continue
+	fi
+
+	if [[ -e $sidecar_file ]]; then
+		declare -r OLD_KEYWORDS=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")	
 	fi
 
 	test -v VERBOSE && echo "[PHOTO] $file" >&2
@@ -135,6 +139,14 @@ for file in $PHOTO_FILES; do
 		year_from_exif=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
 		sidecar_set_property "$sidecar_file" "IPTC" "Copyright" "Copyright (c) $CREATOR 2005-$year_from_exif"
 
+	fi
+
+	# if we have keywords from an existing sidecar, set these in the new sidecar, too. in case some of these are
+	# also in KEYWORDS, the following sidecar_set_iptc_keywords call for the new ones will just skip any existing
+	# (old) keywords
+	# TODO add new option -O (disable case sensitivity?) which will really overwrite, i.e. no old keywords are kept
+	if [[ -v OLD_KEYWORDS ]] && [[ -n $OLD_KEYWORDS ]]; then
+		sidecar_set_iptc_keywords "$sidecar_file" "$OLD_KEYWORDS"
 	fi
 
 	fullname=$(fullname_from_photofile "$file")
