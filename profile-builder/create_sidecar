@@ -104,7 +104,9 @@ for file in $PHOTO_FILES; do
 	fi
 
 	if [[ -e $sidecar_file ]]; then
-		declare -r OLD_KEYWORDS=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")	
+		old_keywords=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")	
+	else
+		old_keywords=
 	fi
 
 	test -v VERBOSE && echo "[PHOTO] $file" >&2
@@ -145,8 +147,8 @@ for file in $PHOTO_FILES; do
 	# also in KEYWORDS, the following sidecar_set_iptc_keywords call for the new ones will just skip any existing
 	# (old) keywords
 	# TODO add new option -O (disable case sensitivity?) which will really overwrite, i.e. no old keywords are kept
-	if [[ -v OLD_KEYWORDS ]] && [[ -n $OLD_KEYWORDS ]]; then
-		sidecar_set_iptc_keywords "$sidecar_file" "$OLD_KEYWORDS"
+	if [[ -v old_keywords ]] && [[ -n $old_keywords ]]; then
+		sidecar_set_iptc_keywords "$sidecar_file" "$old_keywords"
 	fi
 
 	fullname=$(fullname_from_photofile "$file")
