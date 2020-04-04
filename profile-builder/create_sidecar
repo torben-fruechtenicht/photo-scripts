@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -eu
+set -eux
 
 . "$(dirname "$(readlink -e "$0")")/../lib/sidecar.sh"
 . "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
@@ -35,43 +35,43 @@ declare -r PHOTO_FILES=$@
 
 
 lookup_camera_from_exif() {
-	local -r file=$1
-	local -r file_type=$(echo ${file##*.} | tr '[:upper:]' '[:lower:]')
+	local -r photofile=$1
+	local -r file_type=$(echo ${photofile##*.} | tr '[:upper:]' '[:lower:]')
 
 	case $file_type in 
 		raw )
-			exiv2 pr -Pt -g "Exif.PanasonicRaw.Model" "$file" 2> /dev/null;;
+			exiv2 pr -Pt -g "Exif.PanasonicRaw.Model" "$photofile" 2> /dev/null;;
 		*) 
-			camera=$(exiv2 pr -Pt -g 'Exif.Image.Model' "$file" 2> /dev/null)
+			camera=$(exiv2 pr -Pt -g 'Exif.Image.Model' "$photofile" 2> /dev/null)
 			echo "${camera//[[:space:]]/}";;
 	esac
 }
 
 lookup_lens_from_exif() {
-	local -r file=$1
-	local -r file_type=$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')
+	local -r photofile=$1
+	local -r file_type=$(echo "${photofile##*.}" | tr '[:upper:]' '[:lower:]')
 
 	case $file_type in 
 		raw|crw|cr2 )
 			;; # do nothing, the only cameras we have with these types are compact cameras
 		orf)
-			exiv2 pr -Pt -g "Exif.OlympusEq.LensModel" "$file" 2> /dev/null;;
+			exiv2 pr -Pt -g "Exif.OlympusEq.LensModel" "$photofile" 2> /dev/null;;
 		jpg )
-			exiv2 pr -Pt -g  "Exif.Photo.LensModel" "$file" 2> /dev/null;;
+			exiv2 pr -Pt -g  "Exif.Photo.LensModel" "$photofile" 2> /dev/null;;
 		*) 
-			echo "[WARN] Unknown filetype $file_type of $file, cannot lookup lens info" >&2;;
+			echo "[WARN] Unknown filetype $file_type of $photofile, cannot lookup lens info" >&2;;
 	esac
 }
 
 lookup_manufacturer_from_exif() {
-	local -r file=$1
-	local -r file_type=$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')
+	local -r photofile=$1
+	local -r file_type=$(echo "${photofile##*.}" | tr '[:upper:]' '[:lower:]')
 
 	case $file_type in 
 		raw )
-			exiv2 pr -Pt -g "Exif.PanasonicRaw.Make" "$file" 2> /dev/null | xargs;;
+			exiv2 pr -Pt -g "Exif.PanasonicRaw.Make" "$photofile" 2> /dev/null | xargs;;
 		*) 
-			exiv2 pr -Pt -g "Exif.Image.Make" "$file" 2> /dev/null | xargs;;
+			exiv2 pr -Pt -g "Exif.Image.Make" "$photofile" 2> /dev/null | xargs;;
 	esac
 }
 
@@ -89,14 +89,25 @@ select_template() {
 	fi
 }
 
-for file in $PHOTO_FILES; do
+set_iptc_creator_copyright() {
+	local -r sidecar_file=$1
+	local -r creator=$2
+	local -r photo_file=$3
 
-	file=$(readlink -e "$file")
-	! test -z "$file" || continue
+	sidecar_set_property "$sidecar_file" "IPTC" "Creator" "$creator" 
 
-	is_original_photofile $file || continue
+	local year_from_exif=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$photo_file" 2> /dev/null | cut -d':' -f 1)
+	sidecar_set_property "$sidecar_file" "IPTC" "Copyright" "Copyright (c) $creator $year_from_exif"
+}
+
+for photofile in $PHOTO_FILES; do
+
+	photofile=$(readlink -e "$photofile")
+	! test -z "$photofile" || continue
+
+	is_original_photofile $photofile || continue
 	
-	sidecar_file="$file.pp3"
+	sidecar_file="$photofile.pp3"
 
 	if [[ -e $sidecar_file ]] && ! [[ -v OVERWRITE_EXISTING ]]; then
 		test -v VERBOSE && echo "[SKIP] Sidecar $sidecar_file exists" >&2
@@ -105,42 +116,45 @@ for file in $PHOTO_FILES; do
 
 	if [[ -e $sidecar_file ]]; then
 		old_keywords=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")	
+		old_creator=$(sed -rn '/\[IPTC\]/,/^$/ s/Creator=(.+)+$/\1/p' "$sidecar_file")	
 	else
 		old_keywords=
+		old_creator=
 	fi
 
-	test -v VERBOSE && echo "[PHOTO] $file" >&2
+	test -v VERBOSE && echo "[PHOTO] $photofile" >&2
 
-	camera_from_exif=$(lookup_camera_from_exif $file)
+	camera_from_exif=$(lookup_camera_from_exif $photofile)
 	if [[ -z $camera_from_exif ]]; then
-		echo "[ERROR] No camera info found in EXIF data of $file" >&2
+		echo "[ERROR] No camera info found in EXIF data of $photofile" >&2
 		continue
 	fi
 
-	lens_from_exif=$(lookup_lens_from_exif "$file")
-	manufacturer_from_exif=$(lookup_manufacturer_from_exif "$file")
+	lens_from_exif=$(lookup_lens_from_exif "$photofile")
+	manufacturer_from_exif=$(lookup_manufacturer_from_exif "$photofile")
 
 	test -v VERBOSE && echo "[CAMERA] $camera_from_exif" >&2
 	test -v VERBOSE && echo "[MANUFACTURER] $manufacturer_from_exif" >&2
 	test -v VERBOSE && test -n "$lens_from_exif" && echo "[LENS] $lens_from_exif" >&2
 
-	file_type=$(echo ${file##*.} | tr '[:upper:]' '[:lower:]')
+	file_type=$(echo ${photofile##*.} | tr '[:upper:]' '[:lower:]')
  	sidecar_template=$(select_template "$file_type" "$camera_from_exif" "$lens_from_exif")
 	if [[ -z $sidecar_template ]]; then
-		echo "[ERROR] No sidecar template found for $file"
+		echo "[ERROR] No sidecar template found for $photofile"
 		continue
 	fi
 	test -v VERBOSE && echo "[INFO] Using template $sidecar_template" >&2
 
  	cp -f "$sidecar_template" "$sidecar_file"
 
+	# if we have a creator from an existing sidecar, set this in the new sidecar, too. so to keep
+	# an old creator, just call without -c option.
+	if [[ -v old_creator ]] && [[ -n $old_creator ]]; then
+		set_iptc_creator_copyright "$sidecar_file" "$old_creator" "$photofile"
+	fi
+
 	if [[ -v CREATOR ]]; then
-
-		sidecar_set_property "$sidecar_file" "IPTC" "Creator" "$CREATOR" 
-
-		year_from_exif=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
-		sidecar_set_property "$sidecar_file" "IPTC" "Copyright" "Copyright (c) $CREATOR 2005-$year_from_exif"
-
+		set_iptc_creator_copyright "$sidecar_file" "$CREATOR" "$photofile"
 	fi
 
 	# if we have keywords from an existing sidecar, set these in the new sidecar, too. in case some of these are
@@ -151,8 +165,8 @@ for file in $PHOTO_FILES; do
 		sidecar_set_iptc_keywords "$sidecar_file" "$old_keywords"
 	fi
 
-	fullname=$(fullname_from_photofile "$file")
-	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(headline_from_photofile "$file" )"
+	fullname=$(fullname_from_photofile "$photofile")
+	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(headline_from_photofile "$photofile" )"
 	sidecar_set_property "$sidecar_file" "IPTC" "Caption" "[$fullname]"
 	
 	if [[ -n "$lens_from_exif" ]]; then
