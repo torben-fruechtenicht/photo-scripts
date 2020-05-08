@@ -2,7 +2,7 @@
 
 set -eu
 
-source "$(dirname "$(readlink -e $0)")/lib/exif.sh"
+source "$(dirname "$(readlink -e "$0")")/lib/exif.sh"
 
 declare -r CREATE_SIDECAR_CMD="$(dirname "$(readlink -e "$0")")/profile-builder/create_sidecar"
 declare -r TMP_DIR=$(mktemp -d)
@@ -13,17 +13,15 @@ cleanup() {
 trap cleanup EXIT
 
 
-while getopts "c:k:t:vg" opt; do
+while getopts "c:k:t:g" opt; do
     case $opt in
         c ) 
-			declare -r CREATOR=$OPTARG;;   
+			declare -r CREATOR_OPTION=$OPTARG;;   
 		k ) 
 			# CSV string, using ";". no quoting needed for keywords with blanks
 			declare -r KEYWORDS_OPTION=$OPTARG;;		
         t )
             declare -r SIDECAR_TEMPLATES_DIR=$(readlink -e "$OPTARG");;
-		v )
-			declare -r VERBOSE=;;
         g )
             declare -r USE_GUI=;;    
 	esac
@@ -46,14 +44,13 @@ if [[ -z $TARGET_DIR ]]; then
 fi
 
 request_options_from_gui() {
-
-    # TODO add date selector
   
     yad \
 		--title="Import photos from DCIM directory $DCIM_DIR" \
 		--form \
 		--field="Album:TEXT" "New photos" \
-        --field="Photo title:TEXT" "New" \
+        --field="Photo title:TEXT" "" \
+        --field="Photographer/creator:TEXT" "${CREATOR_OPTION+$CREATOR_OPTION}" \
 		--field="Keywords (separated by \";\"):TEXT" "${KEYWORDS_OPTION+$KEYWORD_OPTIONS}" \
         --field="Only from date:DT" 2> /dev/null
     
@@ -63,30 +60,43 @@ request_options_from_gui() {
     fi
 }
 
+to_string_with_no_blanks() {
+    echo "$1" | tr ' ' '-'
+}
+
 # to set remaining input vars, we either use the gui (if requested) or take them from the command line
 if [[ -v USE_GUI ]]; then
 
     options_string="$(request_options_from_gui)"
-    echo $options_string >&2
-    declare -r ALBUM="$(echo "$options_string" | cut -d'|' -f 1)"
-    declare -r TITLE="$(echo "$options_string" | cut -d'|' -f 2)"
-    keywords_string="$(echo "$options_string" | cut -d'|' -f 3)"
-    test -n "$keywords_string" && declare -r KEYWORDS="$(echo "$options_string" | cut -d'|' -f 3)"
-    declare -r DATE_TAKEN="$(echo "$options_string" | cut -d'|' -f 4)"
+
+    declare -r ALBUM="$(echo "$options_string" | cut -d'|' -f 1 | tr ' ' '-')"
+
+    title_string="$(echo "$options_string" | cut -d'|' -f 2 | tr ' ' '-')"
+    if [[ -n $title_string ]]; then
+        declare -r TITLE="$title_string"
+    else 
+        declare -r TITLE=$ALBUM
+    fi
+    
+    declare -r CREATOR="$(echo "$options_string" | cut -d'|' -f 3)"
+
+    keywords_string="$(echo "$options_string" | cut -d'|' -f 4)"
+    test -n "$keywords_string" && declare -r KEYWORDS=$keywords_string
+
+    declare -r DATE_TAKEN="$(echo "$options_string" | cut -d'|' -f 5)"
 
 else 
     
-    declare -r ALBUM=${3+$3}
+    declare -r ALBUM="$(echo "${3+$3}" | tr ' ' '-')"
     if [[ -z $ALBUM ]]; then
         echo "[ERROR] No album name given" >&2
         exit 1
     fi
 
     declare -r TITLE=$ALBUM
+    test -v CREATOR_OPTION && declare -r CREATOR=$CREATOR_OPTION
     test -v KEYWORDS_OPTION && declare -r KEYWORDS=$KEYWORDS_OPTION
 fi
-
-exit
 
 
 build_photonumber_filename_with_leading_p() {
@@ -147,18 +157,20 @@ build_targetpath() {
     local -r datetimeoriginal=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$photofile" 2> /dev/null)
 	
     local -r year=$(echo "$datetimeoriginal" | cut -d':' -f 1)
-	local -r date=$(echo "$datetimeoriginal" | cut -d' ' -f 1 | tr --delete ':')
+	local -r date=$(echo "$datetimeoriginal" | cut -d' ' -f 1 | tr ':' '-')
+    local -r date_numerical=$(echo "$datetimeoriginal" | cut -d' ' -f 1 | tr --delete ':')
 	local -r timeofday=$(echo "$datetimeoriginal" | cut -d' ' -f2 | cut -d ':' -f1-2 | tr --delete ':')
 
     local -r target_dir="$TARGET_DIR/$year/$ALBUM/$date"
 
-    echo "${target_dir}/${TITLE}_${date}_${timeofday}_$(camera_name "$photofile")_$(build_photonumber "$photofile")"
+    echo "${target_dir}/${TITLE}_${date_numerical}_${timeofday}_$(camera_name "$photofile")_$(build_photonumber "$photofile")"
 }
 
-
 declare -r EXTENSIONS=".+\.(ORF|CRW|CR2|RAW|JPG)"
+# DOC when using find with both -exec (for copying) and -printf (for the filename), copying must happen first. Otherwise
+# the name will already have been printed to stdout before the file was copied
 find "$DCIM_DIR" -regextype posix-extended -type f -iregex $EXTENSIONS \
-    -printf "$TMP_DIR"'/%f\n' -exec cp --preserve=timestamps {} "$TMP_DIR" \; | while read -r photofile; do
+    -exec cp --preserve=timestamps {} "$TMP_DIR" \; -printf "$TMP_DIR"'/%f\n' | while read -r photofile; do
 
     target_filename=$(build_targetpath "$photofile")
 
@@ -176,11 +188,11 @@ find "$DCIM_DIR" -regextype posix-extended -type f -iregex $EXTENSIONS \
 
     echo "$target_filename"
 
-done | xargs --no-run-if-empty "$CREATE_SIDECAR_CMD" \
-    "${CREATOR+-c "$CREATOR"}" "${KEYWORDS+-k "$KEYWORDS"}" "$SIDECAR_TEMPLATES_DIR" | \
-# the output of actual copying of the photos (i.e. the target filenames of the photos) is swallowed by create_sidecar
-# therefore, print all filenames (photos and sidecars) in a final step
-while read -r sidecar_file; do
-    echo "${sidecar_file%.*}"
-    echo "$sidecar_file"
-done
+done #| xargs --no-run-if-empty "$CREATE_SIDECAR_CMD" \
+#     "${CREATOR+-c "$CREATOR"}" "${KEYWORDS+-k "$KEYWORDS"}" "$SIDECAR_TEMPLATES_DIR" | \
+# # the output of actual copying of the photos (i.e. the target filenames of the photos) is swallowed by create_sidecar
+# # therefore, print all filenames (photos and sidecars) in a final step
+# while read -r sidecar_file; do
+#     echo "${sidecar_file%.*}"
+#     echo "$sidecar_file"
+# done
