@@ -1,11 +1,16 @@
 #! /usr/bin/env bash
 
-set -eu
+set -e
+
+
+declare -r NO_DCIM_DIR_RC=101
+declare -r NO_TARGET_DIR_RC=102
+
 
 source "$(dirname "$(readlink -e "$0")")/lib/exif.sh"
 
-declare -r CREATE_SIDECAR_CMD="$(dirname "$(readlink -e "$0")")/profile-builder/create_sidecar"
 declare -r TMP_DIR=$(mktemp -d)
+
 
 cleanup() {
   test -e "$TMP_DIR" && rm -rf "$TMP_DIR"
@@ -13,85 +18,38 @@ cleanup() {
 trap cleanup EXIT
 
 
-while getopts "c:k:t:g" opt; do
+while getopts "t:a:" opt; do
     case $opt in
-        c ) 
-			declare -r CREATOR_OPTION=$OPTARG;;   
-		k ) 
-			# CSV string, using ";". no quoting needed for keywords with blanks
-			declare -r KEYWORDS_OPTION=$OPTARG;;		
+        a )
+            declare -r ALBUM="$(echo "$OPTARG" | tr ' ' '-')";;
         t )
-            declare -r SIDECAR_TEMPLATES_DIR=$(readlink -e "$OPTARG");;
-        g )
-            declare -r USE_GUI=;;    
+            declare -r TITLE="$(echo "$OPTARG" | tr ' ' '-')";;
 	esac
 done
 shift $(expr $OPTIND - 1 )
 
-if ! [[ -v SIDECAR_TEMPLATES_DIR ]]; then
-    echo "No sidecar templates dir given or does not exist" >&2
-    exit 1
-fi
+
 declare -r DCIM_DIR=$(readlink -e "$1")
 if [[ -z $DCIM_DIR ]]; then
-    echo "[ERROR] No DCIM directory given or does not exist" >&2
-    exit 1
+    echo "[ERROR] None given or nonexistent DCIM directory" >&2
+    exit $NO_DCIM_DIR_RC
 fi
+
 declare -r TARGET_DIR=$(readlink -e "$2")
 if [[ -z $TARGET_DIR ]]; then
-    echo "[ERROR] No target directory given or does not exist" >&2
-    exit 1
+    echo "[ERROR] None given or nonexistent target directory" >&2
+    exit $NO_TARGET_DIR_RC
 fi
 
-run_options_dialog() {
-  
-    yad \
-		--title="Import photos from DCIM directory $DCIM_DIR" \
-		--form \
-		--field="Album:TEXT" "New photos" \
-        --field="Photo title:TEXT" "" \
-        --field="Photographer/creator:TEXT" "${CREATOR_OPTION+$CREATOR_OPTION}" \
-		--field="Keywords (separated by \";\"):TEXT" "${KEYWORDS_OPTION+$KEYWORD_OPTIONS}" \
-        --field="Only from date:DT" 2> /dev/null
-    
-    if [[ $? = 252 ]]; then
-        echo "[INFO] Cancelled" >&2
-        exit
-    fi
-}
+if ! [[ -v ALBUM ]]; then
+    declare -r ALBUM="New-Photos"
+fi
 
-if [[ -v USE_GUI ]]; then
-
-    options_string="$(run_options_dialog)"
-
-    declare -r ALBUM="$(echo "$options_string" | cut -d'|' -f 1 | tr ' ' '-')"
-
-    title_string="$(echo "$options_string" | cut -d'|' -f 2 | tr ' ' '-')"
-    if [[ -n $title_string ]]; then
-        declare -r TITLE="$title_string"
-    else 
-        declare -r TITLE=$ALBUM
-    fi
-    
-    declare -r CREATOR="$(echo "$options_string" | cut -d'|' -f 3)"
-
-    keywords_string="$(echo "$options_string" | cut -d'|' -f 4)"
-    test -n "$keywords_string" && declare -r KEYWORDS=$keywords_string
-
-    declare -r DATE_TAKEN="$(echo "$options_string" | cut -d'|' -f 5)"
-
-else 
-    
-    declare -r ALBUM="$(echo "${3+$3}" | tr ' ' '-')"
-    if [[ -z $ALBUM ]]; then
-        echo "[ERROR] No album name given" >&2
-        exit 1
-    fi
-
+if ! [[ -v TITLE ]]; then
     declare -r TITLE=$ALBUM
-    test -v CREATOR_OPTION && declare -r CREATOR=$CREATOR_OPTION
-    test -v KEYWORDS_OPTION && declare -r KEYWORDS=$KEYWORDS_OPTION
 fi
+
+set -u
 
 
 build_photonumber_filename_with_leading_p() {
@@ -186,10 +144,4 @@ find "$DCIM_DIR" -regextype posix-extended -type f -iregex $EXTENSIONS \
 
     echo "$target_filename"
 
-done | xargs --no-run-if-empty "$CREATE_SIDECAR_CMD" ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWORDS"} "$SIDECAR_TEMPLATES_DIR" |\
-# the output of actual copying of the photos (i.e. the target filenames of the photos) is swallowed by create_sidecar
-# therefore, print all filenames (photos and sidecars) in a final step
-while read -r sidecar_file; do
-    echo "${sidecar_file%.*}"
-    echo "$sidecar_file"
 done

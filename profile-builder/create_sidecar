@@ -1,6 +1,9 @@
 #! /usr/bin/env bash
 
-set -eux
+set -eu
+
+declare -r NO_TEMPLATES_DIR_RC=101
+declare -r TEMPLATES_DIR_INVALID=102
 
 . "$(dirname "$(readlink -e "$0")")/../lib/sidecar.sh"
 . "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
@@ -24,10 +27,10 @@ shift $(expr $OPTIND - 1 )
 declare -r TEMPLATES_DIR=$(readlink -e "$1")
 if [[ -z $TEMPLATES_DIR ]]; then	
 	echo "[ERROR] Templates directory does not exist" >&2
-	exit 1
+	exit $NO_TEMPLATES_DIR_RC
 elif ! [[ -d $TEMPLATES_DIR ]]; then
 	echo "[ERROR] Templates directory (first parameter) is not a directory" >&2
-	exit 1
+	exit $TEMPLATES_DIR_INVALID
 fi
 shift 1
 
@@ -140,7 +143,7 @@ for photofile in $PHOTO_FILES; do
 	file_type=$(echo ${photofile##*.} | tr '[:upper:]' '[:lower:]')
  	sidecar_template=$(select_template "$file_type" "$camera_from_exif" "$lens_from_exif")
 	if [[ -z $sidecar_template ]]; then
-		echo "[ERROR] No sidecar template found for $photofile"
+		echo "[ERROR] No sidecar template found for $photofile" >&2
 		continue
 	fi
 	test -v VERBOSE && echo "[INFO] Using template $sidecar_template" >&2
