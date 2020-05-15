@@ -1,6 +1,7 @@
 __quote_if_spaces_exist() {
 	local -r keyword=$1
-	if [[ $keyword =~ .+[[:space:]].+ ]]; then
+	# first test takes care of existing with blanks, these have quotes already
+	if ! [[ $keyword =~ \".+\" ]] && [[ $keyword =~ .+[[:space:]].+ ]]; then
 		echo "\"$keyword\""
 	else
 		echo $keyword
