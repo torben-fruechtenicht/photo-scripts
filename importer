@@ -68,7 +68,15 @@ fi
 create_sidecar_out=$("$CREATE_SIDECAR_CMD" ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWORDS"} "$SIDECAR_TEMPLATES_DIR" $(echo $imported_photos) 2>&1)
 create_sidecar_rc=$?
 if [[ $create_sidecar_rc != 0 ]]; then
-    "$POPUP_CMD" -e "$POPUP_TITLE" "Import succeeded but creating sidecars failed with return code $create_sidecar_rc"
+    case $import_photos_rc in     
+        101 )
+            error_msg=", templates directory missing";;
+        102 )
+            error_msg=", templates directory is not a directory (only photos given?)";;
+        * )
+            error_msg=" with return code $create_sidecar_rc";;
+    esac
+    "$POPUP_CMD" -e "$POPUP_TITLE" "Import succeeded but creating sidecars failed $error_msg"
     exit 1
 fi
 
@@ -80,4 +88,4 @@ if echo "$create_sidecar_out" | grep -q "\[ERROR\]"; then
     create_sidecar_errors="Errors when creating sidecars:\n$(echo "$create_sidecar_out" | grep "\[ERROR\]")"
 fi
 "$POPUP_CMD" -i "$POPUP_TITLE" \
-    "$(echo -e "Done, imported $imported_photos_count photos ($total_size_mb MB) in $duration_in_minutes minutes:\n$imported_photos\n\n${create_sidecar_errors+$create_sidecar_errors}")"
+    "$(echo -e "Done, imported $imported_photos_count photos ($total_size_mb MB) in $duration_in_minutes minutes.${create_sidecar_errors+$(echo -e "\n\n$create_sidecar_errors")}")"
