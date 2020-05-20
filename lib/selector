@@ -64,7 +64,6 @@ options_string=$(yad\
     --field="Photo number ends with:TEXT" "" \
     --field="Search directory:DIR" "$SEARCH_DIR_OPTION" \
     --field="Allowed extensions:TEXT" "$EXTENSIONS_DEFAULT" 2> /dev/null)
-echo "yad output: $options_string" >&2
 if [[ $? = 252 ]]; then
     exit
 fi
