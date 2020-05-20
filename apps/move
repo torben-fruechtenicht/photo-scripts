@@ -1,0 +1,53 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+
+declare -r SELECTOR="$BASE_DIR/lib/selector"
+declare -r MOVE_TO_ALBUM="$BASE_DIR/tools/move_to_album"
+declare -r POPUP_CMD="$BASE_DIR/lib/notification.sh"
+
+declare -r CONFIG_DIR=$(readlink -m $HOME/.local/share/photo-scripts)
+if ! [[ -d $CONFIG_DIR ]]; then
+    mkdir --parents "$CONFIG_DIR"
+fi
+declare -r SELECTOR_OLD_VALUES="$CONFIG_DIR/selector_old_values"
+
+declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
+
+old_values_or_default() {
+    local -r name=$1
+    local -r default=$2
+
+    local value=$default
+
+    if [[ -v SELECTOR_OLD_VALUES ]]; then
+        value=$(grep "$name" "$SELECTOR_OLD_VALUES" | cut -d'=' -f2)
+    fi
+
+    echo "$value"
+}
+
+photos=$("$SELECTOR" -o "$SELECTOR_OLD_VALUES" "$SEARCH_DIR")
+
+dialog_text=$(echo -e "Move listed photos\n\n$photos\n\nto a different album:\n\n")
+
+move_to_album_params=$(yad \
+    --title="Move listed photos to a different album:" \
+    --text="$dialog_text" \
+    --form \
+    --field="New album (required):CBE" "$(old_values_or_default "album" "")" \
+    --field="Rename photos:CHK" "FALSE")
+
+declare -r TARGET_ALBUM_NAME=$(echo "$move_to_album_params" | cut -d'|' -f 1 | tr ' ' '-')
+if [[ -z $TARGET_ALBUM_NAME ]]; then    
+    "$POPUP_CMD" -e "Move to album - error" "New album name is required"  
+    exit 1
+fi
+declare -r RENAME_PHOTOS_OPTION=$(echo "$move_to_album_params" | cut -d'|' -f 2)
+if [[ $RENAME_PHOTOS_OPTION = "TRUE" ]]; then
+    declare -r RENAME_PHOTOS=
+fi
+
+"$MOVE_TO_ALBUM" ${RENAME_PHOTOS+-r} "$TARGET_ALBUM_NAME" "$photos"
