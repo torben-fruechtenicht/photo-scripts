@@ -1,0 +1,263 @@
+#! /usr/bin/env bash
+
+set -ue
+
+declare -r POPUP_CMD="$(dirname "$(readlink -e "$0")")/lib/notification.sh"
+
+while getopts "o:" opt; do
+    case $opt in
+        o ) 
+			declare -r OLD_VALUES_FILE=$(readlink -f "$OPTARG")
+            ! test -e "$OLD_VALUES_FILE" && touch "$OLD_VALUES_FILE";;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+
+declare -r SEARCH_DIR_OPTION="$(readlink -e "${1+$1}")"
+
+
+old_values_or_default() {
+    local -r name=$1
+    local -r default=$2
+
+    local value=$default
+
+    if [[ -v OLD_VALUES_FILE ]]; then
+        value=$(grep "$name" "$OLD_VALUES_FILE" | cut -d'=' -f2)
+    fi
+
+    echo "$value"
+}
+
+old_value_preselected_in_list() {
+    local -r name=$1
+    local -r all_values=$2
+
+    local values_with_old_preselected=$all_values
+
+    if [[ -v OLD_VALUES_FILE ]]; then
+        local -r old_value=$(grep "$name" "$OLD_VALUES_FILE" | cut -d'=' -f2)
+        if [[ -n $old_value ]]; then
+            values_with_old_preselected=$(echo "$all_values" | sed 's/\('"$old_value"'\)/^\1/')
+        fi
+    fi
+
+    echo "$values_with_old_preselected"
+}
+
+declare -r MONTHS="!Jan!Feb!Mar!Apr!May!June!July!Aug!Sep!Oct!Nov!Dec"
+declare -r DAYS_OF_MONTH="!01!02!03!04!05!06!07!08!09!10!11!12!13!14!15!16!17!18!19!20!21!22!23!24!25!26!27!28!29!30!31"
+declare -r EXTENSIONS_DEFAULT="ORF CRW CR2 RAW JPG"
+# TODO photonumber tail should allow ranges
+# TODO time of day should allow ranges
+# TODO add more spacing between fields
+options_string=$(yad\
+    --title="Select photos matching:" \
+    --form \
+    --field="Album:CBE" "$(old_values_or_default "album" "")" \
+    --field="Photo title:CBE" "$(old_values_or_default "title" "")" \
+    --field="Year:CBE" "$(old_values_or_default "year" "$(date +%Y)")" \
+    --field="Month:CB" "$(old_value_preselected_in_list "month" "$MONTHS")" \
+    --field="Day of month:CB" "$(old_value_preselected_in_list "dayofmonth" "$DAYS_OF_MONTH")" \
+    --field="Time of day:TEXT" "" \
+    --field="Photo number ends with:TEXT" "" \
+    --field="Search directory:DIR" "$SEARCH_DIR_OPTION" \
+    --field="Allowed extensions:TEXT" "$EXTENSIONS_DEFAULT" 2> /dev/null)
+echo "yad output: $options_string" >&2
+if [[ $? = 252 ]]; then
+    exit
+fi
+
+set -x
+declare -r ALBUM=$(echo "$options_string" | cut -d'|' -f 1 | tr ' ' '-')
+declare -r TITLE=$(echo "$options_string" | cut -d'|' -f 2 | tr ' ' '-')
+declare -r YEAR=$(echo "$options_string" | cut -d'|' -f 3)
+declare -r MONTH=$(echo "$options_string" | cut -d'|' -f 4)
+declare -r DAY_OF_MONTH=$(echo "$options_string" | cut -d'|' -f 5)
+declare -r TIME_OF_DAY=$(echo "$options_string" | cut -d'|' -f 6)
+declare -r PHOTO_NUMBER_TAIL=$(echo "$options_string" | cut -d'|' -f 7)
+set +x
+
+# FIXME handle missing SEARCH_DIR - if there is a way not to select one
+#   MAYBE: check if yad passes the current dir as the default if no own default is set - if yes, we could check if entered
+#   directory is current. con: what if user wants to save in current?
+declare -r SEARCH_DIR=$(echo "$options_string" | cut -d'|' -f 8)
+
+declare -r EXTENSIONS=$(echo "$options_string" | cut -d'|' -f 9)
+
+
+count_char_in_string() {
+    local -r c=$1
+    local -r string=$2
+
+    c_only=${string//[^$c]}
+    echo ${#c_only}
+}
+
+save_cb_value() {
+    local -r name=$1
+    local -r value=$2
+    local -r max_saved=$3
+    
+    if grep -q "$name=" "$OLD_VALUES_FILE"; then
+
+        # get the old values with any occurrence of $value already removed
+        local -r old_values=$(grep "$name" "$OLD_VALUES_FILE" | cut -d'=' -f2 | sed -e 's/'"$value"'!\?//')
+        if [[ -z $old_values ]]; then
+            sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'/' "$OLD_VALUES_FILE"
+        else
+            local -r values_count=$(( $(count_char_in_string '!' "$old_values") + 1 ))
+            if (( $values_count < $max_saved )); then
+                sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'!'"$old_values"'/' "$OLD_VALUES_FILE"
+            else 
+                local -r old_values_without_last=$(echo ${old_values%!*})
+                sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'!'"$old_values_without_last"'/' "$OLD_VALUES_FILE"
+            fi
+        fi
+
+    else
+        echo "$name=$value" >> "$OLD_VALUES_FILE"
+    fi
+}
+
+save_single_value() {
+    local -r name=$1
+    local -r value=$2
+
+    if grep -q "$name=" "$OLD_VALUES_FILE"; then
+        sed -i -e 's/'"$name"'=.+/'"$name"'='"$value"'/' "$OLD_VALUES_FILE"
+    else
+        echo "$name=$value" >> "$OLD_VALUES_FILE"
+    fi    
+}
+
+if [[ -v OLD_VALUES_FILE ]]; then
+    test -n "$ALBUM" && save_cb_value "album" "$ALBUM" 5
+    test -n "$TITLE" && save_cb_value "title" "$TITLE" 10
+    test -n "$YEAR" && save_cb_value "year" "$YEAR" 10
+    test -n "$MONTH" && save_single_value "month" "$MONTH"
+    test -n "$DAY_OF_MONTH" && save_single_value "dayofmonth" "$DAY_OF_MONTH"
+fi
+
+year_glob() {
+    local -r year=${YEAR+$YEAR}
+    if [[ -z $year ]]; then
+        echo "????"
+    else 
+        echo "$year"
+    fi
+}
+
+month_glob() {
+    local -r month=${MONTH+$MONTH}
+    if [[ -z $month ]]; then
+        echo "??"
+    else 
+        echo "$month"
+    fi
+}
+
+dayofmonth_glob() {
+    local -r dayofmonth=${DAY_OF_MONTH+$DAY_OF_MONTH}
+    if [[ -z $dayofmonth ]]; then
+        echo "??"
+    else 
+        echo "$dayofmonth"
+    fi
+}
+
+album_glob() {
+    local -r album=${ALBUM+$ALBUM}
+    if [[ -z $album ]]; then
+        echo "*"
+    else 
+        echo "$album"
+    fi
+}
+
+month_glob_from_shortname() {
+    local -r monthname=${1+$1}
+    case $monthname in 
+        Jan )
+            echo "01";;
+        Feb )
+            echo "02";;
+        Mar )
+            echo "03";;
+        Apr )
+            echo "04";;
+        May )
+            echo "05";;
+        Jun )
+            echo "06";;
+        Jul )
+            echo "07";;
+        Aug )
+            echo "08";;
+        Seo )
+            echo "09";;
+        Oct )
+            echo "10";;
+        Nov )
+            echo "11";;
+        Dec )
+            echo "12";;    
+        * )
+            echo "??";;       
+    esac
+}
+
+date_path_glob() {
+    local -r month=$(month_glob_from_shortname "${MONTH+$MONTH}")
+    echo "$(year_glob)-$month-$(dayofmonth_glob)"
+}
+
+date_filename_glob() {
+    date_path_glob | tr --delete '-'
+}
+
+title_glob() {
+    local -r title=${TITLE+$TITLE}
+    if [[ -z $title ]]; then
+        echo "*"
+    else 
+        echo "$title"
+    fi
+}
+
+timeofday_glob() {
+    local -r timeofday=${TIME_OF_DAY+$TIME_OF_DAY}
+    if [[ -z $timeofday ]]; then
+        echo "????"
+    else 
+        echo "$timeofday"
+    fi
+}
+
+photonumber_tail_glob() {
+    local -r number_tail=${PHOTO_NUMBER_TAIL+$PHOTO_NUMBER_TAIL}
+    if [[ -z $number_tail ]]; then
+        echo "*"
+    else 
+        echo "*$number_tail"
+    fi
+}
+
+filename_glob() {
+    echo "$(title_glob)_$(date_filename_glob)_$(timeofday_glob)_*_$(photonumber_tail_glob).???"
+}
+
+extensions_regex_alternatives() {
+    local -r extensions=${EXTENSIONS+$EXTENSIONS}
+    if [[ -z $extensions ]]; then
+        echo "???"
+    else 
+        echo "$extensions" | tr ' ' '|'
+    fi
+}
+
+
+find "$SEARCH_DIR" -regextype posix-extended -type f \
+    -ipath "*/$(year_glob)/$(album_glob)/$(date_path_glob)/$(filename_glob)" \
+    -iregex ".+\.($(extensions_regex_alternatives))"
