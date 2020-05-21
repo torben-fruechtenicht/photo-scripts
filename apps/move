@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -ux
+set -u
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
@@ -30,8 +30,7 @@ old_values_or_default() {
     echo "$value"
 }
 
-photos=$("$SELECTOR" -o "$SELECTOR_OLD_VALUES" "$SEARCH_DIR")
-# script is running with 
+photos=$("$SELECTOR" -o "$SELECTOR_OLD_VALUES" "$SEARCH_DIR") 
 
 if [[ -z $photos ]]; then
     "$POPUP_CMD" -w "Move - error" "No matching photos found"  
