@@ -10,7 +10,7 @@ declare -r SELECTOR="$BASE_DIR/utils/selector"
 declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
-source "$BASE_DIR/utils/yad_helpers.sh"
+source "$BASE_DIR/utils/yad_old_values.sh"
 
 declare -r OLD_VALUES_FILE="$(get_old_values_file "selector")"
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")

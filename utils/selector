@@ -4,7 +4,7 @@ set -u
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
-source "$BASE_DIR/utils/yad_helpers.sh"
+source "$BASE_DIR/utils/yad_old_values.sh"
 
 while getopts "o:" opt; do
     case $opt in

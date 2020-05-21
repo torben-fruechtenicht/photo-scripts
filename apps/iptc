@@ -7,7 +7,7 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 declare -r SELECTOR="$BASE_DIR/utils/selector"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
-source "$BASE_DIR/utils/yad_helpers.sh"
+source "$BASE_DIR/utils/yad_old_values.sh"
 declare -r SET_KEYWORDS_CMD="$BASE_DIR/set_iptc_keywords"
 
 declare -r OLD_VALUES_FILE="$(get_old_values_file "selector")"
