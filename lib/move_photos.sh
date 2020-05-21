@@ -10,7 +10,7 @@ shopt -s nocasematch
 print_help() {
     cat <<EOF
 Usage:
-    $(basename "$0") [-v] [-s] [-h] [-r NEW_NAME] [-R RENAME_MODE] -t TARGET_DIRECTORY_ROOT PHOTO_FILES...
+    $(basename "$0") [-v] [-s] [-h] [-r NEW_NAME] [-m RENAME_MODE] -t TARGET_DIRECTORY_ROOT PHOTO_FILES...
 
     PHOTO_FILES..
         A list of photo files (any non-image files are skipped), to be exact: the original files as saved 
@@ -20,7 +20,7 @@ Usage:
     -r NEW_NAME
         Change name of target files and album directories to NEW_NAME. Besides renaming files metadata pertaining
         to the name is changed, too. See also -R
-    -R RENAME_MODE
+    -m RENAME_MODE
         Valid values are "a" (rename only albums), "p" (rename only photos), "b" (rename both albums and photos)
         The default mode (if "-R" is not given) is "b".
     -v

@@ -5,7 +5,7 @@ set -u
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 declare -r SELECTOR="$BASE_DIR/utils/selector"
-declare -r MOVE_TO_ALBUM="$BASE_DIR/tools/move_to_album"
+declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
 
@@ -63,9 +63,12 @@ if [[ -z $TARGET_ALBUM_NAME ]]; then
     "$POPUP_CMD" -e "Move - error" "New album name is required"  
     exit 1
 fi
+
 declare -r RENAME_PHOTOS_OPTION=$(echo "$move_to_album_params" | cut -d'|' -f 2)
 if [[ $RENAME_PHOTOS_OPTION = "TRUE" ]]; then
-    declare -r RENAME_PHOTOS=
+    declare -r RENAME_MODE="b"
+else 
+    declare -r RENAME_MODE="a"
 fi
 
-"$MOVE_TO_ALBUM" ${RENAME_PHOTOS+-r} "$TARGET_ALBUM_NAME" "$photos"
+"$MOVE_PHOTOS" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE "$photos"
