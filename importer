@@ -4,7 +4,7 @@ set -u
 
 declare -r CMD_DIR=$(dirname "$(readlink -e "$0")")
 
-declare -r POPUP_CMD="$CMD_DIR/lib/notification.sh"
+declare -r POPUP_CMD="$CMD_DIR/utils/notification"
 declare -r POPUP_TITLE="Import photos"
 
 declare -r IMPORT_CMD="$CMD_DIR/import_photos"

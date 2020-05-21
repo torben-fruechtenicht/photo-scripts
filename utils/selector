@@ -3,7 +3,7 @@
 set -ue
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
-declare -r POPUP_CMD="$BASE_DIR/lib/notification.sh"
+declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
 
 while getopts "o:" opt; do

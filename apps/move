@@ -6,7 +6,7 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 declare -r SELECTOR="$BASE_DIR/utils/selector"
 declare -r MOVE_TO_ALBUM="$BASE_DIR/tools/move_to_album"
-declare -r POPUP_CMD="$BASE_DIR/lib/notification.sh"
+declare -r POPUP_CMD="$BASE_DIR/util/notification"
 
 declare -r CONFIG_DIR=$(readlink -m $HOME/.local/share/photo-scripts)
 if ! [[ -d $CONFIG_DIR ]]; then
