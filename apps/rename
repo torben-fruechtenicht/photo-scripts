@@ -1,0 +1,49 @@
+#! /usr/bin/env bash
+
+set -u
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+
+source "$BASE_DIR/utils/yad_helpers.sh"
+declare -r SELECTOR="$BASE_DIR/utils/selector"
+declare -r YAD_CMD="$BASE_DIR/utils/yad"
+declare -r POPUP_CMD="$BASE_DIR/utils/notification"
+declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
+
+
+remove_searchdir_from_photos_list()  {
+    local -r list=$1
+    echo "$list" | while read -r photo; do 
+        echo ${photo#$SEARCH_DIR/}
+    done
+} 
+
+
+declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
+shift 1
+
+
+photos=$("$SELECTOR" -o "$(get_old_values_file "selector")" "$SEARCH_DIR")
+if [[ -z $photos ]]; then
+    "$POPUP_CMD" -w "Select for renaming" "No matching photos found"
+    exit 1
+fi   
+
+dialog_text=$(echo -e "Rename photos\n\n$(remove_searchdir_from_photos_list "$photos")\n\nto:\n")
+rename_params=$("$YAD_CMD" \
+    --title="Rename photos" \
+    --text="$dialog_text" \
+    --form \
+    --field="New name (required):CBE" "$(old_values_or_default "title" "")")
+yad_rc=$?
+if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
+    exit
+fi
+
+declare -r NEW_NAME=$(echo "$rename_params" | cut -d'|' -f 1 | tr ' ' '-')
+if [[ -z $NEW_NAME ]]; then    
+    "$POPUP_CMD" -e "Rename photos" "New photo name is required"  
+    exit 1
+fi
+
+"$MOVE_PHOTOS" -r "$NEW_NAME" -m "p" $photos
