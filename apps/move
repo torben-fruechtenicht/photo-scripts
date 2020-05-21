@@ -1,12 +1,13 @@
 #! /usr/bin/env bash
 
-set -eu
+set -ux
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 declare -r SELECTOR="$BASE_DIR/utils/selector"
 declare -r MOVE_TO_ALBUM="$BASE_DIR/tools/move_to_album"
-declare -r POPUP_CMD="$BASE_DIR/util/notification"
+declare -r POPUP_CMD="$BASE_DIR/utils/notification"
+declare -r YAD_CMD="$BASE_DIR/utils/yad"
 
 declare -r CONFIG_DIR=$(readlink -m $HOME/.local/share/photo-scripts)
 if ! [[ -d $CONFIG_DIR ]]; then
@@ -30,21 +31,31 @@ old_values_or_default() {
 }
 
 photos=$("$SELECTOR" -o "$SELECTOR_OLD_VALUES" "$SEARCH_DIR")
+# script is running with 
 
 if [[ -z $photos ]]; then
-    "$POPUP_CMD" -e "Move - error" "No matching photos found"  
+    "$POPUP_CMD" -w "Move - error" "No matching photos found"  
     exit 1
 fi
 
-dialog_text=$(echo -e "Move listed photos\n\n$photos\n\nto a different album:\n\n")
+remove_searchdir_from_photos_list()  {
+    local -r list=$1
 
-move_to_album_params=$(yad \
+    echo "$list" | while read -r photo; do 
+        echo ${photo#$SEARCH_DIR/}
+    done
+}    
+
+dialog_text=$(echo -e "Move listed photos\n$(remove_searchdir_from_photos_list "$photos")\nto a different album:\n\n")
+
+move_to_album_params=$("$YAD_CMD" \
     --title="Move listed photos to a different album:" \
     --text="$dialog_text" \
     --form \
     --field="New album (required):CBE" "$(old_values_or_default "album" "")" \
     --field="Rename photos:CHK" "FALSE")
-if [[ $? = 252 ]] || [[ $? = 1 ]]; then
+yad_rc=$?
+if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
