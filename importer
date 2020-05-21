@@ -2,13 +2,16 @@
 
 set -u
 
-declare -r CMD_DIR=$(dirname "$(readlink -e "$0")")
+declare -r APP_TITLE="Import photos"
 
-declare -r POPUP_CMD="$CMD_DIR/utils/notification"
-declare -r POPUP_TITLE="Import photos"
+declare -r BASE_DIR=$(dirname "$(readlink -e "$0")")
 
-declare -r IMPORT_CMD="$CMD_DIR/import_photos"
-declare -r CREATE_SIDECAR_CMD="$CMD_DIR/profile-builder/create_sidecar"
+declare -r POPUP_CMD="$BASE_DIR/utils/notification"
+declare -r IMPORT_CMD="$BASE_DIR/import_photos"
+declare -r CREATE_SIDECAR_CMD="$BASE_DIR/profile-builder/create_sidecar"
+declare -r YAD_CMD="$BASE_DIR/utils/yad"
+source "$BASE_DIR/utils/yad_helpers.sh"
+
 
 while getopts "c:" opt; do
     case $opt in
@@ -23,16 +26,18 @@ declare -r DCIM_DIR=${1+$1}
 declare -r TARGET_DIR=${2+$2}
 declare -r SIDECAR_TEMPLATES_DIR=${3+$3}
 
-
-options_string=$(yad \
-    --title="Import photos" \
+dialog_txt="$(echo -e "Import photos from\n\t$DCIM_DIR\nto\n\t$TARGET_DIR:\n")"
+options_string=$("$YAD_CMD" \
+    --title="$APP_TITLE" \
+    --text="$dialog_txt" \
     --form \
     --field="Album:TEXT" "New photos" \
     --field="Photo title:TEXT" "" \
     --field="Photographer/creator:TEXT" "${CREATOR_OPTION+$CREATOR_OPTION}" \
     --field="Keywords (separated by \";\"):TEXT" "" \
     --field="Only from date:DT" 2> /dev/null)
-if [[ $? = 252 ]]; then
+yad_rc=$?
+if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
@@ -61,7 +66,7 @@ if [[ $import_photos_rc != 0 ]]; then
         * )
             error_msg="Import failed with return code $import_photos_rc";;
     esac
-    "$POPUP_CMD" -e "$POPUP_TITLE" "$error_msg"
+    "$POPUP_CMD" -e "$APP_TITLE" "$error_msg"
     exit 1
 fi
 
@@ -76,7 +81,7 @@ if [[ $create_sidecar_rc != 0 ]]; then
         * )
             error_msg=" with return code $create_sidecar_rc";;
     esac
-    "$POPUP_CMD" -e "$POPUP_TITLE" "Import succeeded but creating sidecars failed $error_msg"
+    "$POPUP_CMD" -e "$APP_TITLE" "Import succeeded but creating sidecars failed $error_msg"
     exit 1
 fi
 
@@ -87,5 +92,5 @@ duration_in_minutes=$(( $SECONDS / 60 ))
 if echo "$create_sidecar_out" | grep -q "\[ERROR\]"; then
     create_sidecar_errors="Errors when creating sidecars:\n$(echo "$create_sidecar_out" | grep "\[ERROR\]")"
 fi
-"$POPUP_CMD" -i "$POPUP_TITLE" \
+"$POPUP_CMD" -i "$APP_TITLE" \
     "$(echo -e "Done, imported $imported_photos_count photos ($total_size_mb MB) in $duration_in_minutes minutes.${create_sidecar_errors+$(echo -e "\n\n$create_sidecar_errors")}")"
