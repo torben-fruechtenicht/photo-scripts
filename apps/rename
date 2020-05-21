@@ -22,8 +22,10 @@ remove_searchdir_from_photos_list()  {
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 shift 1
 
+declare OLD_VALUES_FILE="$(get_old_values_file "selector")"
 
-photos=$("$SELECTOR" -o "$(get_old_values_file "selector")" "$SEARCH_DIR")
+
+photos=$("$SELECTOR" -o "$OLD_VALUES_FILE" "$SEARCH_DIR")
 if [[ -z $photos ]]; then
     "$POPUP_CMD" -w "Select for renaming" "No matching photos found"
     exit 1
@@ -34,7 +36,7 @@ rename_params=$("$YAD_CMD" \
     --title="Rename photos" \
     --text="$dialog_text" \
     --form \
-    --field="New name (required):CBE" "$(old_values_or_default "title" "")")
+    --field="New name (required):CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "title" "")")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit

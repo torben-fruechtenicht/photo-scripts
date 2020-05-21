@@ -18,9 +18,10 @@ get_old_values_file() {
 }
 
 old_values_or_default() {
-    local -r name=$1
-    local -r default=$2
-    local -r old_values_file=$3
+    local -r old_values_file=$1
+    local -r name=$2
+    local -r default=$3
+    
 
     local value=$default
 
@@ -32,9 +33,9 @@ old_values_or_default() {
 }
 
 old_value_preselected_in_list() {
-    local -r name=$1
-    local -r all_values=$2
-    local -r old_values_file=$3
+    local -r old_values_file=$1
+    local -r name=$2
+    local -r default=$3
 
     local values_optional_old_preselected=$all_values
 
