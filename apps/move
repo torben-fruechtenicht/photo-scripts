@@ -1,10 +1,10 @@
 #! /usr/bin/env bash
 
-set -eu
+set -eux
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-declare -r SELECTOR="$BASE_DIR/lib/selector"
+declare -r SELECTOR="$BASE_DIR/utils/selector"
 declare -r MOVE_TO_ALBUM="$BASE_DIR/tools/move_to_album"
 declare -r POPUP_CMD="$BASE_DIR/lib/notification.sh"
 
@@ -44,7 +44,7 @@ move_to_album_params=$(yad \
     --form \
     --field="New album (required):CBE" "$(old_values_or_default "album" "")" \
     --field="Rename photos:CHK" "FALSE")
-if [[ $? = 252 ]]; then
+if [[ $? = 252 ]] || [[ $? = 1 ]]; then
     exit
 fi
 

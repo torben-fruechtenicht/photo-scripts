@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+
+declare -r YAD_BORDER_SIZE=10
+declare -r YAD_OPTIONS="--borders=$YAD_BORDER_SIZE --fixed"
+
+yad $YAD_OPTIONS "$@"
