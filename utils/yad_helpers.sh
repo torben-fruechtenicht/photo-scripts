@@ -4,17 +4,15 @@ __get_old_value() {
     local -r old_values_file=$1
     local -r name=$2
     grep "^${name}=" "$old_values_file" | cut -d'=' -f2
-}    
-
-declare -r __OLD_VALUES_DIR=$(readlink -m $HOME/.local/share/photo-scripts)
+}   
 
 get_old_values_file() {
     local -r app_name=$1
-
-    if ! [[ -d $__OLD_VALUES_DIR ]]; then
-        mkdir --parents "$__OLD_VALUES_DIR"
+    local -r old_values_file_dir=$(readlink -m $HOME/.local/share/photo-scripts)
+    if ! [[ -d $old_values_file_dir ]]; then
+        mkdir --parents "$old_values_file_dir"
     fi
-    echo "$__OLD_VALUES_DIR/${app_name}_old_values"
+    echo "$old_values_file_dir/${app_name}_old_values"
 }
 
 old_values_or_default() {
@@ -47,4 +45,51 @@ old_value_preselected_in_list() {
     fi
 
     echo "$values_optional_old_preselected"
+}
+
+__count_char_in_string() {
+    local -r c=$1
+    local -r string=$2
+
+    c_only=${string//[^$c]}
+    echo ${#c_only}
+}
+
+save_cb_value() {
+    local -r old_values_file=$1
+    local -r name=$2
+    local -r value=$3
+    local -r max_saved=${4-10}
+    
+    if grep -q "$name=" "$old_values_file"; then
+
+        # get the old values with any occurrence of $value already removed
+        local -r old_values=$(grep "$name" "$old_values_file" | cut -d'=' -f2 | sed -e 's/'"$value"'!\?//')
+        if [[ -z $old_values ]]; then
+            sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'/' "$old_values_file"
+        else
+            local -r values_count=$(( $(__count_char_in_string '!' "$old_values") + 1 ))
+            if (( $values_count < $max_saved )); then
+                sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'!'"$old_values"'/' "$old_values_file"
+            else 
+                local -r old_values_without_last=$(echo ${old_values%!*})
+                sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'!'"$old_values_without_last"'/' "$old_values_file"
+            fi
+        fi
+
+    else
+        echo "$name=$value" >> "$old_values_file"
+    fi
+}
+
+save_single_value() {
+    local -r old_values_file=$1
+    local -r name=$2
+    local -r value=$3
+
+    if grep -q "$name=" "$old_values_file"; then
+        sed -i -e 's/'"$name"'=.+/'"$name"'='"$value"'/' "$old_values_file"
+    else
+        echo "$name=$value" >> "$old_values_file"
+    fi    
 }

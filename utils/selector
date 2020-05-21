@@ -59,58 +59,14 @@ declare -r SEARCH_DIR=$(echo "$options_string" | cut -d'|' -f 8)
 declare -r EXTENSIONS=$(echo "$options_string" | cut -d'|' -f 9)
 
 
-count_char_in_string() {
-    local -r c=$1
-    local -r string=$2
-
-    c_only=${string//[^$c]}
-    echo ${#c_only}
-}
-
-save_cb_value() {
-    local -r name=$1
-    local -r value=$2
-    local -r max_saved=$3
-    
-    if grep -q "$name=" "$OLD_VALUES_FILE"; then
-
-        # get the old values with any occurrence of $value already removed
-        local -r old_values=$(grep "$name" "$OLD_VALUES_FILE" | cut -d'=' -f2 | sed -e 's/'"$value"'!\?//')
-        if [[ -z $old_values ]]; then
-            sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'/' "$OLD_VALUES_FILE"
-        else
-            local -r values_count=$(( $(count_char_in_string '!' "$old_values") + 1 ))
-            if (( $values_count < $max_saved )); then
-                sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'!'"$old_values"'/' "$OLD_VALUES_FILE"
-            else 
-                local -r old_values_without_last=$(echo ${old_values%!*})
-                sed -i -e 's/'"$name"'=.*/'"$name"'='"$value"'!'"$old_values_without_last"'/' "$OLD_VALUES_FILE"
-            fi
-        fi
-
-    else
-        echo "$name=$value" >> "$OLD_VALUES_FILE"
-    fi
-}
-
-save_single_value() {
-    local -r name=$1
-    local -r value=$2
-
-    if grep -q "$name=" "$OLD_VALUES_FILE"; then
-        sed -i -e 's/'"$name"'=.+/'"$name"'='"$value"'/' "$OLD_VALUES_FILE"
-    else
-        echo "$name=$value" >> "$OLD_VALUES_FILE"
-    fi    
-}
-
 if [[ -v OLD_VALUES_FILE ]]; then
-    test -n "$ALBUM" && save_cb_value "album" "$ALBUM" 5
-    test -n "$TITLE" && save_cb_value "title" "$TITLE" 10
-    test -n "$YEAR" && save_cb_value "year" "$YEAR" 5
-    test -n "$MONTH" && save_single_value "month" "$MONTH"
-    test -n "$DAY_OF_MONTH" && save_single_value "dayofmonth" "$DAY_OF_MONTH"
+    test -n "$ALBUM" && save_cb_value "$OLD_VALUES_FILE" "album" "$ALBUM" 5
+    test -n "$TITLE" && save_cb_value "$OLD_VALUES_FILE" "title" "$TITLE" 10
+    test -n "$YEAR" && save_cb_value "$OLD_VALUES_FILE" "year" "$YEAR" 5
+    test -n "$MONTH" && save_single_value "$OLD_VALUES_FILE" "month" "$MONTH"
+    test -n "$DAY_OF_MONTH" && save_single_value "$OLD_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
 fi
+
 
 year_glob() {
     local -r year=${YEAR+$YEAR}
