@@ -88,7 +88,7 @@ save_single_value() {
     local -r value=$3
 
     if grep -q "$name=" "$old_values_file"; then
-        sed -i -e 's/'"$name"'=.+/'"$name"'='"$value"'/' "$old_values_file"
+        sed -i -e 's/'"$name"'=.\+/'"$name"'='"$value"'/' "$old_values_file"
     else
         echo "$name=$value" >> "$old_values_file"
     fi    
