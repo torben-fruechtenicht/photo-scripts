@@ -15,6 +15,8 @@ get_old_values_file() {
     echo "$old_values_file_dir/${app_name}_old_values"
 }
 
+declare -r MONTHS_INCL_EMPTY_VALUE="!Jan!Feb!Mar!Apr!May!June!July!Aug!Sep!Oct!Nov!Dec"
+
 old_values_or_default() {
     local -r old_values_file=$1
     local -r name=$2
