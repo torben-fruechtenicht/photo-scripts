@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 year_glob() {
-    local -r year=${YEAR+$YEAR}
+    local -r year=${1+$1}
     if [[ -z $year ]]; then
         echo "????"
     else 
@@ -10,7 +10,7 @@ year_glob() {
 }
 
 month_glob() {
-    local -r month=${MONTH+$MONTH}
+    local -r month=${1+$1}
     if [[ -z $month ]]; then
         echo "??"
     else 
@@ -19,7 +19,7 @@ month_glob() {
 }
 
 dayofmonth_glob() {
-    local -r dayofmonth=${DAY_OF_MONTH+$DAY_OF_MONTH}
+    local -r dayofmonth=${1+$1}
     if [[ -z $dayofmonth ]]; then
         echo "??"
     else 
@@ -28,7 +28,7 @@ dayofmonth_glob() {
 }
 
 album_glob() {
-    local -r album=${ALBUM+$ALBUM}
+    local -r album=${1+$1}
     if [[ -z $album ]]; then
         echo "*"
     else 
@@ -69,16 +69,21 @@ month_glob_from_shortname() {
 }
 
 date_path_glob() {
-    local -r month=$(month_glob_from_shortname "${MONTH+$MONTH}")
-    echo "$(year_glob)-$month-$(dayofmonth_glob)"
+    local -r year=${1+$1}
+    local -r month=$(month_glob_from_shortname "${2+$2}")
+    local -r dayofmonth=${3+$3}
+    echo "$(year_glob $year)-$month-$(dayofmonth_glob $dayofmonth)"
 }
 
 date_filename_glob() {
-    date_path_glob | tr --delete '-'
+    local -r year=${1+$1}
+    local -r month=${2+$2}
+    local -r dayofmonth=${3+$3}
+    date_path_glob $year $month $dayofmonth | tr --delete '-'
 }
 
 title_glob() {
-    local -r title=${TITLE+$TITLE}
+    local -r title=${1+$1}
     if [[ -z $title ]]; then
         echo "*"
     else 
@@ -87,7 +92,7 @@ title_glob() {
 }
 
 timeofday_glob() {
-    local -r timeofday=${TIME_OF_DAY+$TIME_OF_DAY}
+    local -r timeofday=${1+$1}
     if [[ -z $timeofday ]]; then
         echo "????"
     else 
@@ -96,7 +101,7 @@ timeofday_glob() {
 }
 
 photonumber_glob() {
-    local -r number_tail=${PHOTO_NUMBER_TAIL+$PHOTO_NUMBER_TAIL}
+    local -r number_tail=${1+$1}
     if [[ -z $number_tail ]]; then
         echo "*"
     else 
@@ -105,14 +110,14 @@ photonumber_glob() {
 }
 
 filename_glob() {
-    local -r extension_param=${1+$1}
-    if [[ -z $extension_param ]]; then
-        local -r extension_glob="???"
-    else
-        local -r extension_glob=$extension_param
-    fi
-
-    echo "$(title_glob)_$(date_filename_glob)_$(timeofday_glob)_*_$(photonumber_glob).$extension_glob"
+    local -r title=${1+$1}
+    local -r year=${2+$2}
+    local -r month=${3+$3}
+    local -r dayofmonth=${4+$4}
+    local -r timeofday=${5+$5}
+    local -r camera="*"
+    local -r photonumber_tail=${6+$6}
+    echo "$(title_glob "$title")_$(date_filename_glob $year $month $dayofmonth)_$(timeofday_glob "$timeofday")_*_$(photonumber_glob "$photonumber_tail")"
 }
 
 extensions_regex_alternatives() {

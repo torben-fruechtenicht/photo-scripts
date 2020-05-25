@@ -62,7 +62,11 @@ if [[ -v OLD_VALUES_FILE ]]; then
     test -n "$DAY_OF_MONTH" && save_single_value "$OLD_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
 fi
 
+year_dir_glob=$(year_glob $YEAR)
+album_dir_glob=$(album_glob "$ALBUM")
+day_dir_glob=$(date_path_glob "$YEAR" "$MONTH" "$DAY_OF_MONTH")
+filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$PHOTO_NUMBER_TAIL")
 
 find "$SEARCH_DIR" -regextype posix-extended -type f \
-    -ipath "*/$(year_glob)/$(album_glob)/$(date_path_glob)/$(filename_glob)" \
+    -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
     -iregex ".+\.($(extensions_regex_alternatives))"

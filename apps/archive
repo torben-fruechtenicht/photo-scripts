@@ -54,11 +54,21 @@ fi
 
 
 converted_file_glob() {
-    echo "converted/$(filename_glob "jpg")"
+    local -r title=""
+    local -r photonumber_tail=""
+    local -r dayofmonth=""
+    local -r timeofday=""
+    echo "converted/$(filename_glob "$title" "$YEAR" "$MONTH" "$dayofmonth" "$timeofday" "$photonumber_tail").jpg"
 }
 
-archivable_photos=$(\
-    find "$SEARCH_DIR" -type f -ipath "*/$(year_glob)/$(album_glob)/$(date_path_glob)/$(converted_file_glob)" | \
+collect_archivable_photos() {
+    local -r dayofmonth=""
+    local -r year_dir_glob=$(year_glob $YEAR)
+    local -r album_dir_glob=$(album_glob "$ALBUM")
+    local -r day_dir_glob=$(date_path_glob "$YEAR" "$MONTH" "$dayofmonth")
+
+    # search all output files, i.e. jpgs from the converted dirs
+    find "$SEARCH_DIR" -type f -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$(converted_file_glob)" | \
     # get fullnames for all processed files (and make sure we have no duplicates after variants reduction)
     while read -r processed_file; do
         fullname_from_photofile "$processed_file" | sed -r 's/(.+_[0-9a-zA-Z]+)-[0-9]+$/\1/'
@@ -68,7 +78,9 @@ archivable_photos=$(\
         find "$SEARCH_DIR" -regextype posix-extended -type f \
             -iregex ".+/$fullname\.(ORF|RAW|JPG|CRW|CR2)$" ! -path '*/converted/*'
     done
-)
+}
+
+archivable_photos=$(collect_archivable_photos)
 
 if [[ -z $archivable_photos ]]; then
     "$POPUP_CMD" -e "$APP_TITLE" "No archivable photos found that match the filer"
