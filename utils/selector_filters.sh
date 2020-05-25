@@ -119,12 +119,3 @@ filename_glob() {
     local -r photonumber_tail=${6+$6}
     echo "$(title_glob "$title")_$(date_filename_glob $year $month $dayofmonth)_$(timeofday_glob "$timeofday")_*_$(photonumber_glob "$photonumber_tail")"
 }
-
-extensions_regex_alternatives() {
-    local -r extensions=${EXTENSIONS+$EXTENSIONS}
-    if [[ -z $extensions ]]; then
-        echo "???"
-    else 
-        echo "$extensions" | tr ' ' '|'
-    fi
-}

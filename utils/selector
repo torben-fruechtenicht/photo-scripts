@@ -32,8 +32,7 @@ options_string=$("$YAD_CMD" \
     --field="Day of month:CB" "$(old_value_preselected_in_list "$OLD_VALUES_FILE" "dayofmonth" "$DAYS_OF_MONTH_INCL_EMPTY_VALUE")" \
     --field="Time of day:TEXT" "" \
     --field="Photo number ends with:TEXT" "" \
-    --field="Search directory:DIR" "$SEARCH_DIR_OPTION" \
-    --field="Allowed extensions:TEXT" "$EXTENSIONS_DEFAULT" 2> /dev/null)
+    --field="Search directory:DIR" "$SEARCH_DIR_OPTION" 2> /dev/null)
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
@@ -51,7 +50,6 @@ declare -r PHOTO_NUMBER_TAIL=$(echo "$options_string" | cut -d'|' -f 7)
 #   MAYBE: check if yad passes the current dir as the default if no own default is set - if yes, we could check if entered
 #   directory is current. con: what if user wants to save in current?
 declare -r SEARCH_DIR=$(echo "$options_string" | cut -d'|' -f 8)
-declare -r EXTENSIONS=$(echo "$options_string" | cut -d'|' -f 9)
 
 
 if [[ -v OLD_VALUES_FILE ]]; then
@@ -69,4 +67,4 @@ filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_O
 
 find "$SEARCH_DIR" -regextype posix-extended -type f \
     -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
-    -iregex ".+\.($(extensions_regex_alternatives))"
+    -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)"
