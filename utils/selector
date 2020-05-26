@@ -58,10 +58,12 @@ fi
 # FIXME handle missing SEARCH_DIR - if there is a way not to select one
 #   MAYBE: check if yad passes the current dir as the default if no own default is set - if yes, we could check if entered
 #   directory is current. con: what if user wants to save in current?
+
 declare -r SEARCH_DIR=$(echo "$options_string" | cut -d'|' -f 8)
 
 
 if [[ -v OLD_VALUES_FILE ]]; then
+    # TODO allow saving of empty values (because we rarely use title and don't want the last used one to appear)
     test -n "$ALBUM" && save_cb_value "$OLD_VALUES_FILE" "album" "$ALBUM" 5
     test -n "$TITLE" && save_cb_value "$OLD_VALUES_FILE" "title" "$TITLE" 10
     test -n "$YEAR" && save_cb_value "$OLD_VALUES_FILE" "year" "$YEAR" 5
@@ -73,7 +75,7 @@ year_dir_glob=$(year_glob $YEAR)
 album_dir_glob=$(album_glob "$ALBUM")
 day_dir_glob=$(date_path_glob "$YEAR" "$MONTH" "$DAY_OF_MONTH")
 filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$PHOTO_NUMBER_TAIL")
-set -x
+
 find "$SEARCH_DIR" -regextype posix-extended -type f \
     -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
     -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)"

@@ -19,13 +19,16 @@ headline_from_photofile() {
     echo "$photo_filename" | sed -r 's/'"$PHOTO_FILENAME_PATTERN"'/\1 \5/'
 }
 
-is_original_photofile() ( # use "()" instead of "{}" so that the function body is executed as a subshell
+is_original_photofile() ( 
+# use "()" instead of "{}" so that the function body is executed as a subshell (shopt call can not
+# interfere with the calling script)
     local -r file=$1
     shopt -s nocasematch
 
     # TODO check that parent directories of sourcephoto are year/album/date (or move to is_valid function)
 
     [[ -f $file ]] && \
+        # TODO use PHOTO_FULLNAME_PATTERN
         [[ $file =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]] && \
         ! [[ $file =~ .+/converted/^/+$ ]]
 )
