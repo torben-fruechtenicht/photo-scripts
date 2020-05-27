@@ -3,9 +3,10 @@
 set -eu
 shopt -s nocasematch
 
-. "$(dirname "$(readlink -e $0)")/metadata.sh"
-. "$(dirname "$(readlink -e $0)")/sidecar.sh"
-. "$(dirname "$(readlink -e $0)")/jpeg.sh"
+declare -r BASE_DIR=$(dirname "$(readlink -e "$0")/..")
+source "$BASE_DIR/lib/metadata.sh"
+source "$BASE_DIR/lib/sidecar.sh"
+source "$BASE_DIR/lib/jpeg.sh"
 
 print_help() {
     cat <<EOF
