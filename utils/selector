@@ -59,12 +59,13 @@ fi
 
 
 if [[ -v OLD_VALUES_FILE ]]; then
-    # TODO allow saving of empty values (because we rarely use title and don't want the last used one to appear)
-    test -n "$ALBUM" && save_cb_value "$OLD_VALUES_FILE" "album" "$ALBUM" 5
-    test -n "$TITLE" && save_cb_value "$OLD_VALUES_FILE" "title" "$TITLE" 10
+    save_cb_value "$OLD_VALUES_FILE" "album" "$ALBUM" 25
+    save_cb_value "$OLD_VALUES_FILE" "title" "$TITLE" 25
+    # to prevent accidential gigantic result lists, never save the empty year value, that parameter should only be left out
+    # if required
     test -n "$YEAR" && save_cb_value "$OLD_VALUES_FILE" "year" "$YEAR" 5
-    test -n "$MONTH" && save_single_value "$OLD_VALUES_FILE" "month" "$MONTH"
-    test -n "$DAY_OF_MONTH" && save_single_value "$OLD_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
+    save_single_value "$OLD_VALUES_FILE" "month" "$MONTH"
+    save_single_value "$OLD_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
 fi
 
 year_dir_glob=$(year_glob $YEAR)
