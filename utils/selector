@@ -20,13 +20,17 @@ done
 shift $(expr $OPTIND - 1 )
 
 
-declare -r SEARCH_DIR_OPTION="$(readlink -e "${1+$1}")"
+declare -r SEARCH_DIR="$(readlink -e "${1+$1}")"
+if [[ -z $SEARCH_DIR ]]; then
+    "$POPUP_CMD" -e "$APP_TITLE" "Cannot run selector without a search directory"
+    exit 1
+fi
+
 declare -r EXTENSIONS_DEFAULT="ORF CRW CR2 RAW JPG"
 # TODO photonumber tail should allow ranges
 # TODO time of day should allow ranges
-# TODO add more spacing between fields
 options_string=$("$YAD_CMD" \
-    --title="Select photos matching:" \
+    --title="Select photos from $SEARCH_DIR matching:" \
     --form \
     --field="Album:CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "album" "")" \
     --field="Photo title:CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "title" "")" \
@@ -34,8 +38,7 @@ options_string=$("$YAD_CMD" \
     --field="Month:CB" "$(old_value_preselected_in_list "$OLD_VALUES_FILE" "month" "$MONTHS_INCL_EMPTY_VALUE")" \
     --field="Day of month:CB" "$(old_value_preselected_in_list "$OLD_VALUES_FILE" "dayofmonth" "$DAYS_OF_MONTH_INCL_EMPTY_VALUE")" \
     --field="Time of day:TEXT" "" \
-    --field="Photo number ends with:TEXT" "" \
-    --field="Search directory:DIR" "$SEARCH_DIR_OPTION" 2> /dev/null)
+    --field="Photo number ends with:TEXT" "" 2> /dev/null)
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
@@ -53,13 +56,6 @@ if [[ -z $ALBUM ]] && [[ -z $TITLE ]]; then
     "$POPUP_CMD" -e "$APP_TITLE" "One of album or title must be defined"
     exit 1
 fi
-
-
-# FIXME handle missing SEARCH_DIR - if there is a way not to select one
-#   MAYBE: check if yad passes the current dir as the default if no own default is set - if yes, we could check if entered
-#   directory is current. con: what if user wants to save in current?
-
-declare -r SEARCH_DIR=$(echo "$options_string" | cut -d'|' -f 8)
 
 
 if [[ -v OLD_VALUES_FILE ]]; then
