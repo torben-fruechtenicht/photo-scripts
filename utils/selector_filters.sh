@@ -1,5 +1,7 @@
 #! /usr/bin/env bash
 
+# TODO rename to "find_globs.sh" after month_glob_from_shortname has been removed
+
 year_glob() {
     local -r year=${1+$1}
     if [[ -z $year ]]; then
@@ -20,10 +22,10 @@ month_glob() {
 
 dayofmonth_glob() {
     local -r dayofmonth=${1+$1}
-    if [[ -z $dayofmonth ]]; then
-        echo "??"
-    else 
+    if [[ $dayofmonth =~ ^[0-9]{2}$ ]] && (( 1 <= $dayofmonth )) && (( $dayofmonth <= 31  )); then
         echo "$dayofmonth"
+    else 
+        echo "??"
     fi
 }
 
@@ -39,29 +41,29 @@ album_glob() {
 month_glob_from_shortname() {
     local -r monthname=${1+$1}
     case $monthname in 
-        Jan )
+        Jan* )
             echo "01";;
-        Feb )
+        Feb* )
             echo "02";;
-        Mar )
+        Mar* )
             echo "03";;
-        Apr )
+        Apr* )
             echo "04";;
         May )
             echo "05";;
-        Jun )
+        Jun* )
             echo "06";;
-        Jul )
+        Jul* )
             echo "07";;
-        Aug )
+        Aug* )
             echo "08";;
-        Seo )
+        Sep* )
             echo "09";;
-        Oct )
+        Oct* )
             echo "10";;
-        Nov )
+        Nov* )
             echo "11";;
-        Dec )
+        Dec* )
             echo "12";;    
         * )
             echo "??";;       
