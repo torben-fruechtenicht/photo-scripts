@@ -46,4 +46,9 @@ if [[ -z $KEYWORDS ]]; then
 fi
 
 "$SET_KEYWORDS_CMD" "$KEYWORDS" "$photos"
+set_keywords_rc=$?
+if [[ $set_keywords_rc != 0 ]]; then
+    "$POPUP_CMD" -w "$APP_TITLE" "Setting IPTC keywords failed with return code $set_keywords_rc"  
+    exit 1
+fi
 
