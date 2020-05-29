@@ -95,4 +95,5 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-"$MOVE_PHOTOS_CMD" -t "$ARCHIVE_DIR" "$archivable_photos" | xargs chmod ugo-w
+# FIXME use "set -o pipefail" so that we fail already from the first part, hopefully?
+"$MOVE_PHOTOS_CMD" -t "$ARCHIVE_DIR" "$archivable_photos" | xargs --no-run-if-empty chmod ugo-w
