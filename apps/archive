@@ -102,6 +102,6 @@ if [[ $action_rc = 0 ]]; then
     "$POPUP_CMD" -i "$APP_TITLE" "Archived $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\""
 else
     "$POPUP_CMD" -e "$APP_TITLE" \
-        "Archiving $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\" failed with return code $move_photos_rc"
+        "Archiving $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\" failed with return code $action_rc"
     exit 1
 fi

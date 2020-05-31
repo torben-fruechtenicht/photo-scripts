@@ -11,6 +11,7 @@ declare -r IMPORT_CMD="$BASE_DIR/import_photos"
 declare -r CREATE_SIDECAR_CMD="$BASE_DIR/profile-builder/create_sidecar"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
 source "$BASE_DIR/utils/yad_old_values.sh"
+source "$BASE_DIR/utils/yad.sh"
 
 
 while getopts "c:" opt; do
@@ -27,9 +28,7 @@ declare -r TARGET_DIR=${2+$2}
 declare -r SIDECAR_TEMPLATES_DIR=${3+$3}
 
 dialog_txt="$(echo -e "Import photos from\n\t$DCIM_DIR\nto\n\t$TARGET_DIR:\n")"
-options_string=$("$YAD_CMD" \
-    --title="$APP_TITLE" \
-    --text="$dialog_txt" \
+options_string=$(run_yad "$APP_TITLE" "Import photos from $DCIM_DIR to $TARGET_DIR" \
     --form \
     --field="Album:TEXT" "New photos" \
     --field="Photo title:TEXT" "" \
@@ -57,40 +56,26 @@ test -n "$keywords_string" && declare -r KEYWORDS=$keywords_string
 
 imported_photos=$("$IMPORT_CMD" ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} "$DCIM_DIR" "$TARGET_DIR")
 import_photos_rc=$?
-if [[ $import_photos_rc != 0 ]]; then
-    case $import_photos_rc in     
-        101 )
-            error_msg="Import failed, DCIM directory missing";;
-        102 )
-            error_msg="Import failed, target directory missing";;
-        * )
-            error_msg="Import failed with return code $import_photos_rc";;
-    esac
-    "$POPUP_CMD" -e "$APP_TITLE" "$error_msg"
+if [[ $import_photos_rc = 0 ]]; then
+    imported_photos_count=$(echo "$imported_photos" | wc -l)
+    "$POPUP_CMD" -i "$APP_TITLE" "Imported $imported_photos_count photo(s)"
+else
+    "$POPUP_CMD" -e "$APP_TITLE" "Importing photos from $DCIM_DIR failed with return code $import_photos_rc"
     exit 1
 fi
 
-create_sidecar_out=$("$CREATE_SIDECAR_CMD" ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWORDS"} "$SIDECAR_TEMPLATES_DIR" $(echo $imported_photos) 2>&1)
+created_sidecars=$("$CREATE_SIDECAR_CMD" ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWORDS"} "$SIDECAR_TEMPLATES_DIR" \
+    $(echo $imported_photos))
 create_sidecar_rc=$?
-if [[ $create_sidecar_rc != 0 ]]; then
-    case $import_photos_rc in     
-        101 )
-            error_msg=", templates directory missing";;
-        102 )
-            error_msg=", templates directory is not a directory (only photos given?)";;
-        * )
-            error_msg=" with return code $create_sidecar_rc";;
-    esac
-    "$POPUP_CMD" -e "$APP_TITLE" "Import succeeded but creating sidecars failed $error_msg"
+if [[ $create_sidecar_rc = 0 ]]; then
+    sidecars_count=$(echo "$created_sidecars" | wc -l)
+    "$POPUP_CMD" -i "$APP_TITLE" "Created $sidecars_count sidecar(s)"
+else
+    "$POPUP_CMD" -e "$APP_TITLE" "Creating sidecars failed with return code $create_sidecar_rc"
     exit 1
 fi
-
 
 total_size_mb=$(du -ch $imported_photos | tail -1 | cut -f 1)
-imported_photos_count=$(echo "$imported_photos" | wc -l)
 duration_in_minutes=$(( $SECONDS / 60 ))
-if echo "$create_sidecar_out" | grep -q "\[ERROR\]"; then
-    create_sidecar_errors="Errors when creating sidecars:\n$(echo "$create_sidecar_out" | grep "\[ERROR\]")"
-fi
 "$POPUP_CMD" -i "$APP_TITLE" \
-    "$(echo -e "Done, imported $imported_photos_count photos ($total_size_mb MB) in $duration_in_minutes minutes.${create_sidecar_errors+$(echo -e "\n\n$create_sidecar_errors")}")"
+    "Imported $imported_photos_count photo(s) ($total_size_mb MB) in $duration_in_minutes minutes."

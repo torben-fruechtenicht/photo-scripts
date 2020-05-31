@@ -40,7 +40,8 @@ set_keywords_rc=$?
 if [[ $set_keywords_rc = 0 ]]; then
     "$POPUP_CMD" -i "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) done"
 else
-    "$POPUP_CMD" -w "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) failed with return code $set_keywords_rc"
+    "$POPUP_CMD" -w "$APP_TITLE" \
+        "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) failed with return code $set_keywords_rc"
     exit 1
 fi
 
