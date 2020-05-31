@@ -16,11 +16,14 @@ declare -r TIMEOUT=15000
 while getopts "iwe" opt; do
     case $opt in
         i ) 
-			declare -r ICON=$INFO_ICON;;   
+			declare -r ICON=$INFO_ICON
+            declare -r TIMEOUT=20000;;   
 		w ) 
-			declare -r ICON=$WARN_ICON;;   
+			declare -r ICON=$WARN_ICON
+            declare -r TIMEOUT=40000;;   
         e )
-            declare -r ICON=$ERROR_ICON;;   
+            declare -r ICON=$ERROR_ICON
+            declare -r TIMEOUT=60000;;   
 	esac
 done
 shift $(expr $OPTIND - 1 )
