@@ -13,15 +13,6 @@ declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
 source "$BASE_DIR/utils/yad.sh"
 
-
-remove_searchdir_from_photos_list()  {
-    local -r list=$1
-    echo "$list" | while read -r photo; do 
-        echo ${photo#$SEARCH_DIR/}
-    done
-} 
-
-
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 shift 1
 

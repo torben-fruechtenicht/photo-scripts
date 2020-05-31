@@ -23,13 +23,6 @@ if [[ -z $photos ]]; then
     exit 1
 fi
 
-remove_searchdir_from_photos_list()  {
-    local -r list=$1
-
-    echo "$list" | while read -r photo; do 
-        echo ${photo#$SEARCH_DIR/}
-    done
-}    
 
 move_to_album_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
     --form \
