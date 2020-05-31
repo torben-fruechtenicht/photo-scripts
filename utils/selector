@@ -2,7 +2,7 @@
 
 set -u
 
-declare -r APP_TITLE="Photo selector"
+! test -v APP_TITLE && declare -r APP_TITLE="Photo selector"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
