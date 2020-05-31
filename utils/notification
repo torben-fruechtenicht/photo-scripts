@@ -11,8 +11,6 @@ declare -r INFO_ICON=$ICONS_DIR/dialog-information.png
 declare -r WARN_ICON=$ICONS_DIR/dialog-warning.png
 declare -r ERROR_ICON=$ICONS_DIR/dialog-error.png
 
-declare -r TIMEOUT=15000
-
 while getopts "iwe" opt; do
     case $opt in
         i ) 
