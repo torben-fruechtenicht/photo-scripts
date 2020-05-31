@@ -2,7 +2,7 @@
 
 set -u
 
-declare -r APP_TITLE="Move photos"
+declare -r -x APP_TITLE="Move photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
@@ -11,6 +11,7 @@ declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
 source "$BASE_DIR/utils/yad_old_values.sh"
+source "$BASE_DIR/utils/yad.sh"
 
 declare -r OLD_VALUES_FILE="$(get_old_values_file "selector")"
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
@@ -30,14 +31,10 @@ remove_searchdir_from_photos_list()  {
     done
 }    
 
-dialog_text=$(echo -e "Move listed photos\n$(remove_searchdir_from_photos_list "$photos")\nto a different album:\n\n")
-
-move_to_album_params=$("$YAD_CMD" \
-    --title="$APP_TITLE" \
-    --text="$dialog_text" \
+move_to_album_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
     --form \
-    --field="New album (required):CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "album" "")" \
-    --field="Rename photos:CHK" "FALSE")
+    --field="Move to album:CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "album" "")" \
+    --field="Photo titles are changed to album title:CHK" "FALSE")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit

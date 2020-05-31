@@ -17,9 +17,7 @@ run_yad() {
 
 run_yad_selector_result_action_dialog() {
     local -r title=$1
-    set -x
     local -r selected_photos=$2
-    set +x
     local -r search_dir=$3
     local -r action_text=$4
     shift 4
