@@ -4,7 +4,7 @@ set -u
 
 declare -r APP_TITLE="Import photos"
 
-declare -r BASE_DIR=$(dirname "$(readlink -e "$0")")
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r IMPORT_CMD="$BASE_DIR/import_photos"
