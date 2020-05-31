@@ -53,9 +53,11 @@ else
     declare -r RENAME_MODE="a"
 fi
 
-move_photos_out=$("$MOVE_PHOTOS" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE "$photos"  2>&1)
+"$MOVE_PHOTOS" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE "$photos"
 move_photos_rc=$?
-if [[ $move_photos_rc != 0 ]]; then
-    "$POPUP_CMD" -e "$APP_TITLE" "Move photos failed with return code $move_photos_rc"
+if [[ $move_photos_rc = 0 ]]; then
+    "$POPUP_CMD" -i "$APP_TITLE" "Renaming $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" done"
+else
+    "$POPUP_CMD" -e "$APP_TITLE" "Renaming $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" failed with return code $move_photos_rc"
     exit 1
 fi
