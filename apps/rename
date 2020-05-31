@@ -51,8 +51,8 @@ fi
 "$MOVE_PHOTOS" -r "$NEW_NAME" -m "p" $photos
 move_photos_rc=$?
 if [[ $move_photos_rc = 0 ]]; then
-    "$POPUP_CMD" -i "$APP_TITLE" "Renaming $(wc -l $photos) photos to \"$NEW_NAME\" done"
+    "$POPUP_CMD" -i "$APP_TITLE" "Renaming $(echo "$photos" | wc -l) photos to \"$NEW_NAME\" done"
 else
-    "$POPUP_CMD" -e "$APP_TITLE" "Renaming $(wc -l $photos) photos to \"$NEW_NAME\" failed with return code $move_photos_rc"
+    "$POPUP_CMD" -e "$APP_TITLE" "Renaming $(echo "$photos" | wc -l) photos to \"$NEW_NAME\" failed with return code $move_photos_rc"
     exit 1
 fi
