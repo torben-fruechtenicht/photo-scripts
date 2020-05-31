@@ -120,7 +120,7 @@ build_targetpath() {
 }
 
 declare -r EXTENSIONS=".+\.(ORF|CRW|CR2|RAW|JPG)"
-# TODO to use DATE, add another step to pipeline: get date from photofile and compare with DATE, print photofile to stdout
+# TODO to use DATE_TAKEN, add another step to pipeline: get date from photofile and compare with DATE, print photofile to stdout
 # if dates match.
 # Using find checks will not work, they only check if newer as a given date
 # DOC when using find with both -exec (for copying) and -printf (for the filename), copying must happen first. Otherwise

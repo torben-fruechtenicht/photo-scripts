@@ -9,9 +9,8 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r IMPORT_CMD="$BASE_DIR/import_photos"
 declare -r CREATE_SIDECAR_CMD="$BASE_DIR/profile-builder/create_sidecar"
-declare -r YAD_CMD="$BASE_DIR/utils/yad"
-source "$BASE_DIR/utils/yad_old_values.sh"
-source "$BASE_DIR/utils/yad.sh"
+source "$BASE_DIR/apps/lib/yad.sh"
+source "$BASE_DIR/apps/lib/form_values.sh"
 
 
 while getopts "c:" opt; do
@@ -27,31 +26,32 @@ declare -r DCIM_DIR=${1+$1}
 declare -r TARGET_DIR=${2+$2}
 declare -r SIDECAR_TEMPLATES_DIR=${3+$3}
 
-dialog_txt="$(echo -e "Import photos from\n\t$DCIM_DIR\nto\n\t$TARGET_DIR:\n")"
+# TODO use textfield for creator if CREATOR_OPTION is set, otherwise use memorized values in CBE
 options_string=$(run_yad "$APP_TITLE" "Import photos from $DCIM_DIR to $TARGET_DIR" \
     --form \
-    --field="Album:TEXT" "New photos" \
-    --field="Photo title:TEXT" "" \
-    --field="Photographer/creator:TEXT" "${CREATOR_OPTION+$CREATOR_OPTION}" \
-    --field="Keywords (separated by \";\"):TEXT" "" \
-    --field="Only from date:DT" 2> /dev/null)
+    --field="Album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "New photos")" \
+    --field="Photo title:CBE" "$(get_memorized_values_or_default "$OLD_VALUES_FILE" "title" "")" \
+    --field="Photographer/creator" "${CREATOR_OPTION+$CREATOR_OPTION}" \
+    --field="Keywords (separated by \";\"):CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "keywords" "")")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
 declare -r ALBUM="$(echo "$options_string" | cut -d'|' -f 1 | tr ' ' '-')"
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
 
 title_string="$(echo "$options_string" | cut -d'|' -f 2 | tr ' ' '-')"
-test -n "$title_string" && declare -r TITLE="$title_string"
+test -n "$title_string" && declare -r TITLE="$title_string" && \
+    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
 
 creator_string="$(echo "$options_string" | cut -d'|' -f 3)"
-test -n "$creator_string" && declare -r CREATOR=$creator_string
+test -n "$creator_string" && declare -r CREATOR=$creator_string 
+# TODO memorize creator
 
 keywords_string="$(echo "$options_string" | cut -d'|' -f 4)"
-test -n "$keywords_string" && declare -r KEYWORDS=$keywords_string
-
-# declare -r DATE_TAKEN="$(echo "$options_string" | cut -d'|' -f 5)"
+test -n "$keywords_string" && declare -r KEYWORDS=$keywords_string && \
+    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
 
 
 imported_photos=$("$IMPORT_CMD" ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} "$DCIM_DIR" "$TARGET_DIR")
