@@ -15,8 +15,9 @@ declare -r MOVE_PHOTOS_CMD="$BASE_DIR/lib/move_photos.sh"
 source "$BASE_DIR/utils/yad_old_values.sh"
 source "$BASE_DIR/utils/selector_filters.sh"
 source "$BASE_DIR/lib/metadata.sh"
+source "$BASE_DIR/utils/yad.sh"
 
-declare -r OLD_VALUES_FILE="$(get_old_values_file "import")"
+declare -r OLD_VALUES_FILE="$(get_old_values_file "archive")"
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 if [[ -z $SEARCH_DIR ]]; then
@@ -31,8 +32,7 @@ if [[ -z $ARCHIVE_DIR ]]; then
 fi
 
 
-options_string=$("$YAD_CMD" \
-    --title="Select from where to archive:" \
+options_string=$(run_yad "$APP_TITLE" "Select which photos to archive:" \
     --form \
     --field="Album:CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "album" "")" \
     --field="Year:CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "year" "$(date +%Y)")" \
@@ -95,5 +95,13 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-# FIXME use "set -o pipefail" so that we fail already from the first part, hopefully?
+set -o pipefail
 "$MOVE_PHOTOS_CMD" -t "$ARCHIVE_DIR" "$archivable_photos" | xargs --no-run-if-empty chmod ugo-w
+action_rc=$?
+if [[ $action_rc = 0 ]]; then
+    "$POPUP_CMD" -i "$APP_TITLE" "Archived $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\""
+else
+    "$POPUP_CMD" -e "$APP_TITLE" \
+        "Archiving $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\" failed with return code $move_photos_rc"
+    exit 1
+fi
