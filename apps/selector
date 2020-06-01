@@ -5,18 +5,11 @@ set -u
 ! test -v APP_TITLE && declare -r APP_TITLE="Photo selector"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
-declare -r POPUP_CMD="$BASE_DIR/utils/notification"
-source "$BASE_DIR/utils/selector_filters.sh"
-source "$BASE_DIR/utils/yad.sh"
 
-while getopts "o:" opt; do
-    case $opt in
-        o ) 
-			declare -r OLD_VALUES_FILE=$(readlink -f "$OPTARG")
-            ! test -e "$OLD_VALUES_FILE" && touch "$OLD_VALUES_FILE";;
-	esac
-done
-shift $(expr $OPTIND - 1 )
+declare -r POPUP_CMD="$BASE_DIR/utils/notification"
+source "$BASE_DIR/apps/lib/yad.sh"
+source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/find_globs_factory.sh"
 
 
 declare -r SEARCH_DIR="$(readlink -e "${1+$1}")"
@@ -25,15 +18,22 @@ if [[ -z $SEARCH_DIR ]]; then
     exit 1
 fi
 
+
+album_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")
+title_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")
+year_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "year" "$(date +%Y)")
+month_form_value=$(get_memorized_value_preselected_in_all_values_list "$MEMORIZED_FORM_VALUES_FILE" "month" "!$MONTHS")
+dayofmonth_form_value=$(get_memorized_value_preselected_in_all_values_list \
+    "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "!$DAYS_OF_MONTH")
 # TODO photonumber tail should allow ranges
 # TODO time of day should allow ranges
 options_string=$(run_yad "$APP_TITLE" "Select photos from $SEARCH_DIR matching:" \
     --form \
-    --field="Album:CBE" "$(get_memorized_values_or_default "$OLD_VALUES_FILE" "album" "")" \
-    --field="Photo title:CBE" "$(get_memorized_values_or_default "$OLD_VALUES_FILE" "title" "")" \
-    --field="Year:CBE" "$(get_memorized_values_or_default "$OLD_VALUES_FILE" "year" "$(date +%Y)")" \
-    --field="Month:CB" "$(get_memorized_value_preselected_in_all_values_list "$OLD_VALUES_FILE" "month" "!$MONTHS")" \
-    --field="Day of month:CB" "$(get_memorized_value_preselected_in_all_values_list "$OLD_VALUES_FILE" "dayofmonth" "!$DAYS_OF_MONTH")" \
+    --field="Album:CBE" "$album_form_value" \
+    --field="Photo title:CBE" "$title_form_value" \
+    --field="Year (4 digits):CBE" "$year_form_value" \
+    --field="Month:CB" "$month_form_value" \
+    --field="Day of month:CB" "$dayofmonth_form_value" \
     --field="Time of day:TEXT" "" \
     --field="Photo number ends with:TEXT" "" 2> /dev/null)
 yad_rc=$?
@@ -54,22 +54,20 @@ if [[ -z $ALBUM ]] && [[ -z $TITLE ]]; then
     exit 1
 fi
 
-
-if [[ -v OLD_VALUES_FILE ]]; then
-    memorize_form_combobox_values "$OLD_VALUES_FILE" "album" "$ALBUM" 25
-    memorize_form_combobox_values "$OLD_VALUES_FILE" "title" "$TITLE" 25
-    # to prevent accidential gigantic result lists, never save the empty year value, that parameter should only be left out
-    # if explicitely desired
-    test -n "$YEAR" && memorize_form_combobox_values "$OLD_VALUES_FILE" "year" "$YEAR" 5
-    memorize_form_value "$OLD_VALUES_FILE" "month" "$MONTH"
-    memorize_form_value "$OLD_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
-fi
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
+# to prevent accidential gigantic result lists, never save the empty year value, that parameter should only be left out
+# if explicitely desired
+test -n "$YEAR" && memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
+memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
+memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
 
 year_dir_glob=$(year_glob $YEAR)
 album_dir_glob=$(album_glob "$ALBUM")
+month_value=$(month_value_from_name "$MONTH")
 day_dir_glob=$(date_path_glob "$YEAR" "$MONTH" "$DAY_OF_MONTH")
 filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$PHOTO_NUMBER_TAIL")
-
+set -x
 find "$SEARCH_DIR" -regextype posix-extended -type f \
     -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
     -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)"
