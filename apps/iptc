@@ -4,7 +4,7 @@ declare -r -x APP_TITLE="IPTC keyword editor"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-declare -r SELECTOR="$BASE_DIR/utils/selector"
+declare -r SELECTOR="$BASE_DIR/apps/selector"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
 source "$BASE_DIR/utils/yad_old_values.sh"

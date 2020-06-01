@@ -7,7 +7,6 @@ declare -r APP_TITLE="Archive processed photos"
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 source "$BASE_DIR/apps/apps_utils.sh"
-declare -r SELECTOR="$BASE_DIR/utils/selector"
 declare -r ARCHIVE_CMD="$BASE_DIR/archive_processed.sh"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"

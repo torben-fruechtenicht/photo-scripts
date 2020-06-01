@@ -7,7 +7,7 @@ declare -r -x APP_TITLE="Rename photos"
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 source "$BASE_DIR/utils/yad_old_values.sh"
-declare -r SELECTOR="$BASE_DIR/utils/selector"
+declare -r SELECTOR="$BASE_DIR/apps/selector"
 declare -r YAD_CMD="$BASE_DIR/utils/yad"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
