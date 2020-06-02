@@ -27,6 +27,7 @@ declare -r TARGET_DIR=${2+$2}
 declare -r SIDECAR_TEMPLATES_DIR=${3+$3}
 
 # TODO use textfield for creator if CREATOR_OPTION is set, otherwise use memorized values in CBE
+# afterwards: if CREATOR_OPTION is set, fetch memorized values and combine with CREATOR_OPTION (set as selected entry)
 options_string=$(run_yad "$APP_TITLE" "Import photos from $DCIM_DIR to $TARGET_DIR" \
     --form \
     --field="Album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "New photos")" \

@@ -6,7 +6,6 @@ declare -r APP_TITLE="Archive processed photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-declare -r ARCHIVE_CMD="$BASE_DIR/archive_processed.sh"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r MOVE_PHOTOS_CMD="$BASE_DIR/lib/move_photos.sh"
 source "$BASE_DIR/lib/metadata.sh"

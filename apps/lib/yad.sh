@@ -21,7 +21,7 @@ run_yad_selector_result_action_dialog() {
     local -r selected_photos_list=$(__render_selected_photos_list \
         "$(__remove_searchdir_from_photos_list "$selected_photos" "$search_dir")")
     # "\r" adds a linebreak (text in yad is rendered with pango)
-    local -r text="Selected $selected_photos_count photo(s) from $search_dir:\r$selected_photos_list\r$action_text)"
+    local -r text="Selected $selected_photos_count photo(s) from $search_dir:\r$selected_photos_list\r$action_text"
 
     run_yad "$title" "$text" "$@"
 }
