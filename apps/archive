@@ -6,17 +6,13 @@ declare -r APP_TITLE="Archive processed photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-source "$BASE_DIR/apps/apps_utils.sh"
 declare -r ARCHIVE_CMD="$BASE_DIR/archive_processed.sh"
 declare -r POPUP_CMD="$BASE_DIR/utils/notification"
-declare -r YAD_CMD="$BASE_DIR/utils/yad"
 declare -r MOVE_PHOTOS_CMD="$BASE_DIR/lib/move_photos.sh"
-source "$BASE_DIR/utils/yad_old_values.sh"
-source "$BASE_DIR/utils/selector_filters.sh"
 source "$BASE_DIR/lib/metadata.sh"
-source "$BASE_DIR/utils/yad.sh"
-
-declare -r OLD_VALUES_FILE="$(get_old_values_file "archive")"
+source "$BASE_DIR/apps/lib/yad.sh"
+source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/find_globs_factory.sh"
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 if [[ -z $SEARCH_DIR ]]; then
@@ -33,9 +29,9 @@ fi
 
 options_string=$(run_yad "$APP_TITLE" "Select which photos to archive:" \
     --form \
-    --field="Album:CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "album" "")" \
-    --field="Year:CBE" "$(old_values_or_default "$OLD_VALUES_FILE" "year" "$(date +%Y)")" \
-    --field="Month:CB" "$(old_value_preselected_in_list "$OLD_VALUES_FILE" "month" "$MONTHS_INCL_EMPTY_VALUE")" )
+    --field="Album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")" \
+    --field="Year:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "year" "$(date +%Y)")" \
+    --field="Month:CB" "$(get_memorized_value_preselected_in_all_values_list "$MEMORIZED_FORM_VALUES_FILE" "month" "!$MONTHS")" )
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
@@ -45,11 +41,9 @@ declare -r ALBUM=$(echo "$options_string" | cut -d'|' -f 1 | tr ' ' '-')
 declare -r YEAR=$(echo "$options_string" | cut -d'|' -f 2)
 declare -r MONTH=$(echo "$options_string" | cut -d'|' -f 3)
 
-if [[ -v OLD_VALUES_FILE ]]; then
-    test -n "$ALBUM" && save_cb_value "$OLD_VALUES_FILE" "album" "$ALBUM" 5
-    test -n "$YEAR" && save_cb_value "$OLD_VALUES_FILE" "year" "$YEAR" 5
-    test -n "$MONTH" && save_single_value "$OLD_VALUES_FILE" "month" "$MONTH"
-fi
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 5
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
+memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
 
 
 converted_file_glob() {
@@ -57,14 +51,14 @@ converted_file_glob() {
     local -r photonumber_tail=""
     local -r dayofmonth=""
     local -r timeofday=""
-    echo "converted/$(filename_glob "$title" "$YEAR" "$MONTH" "$dayofmonth" "$timeofday" "$photonumber_tail").jpg"
+    echo "converted/$(filename_glob "$title" "$YEAR" "$(month_value_from_name "$MONTH")" "$dayofmonth" "$timeofday" "$photonumber_tail").jpg"
 }
 
 collect_archivable_photos() {
     local -r dayofmonth=""
     local -r year_dir_glob=$(year_glob $YEAR)
     local -r album_dir_glob=$(album_glob "$ALBUM")
-    local -r day_dir_glob=$(date_path_glob "$YEAR" "$MONTH" "$dayofmonth")
+    local -r day_dir_glob=$(date_path_glob "$YEAR" "$(month_value_from_name "$MONTH")" "$dayofmonth")
 
     # search all output files, i.e. jpgs from the converted dirs
     find "$SEARCH_DIR" -type f -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$(converted_file_glob)" | \
@@ -86,13 +80,13 @@ if [[ -z $archivable_photos ]]; then
     exit 1
 fi
 
-dialog_text=$(echo -e "Archive processed photos from list:\n
-$(remove_searchdir_from_photos_list "$archivable_photos" "$SEARCH_DIR")\nto $ARCHIVE_DIR\n")
-"$YAD_CMD" --title="$APP_TITLE" --text="$dialog_text"
+move_to_album_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" \
+    "$archivable_photos" "$SEARCH_DIR" "Archive the selected photos?")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
+
 
 set -o pipefail
 "$MOVE_PHOTOS_CMD" -t "$ARCHIVE_DIR" "$archivable_photos" | xargs --no-run-if-empty chmod ugo-w

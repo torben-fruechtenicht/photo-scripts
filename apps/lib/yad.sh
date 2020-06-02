@@ -2,9 +2,8 @@
 
 run_yad() {
     local -r title=$1
-    # adding a literal linebreak is the only way to force yad to actually add breaks
-    local -r text="$2
-    "
+    # "\r" adds a linebreak (text in yad is rendered with pango)
+    local -r text="$2\r"
     shift 2
 
     local -r yad_options="--borders=10 --fixed --center"
@@ -18,10 +17,11 @@ run_yad_selector_result_action_dialog() {
     local -r action_text=$4
     shift 4
 
-    local -r selected_photos_count=$(echo "$photos" | wc -l)
+    local -r selected_photos_count=$(echo "$selected_photos" | wc -l)
     local -r selected_photos_list=$(__render_selected_photos_list \
         "$(__remove_searchdir_from_photos_list "$selected_photos" "$search_dir")")
-    local -r text="Selected $selected_photos_count photo(s) from $search_dir:\n\n$selected_photos_list\n$action_text"
+    # "\r" adds a linebreak (text in yad is rendered with pango)
+    local -r text="Selected $selected_photos_count photo(s) from $search_dir:\r$selected_photos_list\r$action_text)"
 
     run_yad "$title" "$text" "$@"
 }
