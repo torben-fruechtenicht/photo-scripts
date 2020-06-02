@@ -15,7 +15,7 @@ declare -r OLD_VALUES_FILE="$(get_old_values_file "selector")"
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 
 
-photos=$("$SELECTOR" -o "$OLD_VALUES_FILE" "$SEARCH_DIR") 
+photos=$("$SELECTOR" "$SEARCH_DIR") 
 if [[ -z $photos ]]; then
     "$POPUP_CMD" -w "$APP_TITLE" "No matching photos found"  
     exit 1
