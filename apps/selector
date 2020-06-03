@@ -10,11 +10,12 @@ declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
 source "$BASE_DIR/apps/lib/find_globs_factory.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
 
 
 declare -r SEARCH_DIR="$(readlink -e "${1+$1}")"
 if [[ -z $SEARCH_DIR ]]; then
-    "$POPUP_CMD" -e "$APP_TITLE" "Cannot run selector without a search directory"
+    notify_error "$APP_TITLE" "Cannot run selector without a search directory"
     exit 1
 fi
 
@@ -50,7 +51,7 @@ declare -r TIME_OF_DAY=$(echo "$options_string" | cut -d'|' -f 6)
 declare -r PHOTO_NUMBER_TAIL=$(echo "$options_string" | cut -d'|' -f 7)
 
 if [[ -z $ALBUM ]] && [[ -z $TITLE ]]; then
-    "$POPUP_CMD" -e "$APP_TITLE" "One of album or title must be defined"
+    notify_warning "$APP_TITLE" "One of album or title must be defined"
     exit 1
 fi
 
@@ -61,6 +62,28 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
 test -n "$YEAR" && memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
 memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
 memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
+
+filter_by_number_tail_range() {
+    local -r file=$1
+    local -r range=$2
+
+    # range must have format NNN-MMM
+
+    # split range at "-"
+    lower_bound=
+    upper_bound=
+
+    # NNN and MMM must have same number of digits 
+    
+    # NNN < MMM
+
+    # get tail of number from photo, take as many digits as NNN and MMM
+    file_number_tail=
+
+    if (( $lower_bound <= $file_number_tail )) && (( $file_number_tail <= $upper_bound )); then
+        echo "$file"
+    fi
+}
 
 year_dir_glob=$(year_glob $YEAR)
 album_dir_glob=$(album_glob "$ALBUM")
