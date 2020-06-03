@@ -246,8 +246,8 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
         if [[ -v RENAME_PHOTOS ]]; then
 
-            iptc_headline=$(headline_from_photofile "$sourcephoto")
-            iptc_caption=$(fullname_from_photofile "$sourcephoto")            
+            iptc_headline=$(headline_from_photofile "$targetfile")
+            iptc_caption=$(fullname_from_photofile "$targetfile")            
             
             if ! [[ -w $targetfile ]]; then
                 test -v SIMULATE || chmod u+w "$targetfile"
@@ -257,7 +257,9 @@ for sourcephoto in $SOURCE_PHOTOS; do
             if [[ $file_to_move =~ .*\.pp[23]$ ]]; then
 
                 if ! [[ -v SIMULATE ]]; then
+                    set -x
                     sidecar_set_property "$targetfile" "IPTC" "Headline" "$iptc_headline"
+                    set +x
                     sidecar_set_property "$targetfile" "IPTC" "Caption" "[$iptc_caption]"
                 fi
 
