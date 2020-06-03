@@ -6,7 +6,6 @@ set -u
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
 source "$BASE_DIR/apps/lib/find_globs_factory.sh"
@@ -63,22 +62,39 @@ test -n "$YEAR" && memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "
 memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
 memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
 
+photo_number_tail_is_range() {
+    local -r photo_number_tail=$1
+    [[ $photo_number_tail =~ [0-9]{3}-[0-9]{3} ]]
+}
+
 filter_by_number_tail_range() {
     local -r file=$1
     local -r range=$2
 
     # range must have format NNN-MMM
+    # -> let's assume that's already checked because that's the trigger to switch on range filtering
 
     # split range at "-"
-    lower_bound=
-    upper_bound=
+    lower_bound=$(echo "$range" | cut -d'-' -f1)
+    upper_bound=$(echo "$range" | cut -d'-' -f2)
+    bound_length=$(echo "$lower_bound" | wc -c)
 
     # NNN and MMM must have same number of digits 
+    if [[ $bound_length != $(echo "$upper_bound" | wc -c)  ]]; then
+        notify_warning "$APP_TITLE" "Range of number tails must use same length bounds"
+        exit 1
+    fi
     
     # NNN < MMM
+    if (( $lower_bound > "$upper_bound" )); then
+        notify_warning "$APP_TITLE" "Lower bound is larger than upper bound"
+        exit 1
+    fi
 
     # get tail of number from photo, take as many digits as NNN and MMM
-    file_number_tail=
+    file_name=$(basename "$file")
+    file_number=$(echo ${file_name%%.*})
+    file_number_tail=${file: -$bound_length}
 
     if (( $lower_bound <= $file_number_tail )) && (( $file_number_tail <= $upper_bound )); then
         echo "$file"
