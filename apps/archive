@@ -79,13 +79,17 @@ if [[ -z $archivable_photos ]]; then
     exit 1
 fi
 
-move_to_album_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" \
-    "$archivable_photos" "$SEARCH_DIR" "Archive the selected photos?")
+run_yad_selector_result_action_dialog "$APP_TITLE" \
+    "$archivable_photos" "$SEARCH_DIR" "Archive the selected photos?"
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
+# FIXME change to use archive_processed, not move_photos.sh (because it does not make sense to kind of duplicate
+# the logic from move_photos.sh in collect_archivable_photos)
+# TBD archive_processed expects to be passed a single directory in which it will look for archivable photos. However,
+# this script will produce a list of directories
 
 set -o pipefail
 "$MOVE_PHOTOS_CMD" -t "$ARCHIVE_DIR" "$archivable_photos" | xargs --no-run-if-empty chmod ugo-w
