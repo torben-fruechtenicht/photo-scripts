@@ -7,10 +7,10 @@ declare -r -x APP_TITLE="Rename photos"
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 declare -r SELECTOR="$BASE_DIR/apps/selector"
-declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 shift 1
@@ -18,7 +18,7 @@ shift 1
 
 photos=$("$SELECTOR" "$SEARCH_DIR")
 if [[ -z $photos ]]; then
-    "$POPUP_CMD" -w "$APP_TITLE" "No matching photos found"
+    notify_warning "$APP_TITLE" "No matching photos found"
     exit 1
 fi   
 
@@ -32,7 +32,7 @@ fi
 
 declare -r NEW_TITLE=$(echo "$rename_params" | cut -d'|' -f 1 | tr ' ' '-')
 if [[ -z $NEW_TITLE ]]; then    
-    "$POPUP_CMD" -e "$APP_TITLE" "New photo title is required"  
+    notify_warning "$APP_TITLE" "New photo title is required"  
     exit 1
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$NEW_TITLE" 25
@@ -40,9 +40,9 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$NEW_TITLE"
 "$MOVE_PHOTOS" -r "$NEW_TITLE" -m "p" $photos
 move_photos_rc=$?
 if [[ $move_photos_rc = 0 ]]; then
-    "$POPUP_CMD" -i "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" done"
+    notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" done"
 else
-    "$POPUP_CMD" -e "$APP_TITLE" \
+    notify_error "$APP_TITLE" \
         "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" failed with return code $move_photos_rc"
     exit 1
 fi

@@ -6,22 +6,22 @@ declare -r APP_TITLE="Archive processed photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r MOVE_PHOTOS_CMD="$BASE_DIR/lib/move_photos.sh"
 source "$BASE_DIR/lib/metadata.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
 source "$BASE_DIR/apps/lib/find_globs_factory.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 if [[ -z $SEARCH_DIR ]]; then
-    "$POPUP_CMD" -e "$APP_TITLE" "No search directory given or not-existent"
+    notify_error "$APP_TITLE" "No search directory given or not-existent"
     exit 1
 fi
 
 declare -r ARCHIVE_DIR=$(readlink -e "${2+$2}")
 if [[ -z $ARCHIVE_DIR ]]; then
-    "$POPUP_CMD" -e "$APP_TITLE" "No archive directory given or not-existent"
+    notify_error "$APP_TITLE" "No archive directory given or not-existent"
     exit 1
 fi
 
@@ -75,7 +75,7 @@ collect_archivable_photos() {
 archivable_photos=$(collect_archivable_photos)
 
 if [[ -z $archivable_photos ]]; then
-    "$POPUP_CMD" -e "$APP_TITLE" "No archivable photos found that match the filer"
+    notify_warning "$APP_TITLE" "No archivable photos found that match the filer"
     exit 1
 fi
 
@@ -91,9 +91,9 @@ set -o pipefail
 "$MOVE_PHOTOS_CMD" -t "$ARCHIVE_DIR" "$archivable_photos" | xargs --no-run-if-empty chmod ugo-w
 action_rc=$?
 if [[ $action_rc = 0 ]]; then
-    "$POPUP_CMD" -i "$APP_TITLE" "Archived $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\""
+    notify_info "$APP_TITLE" "Archived $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\""
 else
-    "$POPUP_CMD" -e "$APP_TITLE" \
+    notify_error -e "$APP_TITLE" \
         "Archiving $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\" failed with return code $action_rc"
     exit 1
 fi

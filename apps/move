@@ -8,15 +8,15 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 declare -r SELECTOR="$BASE_DIR/apps/selector"
 declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
-declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 
 photos=$("$SELECTOR" "$SEARCH_DIR") 
 if [[ -z $photos ]]; then
-    "$POPUP_CMD" -w "$APP_TITLE" "No matching photos found"  
+    notify_warning "$APP_TITLE" "No matching photos found"  
     exit 1
 fi
 
@@ -32,7 +32,7 @@ fi
 
 declare -r TARGET_ALBUM_NAME=$(echo "$move_to_album_params" | cut -d'|' -f 1 | tr ' ' '-')
 if [[ -z $TARGET_ALBUM_NAME ]]; then    
-    "$POPUP_CMD" -e "$APP_TITLE" "New album name is required"  
+    notify_warning "$APP_TITLE" "New album name is required"  
     exit 1
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$TARGET_ALBUM_NAME" 25
@@ -47,9 +47,9 @@ fi
 "$MOVE_PHOTOS" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE "$photos"
 move_photos_rc=$?
 if [[ $move_photos_rc = 0 ]]; then
-    "$POPUP_CMD" -i "$APP_TITLE" "Renaming $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" done"
+    notify_info "$APP_TITLE" "Renaming $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" done"
 else
-    "$POPUP_CMD" -e "$APP_TITLE" \
+    notify_error -e "$APP_TITLE" \
         "Renaming $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" failed with return code $move_photos_rc"
     exit 1
 fi

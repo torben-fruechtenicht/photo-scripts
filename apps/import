@@ -6,11 +6,11 @@ declare -r APP_TITLE="Import photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r IMPORT_CMD="$BASE_DIR/import_photos"
 declare -r CREATE_SIDECAR_CMD="$BASE_DIR/profile-builder/create_sidecar"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
 
 
 while getopts "c:" opt; do
@@ -59,9 +59,9 @@ imported_photos=$("$IMPORT_CMD" ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} "$DCIM
 import_photos_rc=$?
 if [[ $import_photos_rc = 0 ]]; then
     imported_photos_count=$(echo "$imported_photos" | wc -l)
-    "$POPUP_CMD" -i "$APP_TITLE" "Imported $imported_photos_count photo(s)"
+    notify_info "$APP_TITLE" "Imported $imported_photos_count photo(s)"
 else
-    "$POPUP_CMD" -e "$APP_TITLE" "Importing photos from $DCIM_DIR failed with return code $import_photos_rc"
+    notify_error "$APP_TITLE" "Importing photos from $DCIM_DIR failed with return code $import_photos_rc"
     exit 1
 fi
 
@@ -70,13 +70,13 @@ created_sidecars=$("$CREATE_SIDECAR_CMD" ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k 
 create_sidecar_rc=$?
 if [[ $create_sidecar_rc = 0 ]]; then
     sidecars_count=$(echo "$created_sidecars" | wc -l)
-    "$POPUP_CMD" -i "$APP_TITLE" "Created $sidecars_count sidecar(s)"
+    notify_info "$APP_TITLE" "Created $sidecars_count sidecar(s)"
 else
-    "$POPUP_CMD" -e "$APP_TITLE" "Creating sidecars failed with return code $create_sidecar_rc"
+    notify_error "$APP_TITLE" "Creating sidecars failed with return code $create_sidecar_rc"
     exit 1
 fi
 
 total_size_mb=$(du -ch $imported_photos | tail -1 | cut -f 1)
 duration_in_minutes=$(( $SECONDS / 60 ))
-"$POPUP_CMD" -i "$APP_TITLE" \
+notify_info -i "$APP_TITLE" \
     "Imported $imported_photos_count photo(s) ($total_size_mb MB) in $duration_in_minutes minutes."

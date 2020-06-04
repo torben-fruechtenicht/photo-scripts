@@ -5,17 +5,17 @@ declare -r -x APP_TITLE="IPTC keyword editor"
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 declare -r SELECTOR="$BASE_DIR/apps/selector"
-declare -r POPUP_CMD="$BASE_DIR/utils/notification"
 declare -r SET_KEYWORDS_CMD="$BASE_DIR/set_iptc_keywords"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 
 
 photos=$("$SELECTOR" "$SEARCH_DIR") 
 if [[ -z $photos ]]; then
-    "$POPUP_CMD" -w "$APP_TITLE" "No matching photos found"  
+    notify_warning "$APP_TITLE" "No matching photos found"  
     exit 1
 fi
 
@@ -29,7 +29,7 @@ fi
 
 declare -r KEYWORDS=$(echo "$set_iptc_params" | cut -d'|' -f 1 | tr ' ' '-')
 if [[ -z $KEYWORDS ]]; then    
-    "$POPUP_CMD" -e "$APP_TITLE" "At least one keyword is required"  
+    notify_warning "$APP_TITLE" "At least one keyword is required"  
     exit 1
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
@@ -37,9 +37,9 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORD
 "$SET_KEYWORDS_CMD" "$KEYWORDS" "$photos"
 set_keywords_rc=$?
 if [[ $set_keywords_rc = 0 ]]; then
-    "$POPUP_CMD" -i "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) done"
+    notify_info "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) done"
 else
-    "$POPUP_CMD" -w "$APP_TITLE" \
+    notify_error "$APP_TITLE" \
         "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) failed with return code $set_keywords_rc"
     exit 1
 fi
