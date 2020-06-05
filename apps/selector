@@ -64,26 +64,21 @@ memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
 
 photo_number_tail_is_range() {
     local -r photo_number_tail=$1
-    [[ $photo_number_tail =~ [0-9]{3}-[0-9]{3} ]]
+    [[ $photo_number_tail =~ [0-9]+-[0-9]+ ]]
 }
 
 filter_by_number_tail_range() {
+    
     local -r file=$1
     local -r range=$2
 
-    # range must have format NNN-MMM
+    # range must have format [0-9]+-[0-9]+
     # -> let's assume that's already checked because that's the trigger to switch on range filtering
 
     # split range at "-"
     lower_bound=$(echo "$range" | cut -d'-' -f1)
     upper_bound=$(echo "$range" | cut -d'-' -f2)
-    bound_length=$(echo "$lower_bound" | wc -c)
-
-    # NNN and MMM must have same number of digits 
-    if [[ $bound_length != $(echo "$upper_bound" | wc -c)  ]]; then
-        notify_warning "$APP_TITLE" "Range of number tails must use same length bounds"
-        exit 1
-    fi
+    bound_length=$(echo -e "$upper_bound" | wc -m)
     
     # NNN < MMM
     if (( $lower_bound > "$upper_bound" )); then
@@ -93,19 +88,36 @@ filter_by_number_tail_range() {
 
     # get tail of number from photo, take as many digits as NNN and MMM
     file_name=$(basename "$file")
-    file_number=$(echo ${file_name%%.*})
-    file_number_tail=${file: -$bound_length}
+    file_name_no_ext=${file_name%.*}
+    file_number=$(echo ${file_name_no_ext%%.*})
+    file_number_tail=${file_number: -$bound_length}
 
-    if (( $lower_bound <= $file_number_tail )) && (( $file_number_tail <= $upper_bound )); then
-        echo "$file"
-    fi
+    (( $lower_bound <= $file_number_tail )) && (( $file_number_tail <= $upper_bound ))
 }
 
 year_dir_glob=$(year_glob $YEAR)
 album_dir_glob=$(album_glob "$ALBUM")
 month_value=$(month_value_from_name "$MONTH")
 day_dir_glob=$(date_path_glob "$YEAR" "$MONTH" "$DAY_OF_MONTH")
-filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$PHOTO_NUMBER_TAIL")
-find "$SEARCH_DIR" -regextype posix-extended -type f \
-    -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
-    -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)"
+
+if photo_number_tail_is_range "$PHOTO_NUMBER_TAIL"; then
+
+    photo_number_tail=""
+    filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$photo_number_tail")
+    find "$SEARCH_DIR" -regextype posix-extended -type f \
+        -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
+        -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)" | \
+    while read -r matched_file; do
+        filter_by_number_tail_range "$matched_file" "$PHOTO_NUMBER_TAIL" &&
+            echo "$matched_file"
+    done
+
+else
+    
+    filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$PHOTO_NUMBER_TAIL")
+    find "$SEARCH_DIR" -regextype posix-extended -type f \
+        -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
+        -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)"
+
+fi
+
