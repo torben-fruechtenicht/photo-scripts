@@ -25,7 +25,7 @@ year_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" 
 month_form_value=$(get_memorized_value_preselected_in_all_values_list "$MEMORIZED_FORM_VALUES_FILE" "month" "!$MONTHS")
 dayofmonth_form_value=$(get_memorized_value_preselected_in_all_values_list \
     "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "!$DAYS_OF_MONTH")
-# TODO photonumber tail should allow ranges
+
 # TODO time of day should allow ranges
 options_string=$(run_yad "$APP_TITLE" "Select photos from $SEARCH_DIR matching:" \
     --form \
@@ -41,83 +41,85 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
+
 declare -r ALBUM=$(echo "$options_string" | cut -d'|' -f 1 | tr ' ' '-')
 declare -r TITLE=$(echo "$options_string" | cut -d'|' -f 2 | tr ' ' '-')
-declare -r YEAR=$(echo "$options_string" | cut -d'|' -f 3)
-declare -r MONTH=$(echo "$options_string" | cut -d'|' -f 4)
-declare -r DAY_OF_MONTH=$(echo "$options_string" | cut -d'|' -f 5)
-declare -r TIME_OF_DAY=$(echo "$options_string" | cut -d'|' -f 6)
-declare -r PHOTO_NUMBER_TAIL=$(echo "$options_string" | cut -d'|' -f 7)
-
 if [[ -z $ALBUM ]] && [[ -z $TITLE ]]; then
     notify_warning "$APP_TITLE" "One of album or title must be defined"
     exit 1
 fi
 
-memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
-memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
-# to prevent accidential gigantic result lists, never save the empty year value, that parameter should only be left out
-# if explicitely desired
-test -n "$YEAR" && memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
-memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
-memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
+declare -r YEAR=$(echo "$options_string" | cut -d'|' -f 3)
+declare -r MONTH=$(echo "$options_string" | cut -d'|' -f 4)
+declare -r DAY_OF_MONTH=$(echo "$options_string" | cut -d'|' -f 5)
+declare -r TIME_OF_DAY=$(echo "$options_string" | cut -d'|' -f 6)
 
-photo_number_tail_is_range() {
+number_tail_is_range() {
     local -r photo_number_tail=$1
     [[ $photo_number_tail =~ [0-9]+-[0-9]+ ]]
 }
 
-filter_by_number_tail_range() {
-    
-    local -r file=$1
-    local -r range=$2
+unpad_number() {
+    local -r number_optional_zeropadded=$1
+    echo "$((10#$number_optional_zeropadded))"
+}
 
-    # range must have format [0-9]+-[0-9]+
-    # -> let's assume that's already checked because that's the trigger to switch on range filtering
+# if number_tail looks like a range (e.g. "2-17"), use an empty NUMBER_TAIL for find and set 
+# NUMBER_TAIL_MIN/MAX and NUMBER_TAIL_LENGTH. otherwise NUMBER_TAIL is set to number_tail
+number_tail=$(echo "$options_string" | cut -d'|' -f 7)
+if [[ $number_tail =~ [0-9]+-[0-9]+ ]]; then
+    declare -r NUMBER_TAIL=""
+    #$((10#$machinenumber))
+    declare -r NUMBER_TAIL_MIN=$(unpad_number "$(echo "$number_tail" | cut -d'-' -f1)")
+    declare -r NUMBER_TAIL_MAX=$(unpad_number "$(echo "$number_tail" | cut -d'-' -f2)")
 
-    # split range at "-"
-    lower_bound=$(echo "$range" | cut -d'-' -f1)
-    upper_bound=$(echo "$range" | cut -d'-' -f2)
-    bound_length=$(echo -e "$upper_bound" | wc -m)
-    
-    # NNN < MMM
-    if (( $lower_bound > "$upper_bound" )); then
-        notify_warning "$APP_TITLE" "Lower bound is larger than upper bound"
+    if (( $NUMBER_TAIL_MIN > "$NUMBER_TAIL_MAX" )); then
+        notify_warning "$APP_TITLE" \
+            "Lower bound $NUMBER_TAIL_MIN for number tail is larger than upper bound $NUMBER_TAIL_MAX"
         exit 1
-    fi
+    fi  
 
-    # get tail of number from photo, take as many digits as NNN and MMM
-    file_name=$(basename "$file")
+    declare -r NUMBER_TAIL_LENGTH=$(echo -n "$NUMBER_TAIL_MAX" | wc -m)
+
+else
+    declare -r NUMBER_TAIL=$number_tail
+fi
+
+
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
+# to prevent gigantic result lists by accident, never save the empty year value, that parameter 
+# should only be left out if explicitely desired (i.e. user has to remove any year value from the field)
+test -n "$YEAR" && memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
+memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
+memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "$DAY_OF_MONTH"
+
+
+get_number_tail() {
+    local -r photo_file=$1
+    local -r tail_size=$2
+
+    file_name=$(basename "$photo_file")
     file_name_no_ext=${file_name%.*}
-    file_number=$(echo ${file_name_no_ext%%.*})
-    file_number_tail=${file_number: -$bound_length}
-
-    (( $lower_bound <= $file_number_tail )) && (( $file_number_tail <= $upper_bound ))
+    echo $(unpad_number "${file_name_no_ext: -$tail_size}")
 }
 
 year_dir_glob=$(year_glob $YEAR)
 album_dir_glob=$(album_glob "$ALBUM")
 month_value=$(month_value_from_name "$MONTH")
 day_dir_glob=$(date_path_glob "$YEAR" "$MONTH" "$DAY_OF_MONTH")
-
-if photo_number_tail_is_range "$PHOTO_NUMBER_TAIL"; then
-
-    photo_number_tail=""
-    filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$photo_number_tail")
-    find "$SEARCH_DIR" -regextype posix-extended -type f \
+filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$NUMBER_TAIL")
+find "$SEARCH_DIR" -regextype posix-extended -type f \
         -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
         -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)" | \
-    while read -r matched_file; do
-        filter_by_number_tail_range "$matched_file" "$PHOTO_NUMBER_TAIL" &&
+# run all found files through range check but skip all checks if no ranges are in use
+while read -r matched_file; do
+    if [[ -v NUMBER_TAIL_MIN ]]; then 
+        number_tail=$(get_number_tail "$matched_file" "$NUMBER_TAIL_LENGTH")
+        (( $NUMBER_TAIL_MIN <= $number_tail )) && (( $number_tail <= $NUMBER_TAIL_MAX )) && \
             echo "$matched_file"
-    done
-
-else
-    
-    filename_glob=$(filename_glob "$TITLE" "$YEAR" "$MONTH" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$PHOTO_NUMBER_TAIL")
-    find "$SEARCH_DIR" -regextype posix-extended -type f \
-        -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
-        -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)"
-
-fi
+    else 
+        echo "$matched_file"
+    fi
+done
 
