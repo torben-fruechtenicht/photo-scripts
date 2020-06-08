@@ -31,7 +31,7 @@ declare -r SIDECAR_TEMPLATES_DIR=${3+$3}
 options_string=$(run_yad "$APP_TITLE" "Import photos from $DCIM_DIR to $TARGET_DIR" \
     --form \
     --field="Album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "New photos")" \
-    --field="Photo title:CBE" "$(get_memorized_values_or_default "$OLD_VALUES_FILE" "title" "")" \
+    --field="Photo title:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")" \
     --field="Photographer/creator" "${CREATOR_OPTION+$CREATOR_OPTION}" \
     --field="Keywords (separated by \";\"):CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "keywords" "")")
 yad_rc=$?
