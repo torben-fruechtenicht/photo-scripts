@@ -21,7 +21,8 @@ run_yad_selector_result_action_dialog() {
     local -r selected_photos_list=$(__render_selected_photos_list \
         "$(__remove_searchdir_from_photos_list "$selected_photos" "$search_dir")")
     # "\r" adds a linebreak (text in yad is rendered with pango) - but only if we use "echo -e
-    local -r text="$(echo -e "Selected $selected_photos_count photo(s) from $search_dir:\r\r$selected_photos_list\r\r$action_text")"
+    local -r text="$(echo -e "Selected $selected_photos_count photo(s) from $search_dir:
+        \r\r$selected_photos_list\r${action_text:+\r$action_text}")"
 
     run_yad "$title" "$text" "$@"
 }
@@ -37,8 +38,16 @@ __remove_searchdir_from_photos_list() {
 
 __render_selected_photos_list() {
     local -r photos=$1
-    # TODO if more than N in list, cut list after N entries (and maybe add a button to repeat the search)
+    local -r list_size=$(echo "$photos" | wc -l)
+    local -r max_list_size=25
+
     # TODO spreach across 2 columns if more than M entries in list
-    #       https://unix.stackexchange.com/a/59292
-    echo "$photos"
+    #   https://unix.stackexchange.com/a/59292
+    #   -> but actually, this would make the dialog too wide
+
+    if (( $list_size > $max_list_size )); then
+        echo -e "$(echo "$photos" | head -n $max_list_size)\r... (list truncated to first $max_list_size entries"
+    else 
+        echo "$photos"
+    fi
 }
