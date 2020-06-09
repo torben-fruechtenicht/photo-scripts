@@ -90,6 +90,18 @@ __count_char_in_string() {
     echo ${#c_only}
 }
 
+__filter_combobox_entries_exclude_value() (
+    read -r list
+    local -r value=$1
+
+    IFS='!'
+    for entry in $list; do
+        if [[ $entry != $value ]]; then
+            echo "$entry"
+        fi
+    done | paste -s -d '!' -
+)
+
 memorize_form_combobox_values() {
     local -r saved_values_file=$1
     local -r fieldname=$2
@@ -99,10 +111,12 @@ memorize_form_combobox_values() {
     if grep -q "$fieldname=" "$saved_values_file"; then
 
         # get the saved values with any occurrence of $current_value already removed
-        local -r saved_values=$(grep "$fieldname" "$saved_values_file" | cut -d'=' -f2 | sed -e 's/'"$current_value"'!\?//')
+        local -r saved_values=$(grep "$fieldname" "$saved_values_file" | cut -d'=' -f2 |\
+            __filter_combobox_entries_exclude_value "$current_value")
         if [[ -z $saved_values ]]; then
             sed -i -e 's/'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'/' "$saved_values_file"
         else
+            # values_count would be the new size of the list after adding the current value
             local -r values_count=$(( $(__count_char_in_string '!' "$saved_values") + 1 ))
             if (( $values_count < $max_saved )); then
                 sed -i -e 's/'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'!'"$saved_values"'/' "$saved_values_file"
