@@ -47,7 +47,7 @@ fi
 "$MOVE_PHOTOS" -r "$TARGET_ALBUM_NAME" -m $RENAME_MODE "$photos"
 move_photos_rc=$?
 if [[ $move_photos_rc = 0 ]]; then
-    notify_info "$APP_TITLE" "Renaming $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" done"
+    notify_info "$APP_TITLE" "Moving $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" done"
 else
     notify_error -e "$APP_TITLE" \
         "Renaming $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" failed with return code $move_photos_rc"
