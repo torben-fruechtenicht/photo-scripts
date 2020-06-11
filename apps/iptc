@@ -27,7 +27,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r KEYWORDS=$(echo "$set_iptc_params" | cut -d'|' -f 1 | tr ' ' '-')
+declare -r KEYWORDS=$(echo "$set_iptc_params" | cut -d'|' -f 1)
 if [[ -z $KEYWORDS ]]; then    
     notify_warning "$APP_TITLE" "At least one keyword is required"  
     exit 1
@@ -36,6 +36,10 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORD
 
 "$SET_KEYWORDS_CMD" "$KEYWORDS" "$photos"
 set_keywords_rc=$?
+# TBD FIXME return code of 1 from set_iptc_keywords is because we're using a while loop in the script? Because
+# last evaluation of loop increment (which is the read command) will return 1 because it cannot read anything
+# anymore?
+# https://stackoverflow.com/a/35412943/1295519
 if [[ $set_keywords_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) done"
 else
