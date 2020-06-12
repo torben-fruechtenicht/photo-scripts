@@ -66,3 +66,7 @@ set -u
 	fi
 	
 done
+
+# if we don't explicitely exit with 0, the return code would come from the while loop (which return non-zero once
+# it reads EOF)
+exit 0
