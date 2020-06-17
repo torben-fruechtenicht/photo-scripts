@@ -2,7 +2,6 @@
 
 set -e
 
-export PATH="$(dirname $(readlink -f "$0")):$PATH"
 declare -r MOVE_PHOTOS="$(dirname $(readlink -e $0))/lib/move_photos.sh"
 
 declare -r NEW_NAME=$1

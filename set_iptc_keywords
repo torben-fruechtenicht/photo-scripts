@@ -45,10 +45,15 @@ set -u
 		fi
 
 		sidecar_set_iptc_keywords "$file" "$KEYWORDS"
-
-		test -v restore_write_protection && chmod u-w "$file" && unset restore_write_protection
-
-		test -v VERBOSE && echo "[INFO] $file" >&2
+		
+		if [[ -v restore_write_protection ]]; then
+			chmod u-w "$file"
+			unset restore_write_protection
+		fi
+		
+		if [[ -v VERBOSE ]]; then
+			echo "[INFO] $file" >&2
+		fi		
 
 	elif [[ $file =~ .*/converted/.*\.jpg$ ]]; then
 		
@@ -59,14 +64,15 @@ set -u
 
 		jpeg_set_iptc_keywords "$KEYWORDS" "$file"
 
-		test -v restore_write_protection && chmod u-w "$file" && unset restore_write_protection
-
-		test -v VERBOSE && echo "[INFO] $file" >&2
+		if [[ -v restore_write_protection ]]; then
+			chmod u-w "$file"
+			unset restore_write_protection
+		fi
+		
+		if [[ -v VERBOSE ]]; then
+			echo "[INFO] $file" >&2
+		fi	
 
 	fi
 	
 done
-
-# if we don't explicitely exit with 0, the return code would come from the while loop (which return non-zero once
-# it reads EOF)
-exit 0

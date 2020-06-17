@@ -2,7 +2,6 @@
 
 set -eu
 
-export PATH="$(dirname "$(readlink -e "$0")"):$PATH"
 declare -r MOVE_PHOTOS="$(dirname $(readlink -e $0))/lib/move_photos.sh"
 
 while getopts "r" opt; do
