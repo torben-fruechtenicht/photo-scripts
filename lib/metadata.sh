@@ -7,7 +7,7 @@ declare -r FILE_EXT_PATTERN="([a-ZA-Z0-9]{3})" # \6
 
 declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}"
 
-declare -r PHOTO_FILENAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}\.${FILE_EXT_PATTERN}"
+declare -r PHOTO_FILENAME_PATTERN="${PHOTO_FULLNAME_PATTERN}\.${FILE_EXT_PATTERN}"
 
 fullname_from_photofile() {
     local -r photo_filename=$(basename "$1")
@@ -15,8 +15,8 @@ fullname_from_photofile() {
 }
 
 headline_from_photofile() {
-    local -r photo_filename=$(basename "$1")
-    echo "$photo_filename" | sed -r 's/'"$PHOTO_FILENAME_PATTERN"'/\1 \5/'
+    local -r fullname=$(fullname_from_photofile "$1")
+    echo "$fullname" | sed -r 's/'"$PHOTO_FULLNAME_PATTERN"'/\1 \5/'
 }
 
 is_original_photofile() ( 

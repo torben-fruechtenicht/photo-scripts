@@ -246,8 +246,8 @@ for sourcephoto in $SOURCE_PHOTOS; do
 
         if [[ -v RENAME_PHOTOS ]]; then
 
-            iptc_headline=$(headline_from_photofile "$sourcephoto")
-            iptc_caption=$(fullname_from_photofile "$sourcephoto")            
+            iptc_headline=$(headline_from_photofile "$targetfile")
+            iptc_caption=$(fullname_from_photofile "$targetfile")            
             
             if ! [[ -w $targetfile ]]; then
                 test -v SIMULATE || chmod u+w "$targetfile"
