@@ -264,8 +264,8 @@ for sourcephoto in $SOURCE_PHOTOS; do
             elif [[ $file_to_move =~ .*/converted/.*\.jpg$ ]]; then
 
                 if ! [[ -v SIMULATE ]]; then
-                    jpeg_set_iptc "Headline" "$iptc_headline" "$targetfile"
-                    jpeg_set_iptc "Caption" "[$iptc_caption]" "$targetfile"
+                    jpeg_set_iptc "$targetfile" "Headline" "$iptc_headline"
+                    jpeg_set_iptc "$targetfile" "Caption" "[$iptc_caption]"
                 fi
 
             fi

@@ -5,10 +5,10 @@ fi
 
 
 jpeg_set_iptc() {
-    local -r key=$1
-    local -r value=$2
-	local -r jpg_file=$3
-
+	local -r jpg_file=$1
+    local -r key=$2
+    local -r value=$3
+	
 	if [[ $key == "Keywords" ]]; then
 		echo "[ERROR] Keywords must be done with jpeg_set_iptc_keywords" >&2
 		return 1
