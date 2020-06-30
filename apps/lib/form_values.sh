@@ -55,14 +55,12 @@ get_memorized_values_or_default() {
     local -r saved_values_file=$1
     local -r fieldname=$2
     local -r default=$3
-  
-    local value=$default
 
     if [[ -e $saved_values_file ]]; then
-        value=$(__lookup_memorized_value "$saved_values_file" "$fieldname")
+        echo $(__lookup_memorized_value "$saved_values_file" "$fieldname")
+    else 
+        echo "$default"
     fi
-
-    echo "$value"
 }
 
 get_memorized_value_preselected_in_all_values_list() {
