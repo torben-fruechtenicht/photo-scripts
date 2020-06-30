@@ -1,0 +1,73 @@
+#! /usr/bin/env bash
+
+set -eu
+shopt -s nocasematch
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
+source "$BASE_DIR/lib/metadata.sh"
+source "$BASE_DIR/lib/sidecar.sh"
+source "$BASE_DIR/lib/jpeg.sh"
+
+
+declare -r ALBUM=${1:-}
+if [[ -z $ALBUM ]]; then
+    echo "[ERROR] Album parameter missing" >&2
+    exit 1
+elif [[ -f $ALBUM || -d $ALBUM ]]; then
+	echo "[ERROR] Album parameter is a file or directory" >&2
+	exit 1
+fi
+
+shift 1
+
+if [[ ${1:-} = "-" ]]; then
+    declare -r READ_FILES_FROM_STDIN=
+else 
+    declare -r FILES=$@
+fi
+
+declare -r PHOTOS_ROOT_DIR="/.+"
+declare -r YEAR_DIR_PATTERN="[0-9]{4}"
+declare -r ALBUM_DIR_PATTERN="[^/]+"
+declare -r DAY_DIR_PATTERN="[0-9]{4}-[0-9]{2}-[0-9]{2}"
+
+albumpath_from_file() {
+    local -r file=$1
+    local -r pattern="($PHOTOS_ROOT_DIR/$YEAR_DIR_PATTERN/$ALBUM_DIR_PATTERN)/$DAY_DIR_PATTERN/(converted/)?$PHOTO_FILENAME_PATTERN"
+    echo "$file" | sed -r 's|'"$pattern"'|\1|'
+}
+
+path_relative_to_album_from_file() {
+    local -r file=$1
+    local -r pattern="$PHOTOS_ROOT_DIR/$YEAR_DIR_PATTERN/$ALBUM_DIR_PATTERN/($DAY_DIR_PATTERN/(converted/)?$PHOTO_FILENAME_PATTERN)"
+    echo "$file" | sed -r 's|'"$pattern"'|\1|'
+}
+
+apply_change_album() {
+    local -r file=$1
+    local -r old_album_path=$(albumpath_from_file "$file")
+    local -r relative_to_album_path=$(path_relative_to_album_from_file "$file")
+    local -r newfullpath="$(dirname "$old_album_path")/$ALBUM/$relative_to_album_path"
+
+    if [[ -e $newfullpath ]]; then
+        echo "Cannot change album of $file, exists already in $ALBUM: $newfullpath" >&2
+        exit 1
+    fi
+
+    if ! [[ -e $(dirname "$newfullpath") ]]; then
+        mkdir --parents $(dirname "$newfullpath")
+    fi
+    
+    mv "$file" "$newfullpath" && echo "$newfullpath"
+}
+
+
+if [[ -v READ_FILES_FROM_STDIN ]]; then
+    while read -r file; do 
+        apply_change_album "$file"
+    done < /dev/stdin
+else 
+    for file in $FILES; do 
+        apply_change_album "$file"
+    done
+fi

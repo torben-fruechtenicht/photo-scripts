@@ -1,0 +1,120 @@
+#! /usr/bin/env bash
+
+set -u
+
+declare -r -x APP_TITLE="Edit photo metadata"
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+
+PATH="$BASE_DIR:$BASE_DIR/lib:$BASE_DIR/apps:$PATH"
+
+source "$BASE_DIR/apps/lib/yad.sh"
+source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
+
+declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
+
+
+augment_user_keywords() {
+    local keywords=$1
+
+    if [[ -v ALBUM_AS_KEYWORD ]]; then
+        keywords="${keywords:+$keywords;}$ALBUM"
+    fi
+
+    if [[ -v TITLE_AS_KEYWORD ]]; then
+        keywords="${keywords:+$keywords;}$TITLE"
+    fi
+
+    echo "$keywords"
+}
+
+equals_TRUE() {
+    local -r string=$1
+    test -n "$string" && test "TRUE" = "$string"
+}
+
+
+declare -r PHOTOS=$(selector "$SEARCH_DIR")
+if [[ -z $PHOTOS ]]; then
+    notify_warning "$APP_TITLE" "No matching photos found"
+    exit 1
+fi
+
+dialog_text="Metadata (empty fields will not be written):"
+user_edit_params=$(
+    run_yad_selector_result_action_dialog "$APP_TITLE" "$PHOTOS" "$SEARCH_DIR" "$dialog_text" \
+        --form \
+        --field="Album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")" \
+        --field="Add album name as a keyword:CHK" "TRUE" \
+        --field="Title:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")" \
+        --field="Add title as a keyword:CHK" "TRUE" \
+        --field="Keywords (separated by \";\"):CBE" \
+            "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "keywords" "")" 
+)
+yad_rc=$?
+if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
+    exit
+fi
+
+declare -r ALBUM=$(echo "$user_edit_params" | cut -d'|' -f 1)
+if [[ -n $ALBUM ]]; then
+    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
+    equals_TRUE "$(echo "$user_edit_params" | cut -d'|' -f 2)" && declare -r ALBUM_AS_KEYWORD=
+fi
+
+declare -r TITLE=$(echo "$user_edit_params" | cut -d'|' -f 3)
+if [[ -n $TITLE ]]; then
+    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
+    equals_TRUE "$(echo "$user_edit_params" | cut -d'|' -f 4)" && declare -r TITLE_AS_KEYWORD=
+fi
+
+declare -r USER_KEYWORDS=$(echo "$user_edit_params" | cut -d'|' -f 5)
+if [[ -n $USER_KEYWORDS ]]; then
+    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
+fi
+declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
+
+declare -r ALL_FILES=$(collect_associated_files.sh "$PHOTOS")
+
+
+if [[ -n $KEYWORDS ]]; then
+    set_keywords "$KEYWORDS" "$ALL_FILES" > /dev/null # we're not interested in the printed files, will be the same as ALL_FILES  
+    set_keywords_rc=$?
+    if [[ $set_keywords_rc = 0 ]]; then
+        notify_info "$APP_TITLE" "Added keywords \"$KEYWORDS\" to $(echo "$PHOTOS" | wc -l) photo(s)"
+    else
+        notify_error "$APP_TITLE" \
+            "Failed adding keywords \"$KEYWORDS\" to $(echo "$PHOTOS" | wc -l) photo(s) with return code $set_keywords_rc"
+        exit 1
+    fi
+fi
+
+if [[ -n $TITLE ]]; then
+    declare -r renamed_files=$(set_title "$TITLE" $ALL_FILES)
+    rename_rc=$?
+    if [[ $rename_rc = 0 ]]; then
+        notify_info "$APP_TITLE" "Changing title of $(echo "$PHOTOS" | wc -l) photo(s) to \"$TITLE\" done"
+    else
+        notify_error "$APP_TITLE" \
+            "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$TITLE\" failed with return code $rename_rc"
+        exit 1
+    fi
+fi
+
+if [[ -n $ALBUM ]]; then
+    if [[ -v renamed_files ]]; then
+        change_album "$ALBUM" "$renamed_files"
+    else 
+        change_album "$ALBUM" "$ALL_FILES"
+    fi    
+    change_album_rc=$?
+    if [[ $change_album_rc = 0 ]]; then
+        notify_info "$APP_TITLE" "Moving $(echo "$PHOTOS" | wc -l) photos to \"$ALBUM\" done"
+    else
+        notify_error -e "$APP_TITLE" \
+            "Renaming $(echo "$PHOTOS" | wc -l) photos to \"$ALBUM\" failed with return code $change_album_rc"
+        exit 1
+    fi
+fi
+

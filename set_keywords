@@ -1,0 +1,79 @@
+#! /usr/bin/env bash
+
+set -eu
+shopt -s nocasematch
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
+source "$BASE_DIR/lib/sidecar.sh"
+source "$BASE_DIR/lib/jpeg.sh"
+
+declare -r KEYWORDS=$1
+if [[ -z $KEYWORDS ]]; then
+	echo "[ERROR] No keywords" >&2
+	exit 1
+elif [[ -f $KEYWORDS || -d $KEYWORDS ]]; then
+	echo "[ERROR] Keywords parameter seems to be a file or directory - actual keywords parameter is missing?" >&2
+	exit 1
+fi
+
+shift 1
+
+if [[ ${1:-} = "-" ]]; then
+    declare -r READ_FILES_FROM_STDIN=
+else 
+    declare -r FILES=$@
+fi
+
+
+apply_add_keywords() {
+	local -r file=$1
+
+	if [[ $file =~ .*\.pp[23]$ ]]; then
+
+		if ! [[ -w $file ]]; then
+			chmod u+w "$file"
+			declare restore_write_protection=
+		fi
+
+		if ! grep -q "^\[IPTC\]$" "$file"; then
+			echo -e "\n[IPTC]\nKeywords=;\n" >> $file			
+		fi
+
+		sidecar_set_iptc_keywords "$file" "$KEYWORDS"
+		
+		if [[ -v restore_write_protection ]]; then
+			chmod u-w "$file"
+			unset restore_write_protection
+		fi	
+
+	elif [[ $file =~ .*/converted/.*\.jpg$ ]]; then
+		
+		if ! [[ -w $file ]]; then
+			test -v SIMULATE || chmod u+w "$file"
+			declare restore_write_protection=
+		fi
+
+		jpeg_set_iptc_keywords "$KEYWORDS" "$file"
+
+		if [[ -v restore_write_protection ]]; then
+			chmod u-w "$file"
+			unset restore_write_protection
+		fi
+		
+		if [[ -v VERBOSE ]]; then
+			echo "[INFO] $file" >&2
+		fi	
+
+	fi
+}
+
+
+if [[ -v READ_FILES_FROM_STDIN ]]; then
+    while read -r file; do 
+		apply_add_keywords "$file" && echo "$file"
+	done < /dev/stdin
+else 
+    for file in $FILES; do 
+		apply_add_keywords "$file" && echo "$file"
+	done
+fi

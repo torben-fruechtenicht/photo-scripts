@@ -20,4 +20,4 @@ for sourcephoto in $SOURCE_PHOTOS; do
     # extensions in the directory of $sourcephoto and below. Move each file and rename if enabled
 	find $(dirname "$sourcephoto") -type f -path "*/${sourcephoto_fullname}*"
 
-done
+done | sort
