@@ -35,15 +35,15 @@ equals_TRUE() {
 }
 
 
-declare -r PHOTOS=$(selector "$SEARCH_DIR")
-if [[ -z $PHOTOS ]]; then
+photos=$(selector "$SEARCH_DIR")
+if [[ -z $photos ]]; then
     notify_warning "$APP_TITLE" "No matching photos found"
     exit 1
 fi
 
 dialog_text="Metadata (empty fields will not be written):"
 user_edit_params=$(
-    run_yad_selector_result_action_dialog "$APP_TITLE" "$PHOTOS" "$SEARCH_DIR" "$dialog_text" \
+    run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "$dialog_text" \
         --form \
         --field="Album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")" \
         --field="Add album name as a keyword:CHK" "TRUE" \
@@ -75,26 +75,26 @@ if [[ -n $USER_KEYWORDS ]]; then
 fi
 declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
 
-declare -r ALL_FILES=$(collect_associated_files.sh "$PHOTOS")
 
+files=$(collect_associated_files.sh "$photos")
 
 if [[ -n $KEYWORDS ]]; then
-    set_keywords "$KEYWORDS" "$ALL_FILES" > /dev/null # we're not interested in the printed files, will be the same as ALL_FILES  
+    set_keywords "$KEYWORDS" "$files" > /dev/null # we're not interested in the printed files, will be the same as $files
     set_keywords_rc=$?
     if [[ $set_keywords_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Added keywords \"$KEYWORDS\" to $(echo "$PHOTOS" | wc -l) photo(s)"
+        notify_info "$APP_TITLE" "Added keywords \"$KEYWORDS\" to $(echo "$photos" | wc -l) photo(s)"
     else
         notify_error "$APP_TITLE" \
-            "Failed adding keywords \"$KEYWORDS\" to $(echo "$PHOTOS" | wc -l) photo(s) with return code $set_keywords_rc"
+            "Failed adding keywords \"$KEYWORDS\" to $(echo "$photos" | wc -l) photo(s) with return code $set_keywords_rc"
         exit 1
     fi
 fi
 
 if [[ -n $TITLE ]]; then
-    declare -r renamed_files=$(set_title "$TITLE" $ALL_FILES)
+    files=$(set_title "$TITLE" $files)
     rename_rc=$?
     if [[ $rename_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Changing title of $(echo "$PHOTOS" | wc -l) photo(s) to \"$TITLE\" done"
+        notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$TITLE\" done"
     else
         notify_error "$APP_TITLE" \
             "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$TITLE\" failed with return code $rename_rc"
@@ -103,18 +103,13 @@ if [[ -n $TITLE ]]; then
 fi
 
 if [[ -n $ALBUM ]]; then
-    if [[ -v renamed_files ]]; then
-        change_album "$ALBUM" "$renamed_files"
-    else 
-        change_album "$ALBUM" "$ALL_FILES"
-    fi    
+    change_album "$ALBUM" "$files"
     change_album_rc=$?
     if [[ $change_album_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Moving $(echo "$PHOTOS" | wc -l) photos to \"$ALBUM\" done"
+        notify_info "$APP_TITLE" "Moving $(echo "$photos" | wc -l) photos to \"$ALBUM\" done"
     else
         notify_error -e "$APP_TITLE" \
-            "Renaming $(echo "$PHOTOS" | wc -l) photos to \"$ALBUM\" failed with return code $change_album_rc"
+            "Moving $(echo "$photos" | wc -l) photos to \"$ALBUM\" failed with return code $change_album_rc"
         exit 1
     fi
 fi
-
