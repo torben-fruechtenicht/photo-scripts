@@ -34,10 +34,21 @@ new_filename() {
     echo "${newtitle}_${filename#*_}"
 }
 
+old_title() {
+    local file=$1
+    local basename=$(basename "$1")
+    echo ${basename%%_*}
+}
+
 apply_set_title() {
 
     local -r file=$1
     local -r filename=${file##*/}
+
+    if [[ $(old_title "$file") = $TITLE ]]; then
+        echo "[WARN] Skipping $file, old title is the same as new title $TITLE" >&2
+        return
+    fi
 
     if ! [[ -w $file ]]; then
         chmod u+w "$file"
@@ -47,8 +58,8 @@ apply_set_title() {
     local -r newfile="$(dirname "$file")/$(new_filename "$filename" "$TITLE")"
 
     if [[ -e $newfile ]]; then
-        echo "[ERROR] Cannot change title of $file, file with new title exists: $newfile" >&2
-        exit 1
+        echo "[WARN] Cannot change title of $file, file with new title exists: $newfile" >&2
+        return
     fi
 
 
@@ -67,6 +78,7 @@ apply_set_title() {
 
     mv -u "$file" "$newfile"
 
+    # FIXME only execute when mv above worked, put code below into group and && with mv call
     if [[ -v restore_write_protection ]]; then
         chmod u-w "$newfile"
     fi
