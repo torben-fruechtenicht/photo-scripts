@@ -8,6 +8,8 @@ source "$BASE_DIR/lib/metadata.sh"
 source "$BASE_DIR/lib/sidecar.sh"
 source "$BASE_DIR/lib/jpeg.sh"
 
+PATH="$BASE_DIR/lib:$PATH"
+
 
 declare -r TITLE=${1:-}
 if [[ -z $TITLE ]]; then
@@ -21,9 +23,9 @@ fi
 shift 1
 
 if [[ ${1:-} = "-" ]]; then
-    declare -r READ_FILES_FROM_STDIN=
+    declare -r READ_PHOTOS_FROM_STDIN=
 else 
-    declare -r FILES=$@
+    declare -r PHOTOS=$@
 fi
 
 
@@ -77,7 +79,7 @@ apply_set_title() {
     fi
 
     mv -u "$file" "$newfile"
-    
+
     if [[ -v restore_write_protection ]]; then
         chmod u-w "$newfile"
     fi
@@ -86,12 +88,10 @@ apply_set_title() {
 }
 
 
-if [[ -v READ_FILES_FROM_STDIN ]]; then
-    while read -r file; do 
-        apply_set_title "$file"
-    done < /dev/stdin
+if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
+    collect_associated_files.sh - < /dev/stdin
 else 
-    for file in $FILES; do 
-        apply_set_title "$file"
-    done
-fi
+    collect_associated_files.sh "$PHOTOS"
+fi | while read -r file; do 
+    apply_set_title "$file"
+done 
