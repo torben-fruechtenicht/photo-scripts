@@ -46,7 +46,7 @@ apply_set_title() {
     local -r filename=${file##*/}
 
     if [[ $(old_title "$file") = $TITLE ]]; then
-        echo "[WARN] Skipping $file, old title is the same as new title $TITLE" >&2
+        echo "[WARN] Cannot change title of $file to \"$TITLE\", same as old title" >&2
         return
     fi
 
@@ -57,11 +57,11 @@ apply_set_title() {
 
     local -r newfile="$(dirname "$file")/$(new_filename "$filename" "$TITLE")"
 
+    # this is a real error case unlike the other check above (which stems from careless user input)
     if [[ -e $newfile ]]; then
-        echo "[WARN] Cannot change title of $file, file with new title exists: $newfile" >&2
-        return
+        echo "[ERROR] Cannot change title of $file to \"$TITLE\", file $newfile exists already" >&2
+        exit 1
     fi
-
 
     if [[ $file = *.pp[23] ]] || [[ $file = */converted/*.jpg ]]; then
         
@@ -77,8 +77,7 @@ apply_set_title() {
     fi
 
     mv -u "$file" "$newfile"
-
-    # FIXME only execute when mv above worked, put code below into group and && with mv call
+    
     if [[ -v restore_write_protection ]]; then
         chmod u-w "$newfile"
     fi

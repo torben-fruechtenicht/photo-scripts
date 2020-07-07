@@ -46,11 +46,18 @@ path_relative_to_album_from_file() {
 apply_change_album() {
     local -r file=$1
     local -r old_album_path=$(albumpath_from_file "$file")
+
+    if [[ $(basename "$old_album_path") = $ALBUM ]]; then
+        echo "[WARN] Cannot change album of $file to \"$ALBUM\", same as old album" >&2
+        return
+    fi
+
     local -r relative_to_album_path=$(path_relative_to_album_from_file "$file")
     local -r newfullpath="$(dirname "$old_album_path")/$ALBUM/$relative_to_album_path"
 
+    # this is a real error case unlike the other check above (which stems from careless user input)
     if [[ -e $newfullpath ]]; then
-        echo "Cannot change album of $file, exists already in $ALBUM: $newfullpath" >&2
+        echo "[ERROR] Cannot change album of $file, file exists already in \"$ALBUM\": $newfullpath" >&2
         exit 1
     fi
 
@@ -58,7 +65,9 @@ apply_change_album() {
         mkdir --parents $(dirname "$newfullpath")
     fi
     
-    mv "$file" "$newfullpath" && echo "$newfullpath"
+    mv "$file" "$newfullpath"
+    
+    echo "$newfullpath"
 }
 
 
