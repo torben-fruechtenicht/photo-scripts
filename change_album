@@ -8,6 +8,8 @@ source "$BASE_DIR/lib/metadata.sh"
 source "$BASE_DIR/lib/sidecar.sh"
 source "$BASE_DIR/lib/jpeg.sh"
 
+PATH="$BASE_DIR/lib:$PATH"
+
 
 declare -r ALBUM=${1:-}
 if [[ -z $ALBUM ]]; then
@@ -21,9 +23,9 @@ fi
 shift 1
 
 if [[ ${1:-} = "-" ]]; then
-    declare -r READ_FILES_FROM_STDIN=
+    declare -r READ_PHOTOS_FROM_STDIN=
 else 
-    declare -r FILES=$@
+    declare -r PHOTOS=$@
 fi
 
 declare -r PHOTOS_ROOT_DIR="/.+"
@@ -62,7 +64,7 @@ apply_change_album() {
     fi
 
     if ! [[ -e $(dirname "$newfullpath") ]]; then
-        mkdir --parents $(dirname "$newfullpath")
+        mkdir --parents "$(dirname "$newfullpath")"
     fi
     
     mv "$file" "$newfullpath"
@@ -71,12 +73,10 @@ apply_change_album() {
 }
 
 
-if [[ -v READ_FILES_FROM_STDIN ]]; then
-    while read -r file; do 
-        apply_change_album "$file"
-    done < /dev/stdin
+if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
+    collect_associated_files.sh - < /dev/stdin
 else 
-    for file in $FILES; do 
-        apply_change_album "$file"
-    done
-fi
+    collect_associated_files.sh "$PHOTOS"
+fi | while read -r file; do 
+    apply_change_album "$file"
+done 
