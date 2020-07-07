@@ -1,23 +1,37 @@
 #! /usr/bin/env bash
 
-set -e
+set -eu
 shopt -s nocasematch
 
-source "$(dirname "$(readlink -e $0)")/metadata.sh"
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/metadata.sh"
 
-declare -r SOURCE_PHOTOS=$@
+PATH="$BASE_DIR/lib:$PATH"
 
-set -u
+if [[ ${1:-} = "-" ]]; then
+    declare -r READ_PHOTOS_FROM_STDIN=
+else 
+    declare -r PHOTOS=$@
+fi
 
-for sourcephoto in $SOURCE_PHOTOS; do
 
-    sourcephoto=$(readlink -e "$sourcephoto")
-    is_original_photofile "$sourcephoto" || continue
-    
-    sourcephoto_fullname=$(fullname_from_photofile "$sourcephoto")
-    
+print_associated_files() {
+    local -r photo=$1
+
+    is_original_photofile "$photo" || return
+
+    local -r sourcephoto_fullname=$(fullname_from_photofile "$photo")        
     # Find all files, i.e. actual photo file and all associated files: search for the basename without
-    # extensions in the directory of $sourcephoto and below. Move each file and rename if enabled
-	find $(dirname "$sourcephoto") -type f -path "*/${sourcephoto_fullname}*"
+    # extensions in the directory of $photo and below. 
+    find $(dirname "$photo") -type f -path "*/${sourcephoto_fullname}*"
+}
 
-done | sort
+if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
+    while read -r photo; do 
+        print_associated_files "$(readlink -e "$photo")" | sort
+    done < /dev/stdin
+else 
+    for photo in $PHOTOS; do
+        print_associated_files "$(readlink -e "$photo")" | sort
+    done
+fi 
