@@ -37,7 +37,7 @@ if [[ -z $TARGET_ALBUM_NAME ]]; then
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$TARGET_ALBUM_NAME" 25
 
-files=$(collect_associated_files.sh "$photos")
+files=$photos
 
 declare -r RENAME_PHOTOS_OPTION=$(echo "$move_to_album_params" | cut -d'|' -f 2)
 if [[ $RENAME_PHOTOS_OPTION = "TRUE" ]]; then
@@ -52,6 +52,7 @@ if [[ $RENAME_PHOTOS_OPTION = "TRUE" ]]; then
     fi
 fi
 
+# we can safely pass $files to change_album because it will just throw away all other files
 change_album "$TARGET_ALBUM_NAME" "$files"
 change_album_rc=$?
 if [[ $change_album_rc = 0 ]]; then
