@@ -1,0 +1,54 @@
+#! /usr/bin/env bash
+
+# TODO add option to remove keywords
+
+set -u
+
+declare -r -x APP_TITLE="IPTC keyword editor"
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+
+source "$BASE_DIR/apps/lib/yad.sh"
+source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
+
+PATH="$BASE_DIR:$BASE_DIR/apps:$PATH"
+
+
+declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
+
+
+photos=$(selector "$SEARCH_DIR") 
+if [[ -z $photos ]]; then
+    notify_warning "$APP_TITLE" "No matching photos found"  
+    exit 1
+fi
+
+keywords_label="Add keyword(s) (separated by \";\")"
+keywords_value="$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "keywords" "")"
+set_iptc_params=$(run_yad_selector_result_action_dialog \
+    "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
+    --form \
+    --field="$keywords_label:CBE" "$keywords_value")
+yad_rc=$?
+if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
+    exit
+fi
+
+declare -r KEYWORDS=$(echo "$set_iptc_params" | cut -d'|' -f 1)
+if [[ -z $KEYWORDS ]]; then    
+    notify_warning "$APP_TITLE" "At least one keyword is required"  
+    exit 1
+fi
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
+
+add_keywords "$KEYWORDS" "$photos"
+add_keywords_rc=$?
+if [[ $add_keywords_rc = 0 ]]; then
+    notify_info "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) done"
+else
+    notify_error "$APP_TITLE" \
+        "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) failed with return code $add_keywords_rc"
+    exit 1
+fi
+
