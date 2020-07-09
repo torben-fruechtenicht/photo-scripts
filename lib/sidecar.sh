@@ -31,7 +31,6 @@ sidecar_set_property() {
     fi
 }
 
-# FIXME rename to add_iptc_keywords
 sidecar_add_iptc_keywords() {
 	local -r sidecar_file=$1
     local -r new_keywords=$2
