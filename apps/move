@@ -52,7 +52,8 @@ if [[ $RENAME_PHOTOS_OPTION = "TRUE" ]]; then
     fi
 fi
 
-# we can safely pass $files to change_album because it will just throw away all other files
+# if we changed photo titles, too, $files will now also contain all associated files. But we can safely pass
+# $files to change_album because it will just throw away all irrelevant files
 change_album "$TARGET_ALBUM_NAME" "$files"
 change_album_rc=$?
 if [[ $change_album_rc = 0 ]]; then

@@ -42,6 +42,16 @@ old_title() {
     echo ${basename%%_*}
 }
 
+is_rawtherapee_sidecar() {
+	local -r file=$1
+	[[ $file =~ .*\.pp[23]$ ]]
+}
+
+is_converted_jpeg() {
+	local -r file=$1
+	[[ $file =~ .*/converted/.*\.jpg$ ]]
+}
+
 apply_set_title() {
 
     local -r file=$1
@@ -65,20 +75,15 @@ apply_set_title() {
         exit 1
     fi
 
-    if [[ $file = *.pp[23] ]] || [[ $file = */converted/*.jpg ]]; then
-        
-        local -r iptc_headline=$(headline_from_photofile "$newfile")
-        local -r iptc_caption="[$(fullname_from_photofile "$newfile")]"   
-        if [[ $file = *.pp[23] ]]; then
-            sidecar_set_property "$file" "IPTC" "Headline" "$iptc_headline"
-            sidecar_set_property "$file" "IPTC" "Caption" "$iptc_caption"    
-        elif [[ $file = */converted/*.jpg ]]; then
-            jpeg_set_iptc "$file" "Headline" "$iptc_headline"
-            jpeg_set_iptc "$file" "Caption" "$iptc_caption"
-        fi
+    if is_rawtherapee_sidecar "$file"; then
+        sidecar_set_property "$file" "IPTC" "Headline" "$(headline_from_photofile "$newfile")"
+        sidecar_set_property "$file" "IPTC" "Caption" "[$(fullname_from_photofile "$newfile")]"
+    elif is_converted_jpeg "$file"; then
+        jpeg_set_iptc "$file" "Headline" "$(headline_from_photofile "$newfile")"
+        jpeg_set_iptc "$file" "Caption" "[$(fullname_from_photofile "$newfile")]"
     fi
 
-    mv -u "$file" "$newfile"
+    mv "$file" "$newfile"
 
     if [[ -v restore_write_protection ]]; then
         chmod u-w "$newfile"
