@@ -49,7 +49,7 @@ process_rawtherapee_sidecar() {
 		echo -e "\n[IPTC]\nKeywords=;\n" >> $sidecar			
 	fi
 
-	sidecar_set_iptc_keywords "$sidecar" "$KEYWORDS"
+	sidecar_add_iptc_keywords "$sidecar" "$KEYWORDS"
 	
 	if [[ -v restore_write_protection ]]; then
 		chmod u-w "$sidecar"
@@ -82,7 +82,7 @@ apply_add_keywords() {
 
 set -o pipefail
 if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
-    collect_associated_files.sh - < /dev/stdin | while read -r file; do apply_add_keywords "$file"; done
+    collect_associated_files.sh < /dev/stdin | while read -r file; do apply_add_keywords "$file"; done
 else 
     collect_associated_files.sh "$PHOTOS" | while read -r file; do apply_add_keywords "$file"; done
 fi 

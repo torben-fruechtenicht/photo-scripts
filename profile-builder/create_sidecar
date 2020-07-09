@@ -161,11 +161,11 @@ for photofile in $PHOTO_FILES; do
 	fi
 
 	# if we have keywords from an existing sidecar, set these in the new sidecar, too. in case some of these are
-	# also in KEYWORDS, the following sidecar_set_iptc_keywords call for the new ones will just skip any existing
+	# also in KEYWORDS, the following sidecar_add_iptc_keywords call for the new ones will just skip any existing
 	# (old) keywords
 	# TODO add new option -O (disable case sensitivity?) which will really overwrite, i.e. no old keywords are kept
 	if [[ -v old_keywords ]] && [[ -n $old_keywords ]]; then
-		sidecar_set_iptc_keywords "$sidecar_file" "$old_keywords"
+		sidecar_add_iptc_keywords "$sidecar_file" "$old_keywords"
 	fi
 
 	fullname=$(fullname_from_photofile "$photofile")
@@ -178,7 +178,7 @@ for photofile in $PHOTO_FILES; do
 		iptc_lens=""
 	fi
 	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$iptc_lens${KEYWORDS-}"
-	sidecar_set_iptc_keywords "$sidecar_file" "$iptc_keywords"
+	sidecar_add_iptc_keywords "$sidecar_file" "$iptc_keywords"
 
 	echo "$sidecar_file"
 done

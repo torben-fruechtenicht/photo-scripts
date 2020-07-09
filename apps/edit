@@ -76,19 +76,19 @@ fi
 declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
 
 
-files=$(collect_associated_files.sh "$photos")
-
 if [[ -n $KEYWORDS ]]; then
-    set_keywords "$KEYWORDS" "$files" > /dev/null # we're not interested in the printed files, will be the same as $files
-    set_keywords_rc=$?
-    if [[ $set_keywords_rc = 0 ]]; then
+    add_keywords "$KEYWORDS" "$photos" > /dev/null # we're not interested in the printed files
+    add_keywords_rc=$?
+    if [[ $add_keywords_rc = 0 ]]; then
         notify_info "$APP_TITLE" "Added keywords \"$KEYWORDS\" to $(echo "$photos" | wc -l) photo(s)"
     else
         notify_error "$APP_TITLE" \
-            "Failed adding keywords \"$KEYWORDS\" to $(echo "$photos" | wc -l) photo(s) with return code $set_keywords_rc"
+            "Failed adding keywords \"$KEYWORDS\" to $(echo "$photos" | wc -l) photo(s) with return code $add_keywords_rc"
         exit 1
     fi
 fi
+
+files=$photos
 
 if [[ -n $TITLE ]]; then
     files=$(set_title "$TITLE" $files)
@@ -103,6 +103,8 @@ if [[ -n $TITLE ]]; then
 fi
 
 if [[ -n $ALBUM ]]; then
+    # if we changed photo titles, $files will now also contain all associated files. But we can safely pass
+    # $files to change_album because it will just throw away all irrelevant files
     change_album "$ALBUM" "$files"
     change_album_rc=$?
     if [[ $change_album_rc = 0 ]]; then

@@ -44,7 +44,7 @@ set -u
 			echo -e "\n[IPTC]\nKeywords=;\n" >> $file			
 		fi
 
-		sidecar_set_iptc_keywords "$file" "$KEYWORDS"
+		sidecar_add_iptc_keywords "$file" "$KEYWORDS"
 		
 		if [[ -v restore_write_protection ]]; then
 			chmod u-w "$file"
