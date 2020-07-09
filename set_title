@@ -87,7 +87,7 @@ apply_set_title() {
     echo "$newfile"
 }
 
-
+set -o pipefail
 if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
     collect_associated_files.sh - < /dev/stdin | while read -r file; do apply_set_title "$file"; done
 else 
