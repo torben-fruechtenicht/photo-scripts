@@ -8,7 +8,7 @@ source "$BASE_DIR/lib/metadata.sh"
 
 PATH="$BASE_DIR/lib:$PATH"
 
-if [[ ${1:-} = "-" ]]; then
+if (( $# == 0 )); then
     declare -r READ_PHOTOS_FROM_STDIN=
 else 
     declare -r PHOTOS=$@

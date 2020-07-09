@@ -74,7 +74,7 @@ apply_change_album() {
 
 set -o pipefail
 if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
-    collect_associated_files.sh - < /dev/stdin | while read -r file; do apply_change_album "$file"; done
+    collect_associated_files.sh < /dev/stdin | while read -r file; do apply_change_album "$file"; done
 else 
     collect_associated_files.sh "$PHOTOS" | while read -r file; do apply_change_album "$file"; done
 fi
