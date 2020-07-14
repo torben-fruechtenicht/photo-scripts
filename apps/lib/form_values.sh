@@ -51,17 +51,19 @@ __lookup_memorized_value() {
     grep "^${fieldname}=" "$saved_values_file" | cut -d'=' -f2
 }   
 
-get_memorized_values_or_default() {
+get_memorized_values_or_default() ( 
+    set -o noglob
+
     local -r saved_values_file=$1
     local -r fieldname=$2
     local -r default=$3
 
     if [[ -e $saved_values_file ]]; then
-        echo $(__lookup_memorized_value "$saved_values_file" "$fieldname")
+        echo "$(__lookup_memorized_value "$saved_values_file" "$fieldname")"
     else 
         echo "$default"
     fi
-}
+)
 
 get_memorized_value_preselected_in_all_values_list() {
     local -r saved_values_file=$1
@@ -89,12 +91,17 @@ __count_char_in_string() {
 }
 
 __filter_combobox_entries_exclude_value() (
+
+    # if we didn't use noglob here, we'd be having fun if $list has the value of "*"
+    set -o noglob
+
     read -r list
     local -r value=$1
 
     IFS='!'
+
     for entry in $list; do
-        if [[ $entry != $value ]]; then
+        if [[ $entry != "$value" ]]; then
             echo "$entry"
         fi
     done | paste -s -d '!' -
