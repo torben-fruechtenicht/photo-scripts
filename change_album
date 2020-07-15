@@ -11,7 +11,7 @@ source "$BASE_DIR/lib/jpeg.sh"
 PATH="$BASE_DIR/lib:$PATH"
 
 
-declare -r ALBUM=${1:-}
+declare -r ALBUM=$(echo "${1:-}" | tr ' ' '-')
 if [[ -z $ALBUM ]]; then
     echo "[ERROR] Album parameter missing" >&2
     exit 1

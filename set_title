@@ -11,7 +11,7 @@ source "$BASE_DIR/lib/jpeg.sh"
 PATH="$BASE_DIR/lib:$PATH"
 
 
-declare -r TITLE=${1:-}
+declare -r TITLE=$(echo "${1:-}" | tr ' ' '-')
 if [[ -z $TITLE ]]; then
     echo "[ERROR] Title parameter missing" >&2
     exit 1
