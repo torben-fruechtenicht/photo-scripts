@@ -75,22 +75,27 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-# FIXME ensure that we're not trying any edits below because the param has an all blanks value.
-# remove all leading or trailing blanks from user inputs (either only here or earlier)
+trim_whitespace() (
+    shopt -s extglob
 
-declare -r ALBUM=$(echo "$user_edit_params" | cut -d'|' -f 1)
+    local string=$1 
+    string="${string##*( )}"
+    echo "${string%%*( )}"
+)
+
+declare -r ALBUM=$(trim_whitespace "$(echo "$user_edit_params" | cut -d'|' -f 1)")
 if [[ -n $ALBUM ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
     equals_TRUE "$(echo "$user_edit_params" | cut -d'|' -f 2)" && declare -r ALBUM_AS_KEYWORD=
 fi
 
-declare -r TITLE=$(echo "$user_edit_params" | cut -d'|' -f 3)
+declare -r TITLE=$(trim_whitespace "$(echo "$user_edit_params" | cut -d'|' -f 3)")
 if [[ -n $TITLE ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
     equals_TRUE "$(echo "$user_edit_params" | cut -d'|' -f 4)" && declare -r TITLE_AS_KEYWORD=
 fi
 
-declare -r USER_KEYWORDS=$(echo "$user_edit_params" | cut -d'|' -f 5)
+declare -r USER_KEYWORDS=$(trim_whitespace "$(echo "$user_edit_params" | cut -d'|' -f 5)")
 if [[ -n $USER_KEYWORDS ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
 fi
@@ -134,6 +139,6 @@ if [[ -n $ALBUM ]]; then
             "Moving $(echo "$photos" | wc -l) photos to \"$ALBUM\" failed with return code $change_album_rc"
         exit 1
     fi
-else 
+elif [[ -n $TITLE ]] || [[ -n $KEYWORDS ]]; then 
     echo "$files"
 fi
