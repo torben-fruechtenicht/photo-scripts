@@ -41,21 +41,44 @@ if [[ -z $photos ]]; then
     exit 1
 fi
 
-dialog_text="Metadata (empty fields will not be written):"
+prepare_combobox_values() (
+    set -o noglob
+
+    local -r field_name=$1
+    local -r default_value=""
+
+    local -r memorized_values=$(get_memorized_values_or_default \
+        "$MEMORIZED_FORM_VALUES_FILE" "$field_name" "$default_value")
+    # we simply add the preselected blank without checking if there is another blank in the string, that's easier
+    # TBD TODO maybe get_memorized_values_or_default should already filter blank entries?
+    echo "^!$memorized_values"
+)
+
+dialog_text="Metadata (blank fields will not be changed):"
+album_field_value="$(prepare_combobox_values "album")"
+title_field_value="$(prepare_combobox_values "title")"
+keywords_field_value="$(prepare_combobox_values "keywords")"
+
+# TODO add option to remove old album and title from keywords
+ 
 user_edit_params=$(
     run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "$dialog_text" \
         --form \
-        --field="Album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")" \
+        --field="Album:CBE" "$album_field_value" \
         --field="Add album name as a keyword:CHK" "TRUE" \
-        --field="Title:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")" \
+        --field="Title:CBE" "$title_field_value" \
         --field="Add title as a keyword:CHK" "TRUE" \
-        --field="Keywords (separated by \";\"):CBE" \
-            "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "keywords" "")" 
+        --field="Keywords (separated by \";\"):CBE" "$keywords_field_value" 
 )
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
+
+# FIXME ensure that we're not trying any edits below because the param has an all blanks value.
+# remove all leading or trailing blanks from user inputs (either only here or earlier)
+
+# FIXME memorize form values without blanks replaced (i.e. do replacing only shortly before actual edits)
 
 declare -r ALBUM=$(echo "$user_edit_params" | cut -d'|' -f 1)
 if [[ -n $ALBUM ]]; then
@@ -74,7 +97,6 @@ if [[ -n $USER_KEYWORDS ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
 fi
 declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
-
 
 if [[ -n $KEYWORDS ]]; then
     add_keywords "$KEYWORDS" "$photos" > /dev/null # we're not interested in the printed files
