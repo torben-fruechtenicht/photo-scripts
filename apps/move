@@ -15,22 +15,25 @@ source "$BASE_DIR/apps/lib/notification.sh"
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 
 photos=$(selector "$SEARCH_DIR") 
+# FIXME $photos will also be empty if user cancelled the selector. but in that case, there should be no
+# warning
+# TBD maybe we let selector exit with special return code if no matching were found? and not check $photos?
 if [[ -z $photos ]]; then
     notify_warning "$APP_TITLE" "No matching photos found"  
     exit 1
 fi
 
-
+album_field_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")
 move_to_album_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
     --form \
-    --field="Move to album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")" \
+    --field="Move to album:CBE" "$album_field_value" \
     --field="Photo titles are changed to album title:CHK" "FALSE")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r TARGET_ALBUM_NAME=$(echo "$move_to_album_params" | cut -d'|' -f 1)
+declare -r TARGET_ALBUM_NAME=$(trim_whitespace "$(cut -d'|' -f 1 <<<"$move_to_album_params")")
 if [[ -z $TARGET_ALBUM_NAME ]]; then    
     notify_warning "$APP_TITLE" "New album name is required"  
     exit 1
@@ -39,7 +42,7 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$TARGET_ALB
 
 files=$photos
 
-declare -r RENAME_PHOTOS_OPTION=$(echo "$move_to_album_params" | cut -d'|' -f 2)
+declare -r RENAME_PHOTOS_OPTION=$(cut -d'|' -f 2 <<<"$move_to_album_params")
 if [[ $RENAME_PHOTOS_OPTION = "TRUE" ]]; then
     files=$(set_title "$TARGET_ALBUM_NAME" "$files")
     rename_rc=$?
