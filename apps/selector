@@ -22,7 +22,8 @@ fi
 album_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")
 title_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")
 year_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "year" "$(date +%Y)")
-month_form_value=$(get_memorized_value_preselected_in_all_values_list "$MEMORIZED_FORM_VALUES_FILE" "month" "!$MONTHS")
+month_form_value=$(get_memorized_value_preselected_in_all_values_list \
+    "$MEMORIZED_FORM_VALUES_FILE" "month" "!$MONTHS")
 dayofmonth_form_value=$(get_memorized_value_preselected_in_all_values_list \
     "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "!$DAYS_OF_MONTH")
 
@@ -42,17 +43,17 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
 fi
 
 
-declare -r ALBUM=$(echo "$options_string" | cut -d'|' -f 1 | tr ' ' '-')
-declare -r TITLE=$(echo "$options_string" | cut -d'|' -f 2 | tr ' ' '-')
+declare -r ALBUM=$(cut -d'|' -f 1 <<<"$options_string")
+declare -r TITLE=$(cut -d'|' -f 2 <<<"$options_string")
 if [[ -z $ALBUM ]] && [[ -z $TITLE ]]; then
     notify_warning "$APP_TITLE" "One of album or title must be defined"
     exit 1
 fi
 
-declare -r YEAR=$(echo "$options_string" | cut -d'|' -f 3)
-declare -r MONTH=$(echo "$options_string" | cut -d'|' -f 4)
-declare -r DAY_OF_MONTH=$(echo "$options_string" | cut -d'|' -f 5)
-declare -r TIME_OF_DAY=$(echo "$options_string" | cut -d'|' -f 6)
+declare -r YEAR=$(cut -d'|' -f 3 <<<"$options_string")
+declare -r MONTH=$(cut -d'|' -f 4 <<<"$options_string")
+declare -r DAY_OF_MONTH=$(cut -d'|' -f 5 <<<"$options_string")
+declare -r TIME_OF_DAY=$(cut -d'|' -f 6 <<<"$options_string")
 
 unpad_number() {
     local -r number_optional_zeropadded=$1
@@ -99,10 +100,12 @@ get_number_tail() {
 }
 
 year_dir_glob=$(year_glob $YEAR)
-album_dir_glob=$(album_glob "$ALBUM")
+album_sanitized=$(tr ' ' '-' <<<"$ALBUM")
+album_dir_glob=$(album_glob "$album_sanitized")
 month_value=$(month_value_from_name "$MONTH")
 day_dir_glob=$(date_path_glob "$YEAR" "$month_value" "$DAY_OF_MONTH")
-filename_glob=$(filename_glob "$TITLE" "$YEAR" "$month_value" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$NUMBER_TAIL")
+title_sanitized=$(tr ' ' '-' <<<"$TITLE")
+filename_glob=$(filename_glob "$title_sanitized" "$YEAR" "$month_value" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$NUMBER_TAIL")
 
 find "$SEARCH_DIR" -regextype posix-extended -type f \
         -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
