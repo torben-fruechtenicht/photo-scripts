@@ -118,7 +118,10 @@ __filter_combobox_entries_exclude_value() (
 memorize_form_combobox_values() {
     local -r saved_values_file=$1
     local -r fieldname=$2
-    local -r current_value=$3
+    local -r current_value=$(trim_whitespace "$3")
+    if [[ -z $current_value ]]; then
+        return
+    fi
     local -r max_saved=${4-10}
     
     if grep -q "$fieldname=" "$saved_values_file"; then
@@ -127,15 +130,15 @@ memorize_form_combobox_values() {
         local -r saved_values=$(grep "$fieldname" "$saved_values_file" | cut -d'=' -f2 |\
             __filter_combobox_entries_exclude_value "$current_value")
         if [[ -z $saved_values ]]; then
-            sed -i -e 's/'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'/' "$saved_values_file"
+            sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'/' "$saved_values_file"
         else
             # values_count would be the new size of the list after adding the current value
             local -r values_count=$(( $(__count_char_in_string '!' "$saved_values") + 1 ))
             if (( $values_count < $max_saved )); then
-                sed -i -e 's/'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'!'"$saved_values"'/' "$saved_values_file"
+                sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'!'"$saved_values"'/' "$saved_values_file"
             else 
                 local -r saved_values_without_last=$(echo ${saved_values%!*})
-                sed -i -e 's/'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'!'"$saved_values_without_last"'/' "$saved_values_file"
+                sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'!'"$saved_values_without_last"'/' "$saved_values_file"
             fi
         fi
 
@@ -147,10 +150,13 @@ memorize_form_combobox_values() {
 memorize_form_value() {
     local -r saved_values_file=$1
     local -r fieldname=$2
-    local -r value=$3
+    local -r value=$(trim_whitespace "$3")
+    if [[ -z $value ]]; then
+        return
+    fi
 
     if grep -q "$fieldname=" "$saved_values_file"; then
-        sed -i -e 's/'"$fieldname"'=.*/'"$fieldname"'='"$value"'/' "$saved_values_file"
+        sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$value"'/' "$saved_values_file"
     else
         echo "$fieldname=$value" >> "$saved_values_file"
     fi    
