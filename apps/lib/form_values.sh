@@ -82,6 +82,14 @@ get_memorized_value_preselected_in_all_values_list() {
     echo "$values_optional_saved_preselected"
 }
 
+trim_whitespace() (
+    shopt -s extglob
+
+    local string=$1 
+    string="${string##*( )}"
+    echo "${string%%*( )}"
+)
+
 __count_char_in_string() {
     local -r c=$1
     local -r string=$2

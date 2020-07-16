@@ -30,7 +30,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r TARGET_ALBUM_NAME=$(echo "$move_to_album_params" | cut -d'|' -f 1 | tr ' ' '-')
+declare -r TARGET_ALBUM_NAME=$(echo "$move_to_album_params" | cut -d'|' -f 1)
 if [[ -z $TARGET_ALBUM_NAME ]]; then    
     notify_warning "$APP_TITLE" "New album name is required"  
     exit 1

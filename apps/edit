@@ -75,14 +75,6 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-trim_whitespace() (
-    shopt -s extglob
-
-    local string=$1 
-    string="${string##*( )}"
-    echo "${string%%*( )}"
-)
-
 declare -r ALBUM=$(trim_whitespace "$(echo "$user_edit_params" | cut -d'|' -f 1)")
 if [[ -n $ALBUM ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25

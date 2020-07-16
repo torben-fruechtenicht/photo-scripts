@@ -6,43 +6,44 @@ declare -r -x APP_TITLE="Rename photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-declare -r SELECTOR="$BASE_DIR/apps/selector"
-declare -r MOVE_PHOTOS="$BASE_DIR/lib/move_photos.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
+
+PATH="$BASE_DIR:$BASE_DIR/apps:$PATH"
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 shift 1
 
 
-photos=$("$SELECTOR" "$SEARCH_DIR")
+photos=$(selector "$SEARCH_DIR")
 if [[ -z $photos ]]; then
     notify_warning "$APP_TITLE" "No matching photos found"
     exit 1
 fi   
 
+title_field_values=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")
 rename_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
     --form \
-    --field="Change photo title(s) to:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")")
+    --field="Change photo title(s) to:CBE" "$title_field_values")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r NEW_TITLE=$(echo "$rename_params" | cut -d'|' -f 1 | tr ' ' '-')
+declare -r NEW_TITLE=$(trim_whitespace "$(echo "$rename_params" | cut -d'|' -f 1)")
 if [[ -z $NEW_TITLE ]]; then    
     notify_warning "$APP_TITLE" "New photo title is required"  
     exit 1
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$NEW_TITLE" 25
 
-"$MOVE_PHOTOS" -r "$NEW_TITLE" -m "p" $photos
-move_photos_rc=$?
-if [[ $move_photos_rc = 0 ]]; then
+set_title "$NEW_TITLE" $photos
+set_title_rc=$?
+if [[ $set_title_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" done"
 else
     notify_error "$APP_TITLE" \
-        "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" failed with return code $move_photos_rc"
+        "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" failed with return code $set_title_rc"
     exit 1
 fi
