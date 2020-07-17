@@ -31,7 +31,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r NEW_TITLE=$(trim_whitespace "$(echo "$rename_params" | cut -d'|' -f 1)")
+declare -r NEW_TITLE=$(trim_whitespace "$(cut -d'|' -f 1 <<<"$rename_params")")
 if [[ -z $NEW_TITLE ]]; then    
     notify_warning "$APP_TITLE" "New photo title is required"  
     exit 1
