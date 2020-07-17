@@ -1,10 +1,11 @@
 #! /usr/bin/env bash
 
-set -e
+set -eu
 
 
 declare -r NO_DCIM_DIR_RC=101
 declare -r NO_TARGET_DIR_RC=102
+declare -r NO_ALBUM_RC=103
 
 
 source "$(dirname "$(readlink -e "$0")")/lib/exif.sh"
@@ -21,13 +22,17 @@ trap cleanup EXIT
 while getopts "t:a:" opt; do
     case $opt in
         a )
-            declare -r ALBUM="$(echo "$OPTARG" | tr ' ' '-')";;
+            declare -r ALBUM="$(tr ' ' '-' <<<"$OPTARG")";;
         t )
-            declare -r TITLE="$(echo "$OPTARG" | tr ' ' '-')";;
+            declare -r TITLE="$(tr ' ' '-' <<<"$OPTARG")";;
 	esac
 done
 shift $(expr $OPTIND - 1 )
 
+if ! [[ -v ALBUM ]]; then
+    echo "[ERROR] No album name given" >&2
+    exit $NO_ALBUM_RC
+fi
 
 declare -r DCIM_DIR=$(readlink -e "$1")
 if [[ -z $DCIM_DIR ]]; then
@@ -40,16 +45,6 @@ if [[ -z $TARGET_DIR ]]; then
     echo "[ERROR] None given or nonexistent target directory" >&2
     exit $NO_TARGET_DIR_RC
 fi
-
-if ! [[ -v ALBUM ]]; then
-    declare -r ALBUM="New-Photos"
-fi
-
-if ! [[ -v TITLE ]]; then
-    declare -r TITLE=$ALBUM
-fi
-
-set -u
 
 
 build_photonumber_filename_with_leading_p() {
@@ -109,15 +104,24 @@ build_targetpath() {
 
     local -r datetimeoriginal=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$photofile" 2> /dev/null)
 	
-    local -r year=$(echo "$datetimeoriginal" | cut -d':' -f 1)
-	local -r date=$(echo "$datetimeoriginal" | cut -d' ' -f 1 | tr ':' '-')
-    local -r date_numerical=$(echo "$datetimeoriginal" | cut -d' ' -f 1 | tr --delete ':')
-	local -r timeofday=$(echo "$datetimeoriginal" | cut -d' ' -f2 | cut -d ':' -f1-2 | tr --delete ':')
+    local -r year=$(cut -d':' -f 1 <<<"$datetimeoriginal")
+	local -r date=$(cut -d' ' -f 1 <<<"$datetimeoriginal" | tr ':' '-')
+    local -r date_numerical=$(cut -d' ' -f 1 <<<"$datetimeoriginal" | tr --delete ':')
+	local -r timeofday=$(cut -d' ' -f2 <<<"$datetimeoriginal" | cut -d ':' -f1-2 | tr --delete ':')
 
     local -r target_dir="$TARGET_DIR/$year/$ALBUM/$date"
 
-    echo "${target_dir}/${TITLE}_${date_numerical}_${timeofday}_$(camera_name "$photofile")_$(build_photonumber "$photofile")"
+    local -r camera=$(camera_name "$photofile")
+    local -r photonumber=$(build_photonumber "$photofile")
+    local -r filename="${TITLE}_${date_numerical}_${timeofday}_${camera}_${photonumber}"
+
+    echo "$target_dir/$filename"
 }
+
+
+if ! [[ -v TITLE ]]; then
+    declare -r TITLE=$ALBUM
+fi
 
 declare -r EXTENSIONS=".+\.(ORF|CRW|CR2|RAW|JPG)"
 # TODO to use DATE_TAKEN, add another step to pipeline: get date from photofile and compare with DATE, print photofile to stdout

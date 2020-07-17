@@ -11,7 +11,7 @@ lookup_camera_from_exif() {
 		raw )
 			exiv2 pr -Pt -g "Exif.PanasonicRaw.Model" "$photofile" 2> /dev/null;;
 		*) 
-			camera=$(exiv2 pr -Pt -g 'Exif.Image.Model' "$photofile" 2> /dev/null)
+			local camera=$(exiv2 pr -Pt -g 'Exif.Image.Model' "$photofile" 2> /dev/null)
 			echo "${camera//[[:space:]]/}";;
 	esac
 }
