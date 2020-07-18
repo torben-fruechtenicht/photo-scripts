@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -ux
+set -u
 
 declare -r APP_TITLE="Import photos"
 
@@ -26,10 +26,33 @@ declare -r DCIM_DIR=${1+$1}
 declare -r TARGET_DIR=${2+$2}
 declare -r SIDECAR_TEMPLATES_DIR=${3+$3}
 
+remove_wildcard_entries() (
+    local -r entries=$1
+
+    IFS='!'
+
+    for entry in $entries; do
+        if ! [[ $entry =~ .*\*.*|.*\?.* ]]; then
+            echo "$entry"
+        fi
+    done | paste -s -d '!' -
+)
+
+declare -r DEFAULT_ALBUM_VALUE="New photos"
+declare -r DEFAULT_TITLE_VALUE=""
 
 dialog_txt="Import photos from $DCIM_DIR to $TARGET_DIR"
-album_cb_values=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "New photos")
-title_cb_values=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")
+
+album_cb_values=$(remove_wildcard_entries \
+    "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "$DEFAULT_ALBUM_VALUE")")
+if [[ -z $album_cb_values ]]; then
+    album_cb_values=$DEFAULT_ALBUM_VALUE
+fi
+title_cb_values=$(remove_wildcard_entries \
+    "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "$DEFAULT_TITLE_VALUE")")
+if [[ -z $title_cb_values ]]; then
+    title_cb_values=$DEFAULT_TITLE_VALUE
+fi    
 creator_value=${CREATOR_OPTION+$CREATOR_OPTION}
 keywords_cb_values=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "keywords" "")
 
