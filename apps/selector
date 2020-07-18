@@ -2,6 +2,8 @@
 
 set -u
 
+declare -r CANCELLED_RC=101
+
 ! test -v APP_TITLE && declare -r APP_TITLE="Photo selector"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
@@ -39,7 +41,7 @@ options_string=$(run_yad "$APP_TITLE" "Select photos from $SEARCH_DIR matching" 
     --field="photo number ends with or is in range:TEXT" "" 2> /dev/null)
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
-    exit
+    exit $CANCELLED_RC
 fi
 
 

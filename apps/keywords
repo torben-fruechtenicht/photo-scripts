@@ -19,7 +19,10 @@ declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 
 
 photos=$(selector "$SEARCH_DIR") 
-if [[ -z $photos ]]; then
+selector_rc=$? 
+if [[ $selector_rc == 101 ]]; then
+    exit
+elif [[ -z $photos ]]; then
     notify_warning "$APP_TITLE" "No matching photos found"  
     exit 1
 fi

@@ -15,12 +15,12 @@ source "$BASE_DIR/apps/lib/notification.sh"
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 
 photos=$(selector "$SEARCH_DIR") 
-# FIXME $photos will also be empty if user cancelled the selector. but in that case, there should be no
-# warning
-# TBD maybe we let selector exit with special return code if no matching were found? and not check $photos?
-if [[ -z $photos ]]; then
+selector_rc=$? 
+if [[ $selector_rc == 101 ]]; then
+    exit
+elif [[ -z $photos ]]; then
     notify_warning "$APP_TITLE" "No matching photos found"  
-    exit 1
+    exit
 fi
 
 album_field_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")
@@ -47,22 +47,22 @@ if [[ $RENAME_PHOTOS_OPTION = "TRUE" ]]; then
     files=$(set_title "$TARGET_ALBUM_NAME" "$files")
     rename_rc=$?
     if [[ $rename_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$TARGET_ALBUM_NAME\" done"
+        notify_info "$APP_TITLE" "Changing title of $(wc -l <<<"$photos") photo(s) to \"$TARGET_ALBUM_NAME\" done"
     else
         notify_error "$APP_TITLE" \
-            "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$TARGET_ALBUM_NAME\" failed with return code $rename_rc"
+            "Changing title of $(wc -l <<<"$photos") photo(s) to \"$TARGET_ALBUM_NAME\" failed with return code $rename_rc"
         exit 1
     fi
 fi
 
-# if we changed photo titles, too, $files will now also contain all associated files. But we can safely pass
+# if we changed photo titles, $files will now contain all associated files. But we can safely pass
 # $files to change_album because it will just throw away all irrelevant files
 change_album "$TARGET_ALBUM_NAME" "$files"
 change_album_rc=$?
 if [[ $change_album_rc = 0 ]]; then
-    notify_info "$APP_TITLE" "Moving $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" done"
+    notify_info "$APP_TITLE" "Moving $(wc -l <<<"$photos") photos to \"$TARGET_ALBUM_NAME\" done"
 else
     notify_error -e "$APP_TITLE" \
-        "Renaming $(echo "$photos" | wc -l) photos to \"$TARGET_ALBUM_NAME\" failed with return code $change_album_rc"
+        "Renaming $(wc -l "$photos") photos to \"$TARGET_ALBUM_NAME\" failed with return code $change_album_rc"
     exit 1
 fi

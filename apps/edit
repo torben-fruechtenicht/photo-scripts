@@ -36,7 +36,10 @@ equals_TRUE() {
 
 
 photos=$(selector "$SEARCH_DIR")
-if [[ -z $photos ]]; then
+selector_rc=$? 
+if [[ $selector_rc == 101 ]]; then
+    exit
+elif [[ -z $photos ]]; then
     notify_warning "$APP_TITLE" "No matching photos found"
     exit 1
 fi
@@ -50,7 +53,6 @@ prepare_combobox_values() (
     local -r memorized_values=$(get_memorized_values_or_default \
         "$MEMORIZED_FORM_VALUES_FILE" "$field_name" "$default_value")
     # we simply add the preselected blank without checking if there is another blank in the string, that's easier
-    # TBD TODO maybe get_memorized_values_or_default should already filter blank entries?
     echo "^!$memorized_values"
 )
 
