@@ -35,7 +35,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r KEYWORDS=$(echo "$set_iptc_params" | cut -d'|' -f 1)
+declare -r KEYWORDS=$(cut -d'|' -f 1 <<<"$set_iptc_params")
 if [[ -z $KEYWORDS ]]; then    
     notify_warning "$APP_TITLE" "At least one keyword is required"  
     exit 1
@@ -45,10 +45,10 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORD
 add_keywords "$KEYWORDS" "$photos"
 add_keywords_rc=$?
 if [[ $add_keywords_rc = 0 ]]; then
-    notify_info "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) done"
+    notify_info "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(wc -l <<<"$photos") photo(s) done"
 else
     notify_error "$APP_TITLE" \
-        "Adding IPTC keywords \"$KEYWORDS\" of $(echo "$photos" | wc -l) photo(s) failed with return code $add_keywords_rc"
+        "Adding IPTC keywords \"$KEYWORDS\" of $(wc -l <<<"$photos") photo(s) failed with return code $add_keywords_rc"
     exit 1
 fi
 
