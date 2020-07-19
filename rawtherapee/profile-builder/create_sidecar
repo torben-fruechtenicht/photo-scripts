@@ -5,8 +5,10 @@ set -eu
 declare -r NO_TEMPLATES_DIR_RC=101
 declare -r TEMPLATES_DIR_INVALID=102
 
-. "$(dirname "$(readlink -e "$0")")/../lib/sidecar.sh"
-. "$(dirname "$(readlink -e "$0")")/../lib/metadata.sh"
+declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../.."
+
+source "$BASEDIR/rawtherapee/lib/sidecar.sh"
+source "$BASEDIR/lib/metadata.sh"
 
 while getopts "c:k:ov" opt; do
     case $opt in

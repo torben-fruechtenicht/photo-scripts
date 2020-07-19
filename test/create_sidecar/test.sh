@@ -3,7 +3,7 @@
 set -e
 . "$(dirname "$(readlink -e "$0")")/../setup.sh"
 
-declare -r CREATE_SIDECAR="$PROJECT_ROOT/profile-builder/create_sidecar"
+declare -r CREATE_SIDECAR="$PROJECT_ROOT/rawtherapee/profile-builder/create_sidecar"
 
 declare -r TEMPLATES_DIR="$INPUT_DIR/templates"
 declare -r CREATOR="Me myself and I"

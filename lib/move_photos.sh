@@ -5,7 +5,7 @@ shopt -s nocasematch
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/metadata.sh"
-source "$BASE_DIR/lib/sidecar.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 source "$BASE_DIR/lib/jpeg.sh"
 
 print_help() {

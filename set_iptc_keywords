@@ -5,7 +5,7 @@ shopt -s nocasematch
 
 declare -r COLLECTOR_CMD=$(dirname "$0")/lib/collect_associated_files.sh
 
-. "$(dirname "$0")/lib/sidecar.sh"
+. "$(dirname "$0")/rawtherapee/lib/sidecar.sh"
 . "$(dirname "$0")/lib/jpeg.sh"
 
 while getopts "v" opt; do

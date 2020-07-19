@@ -4,7 +4,7 @@ set -e
 . "$(dirname "$(readlink -e "$0")")/../setup.sh"
 
 
-declare -r BUILD_TEMPLATES="$PROJECT_ROOT/profile-builder/build_templates.sh"
+declare -r BUILD_TEMPLATES="$PROJECT_ROOT/rawtherapee/profile-builder/build_templates.sh"
 
 declare -r BASELINES_ROOT="$INPUT_DIR/baselines"
 declare -r GENERATED_TEMPLATES_DIR="$OUTPUT_DIR"
