@@ -43,7 +43,7 @@ month_glob() {
     if [[ -z $month ]]; then
         echo "??"
     else 
-        echo "$month"
+        printf "%02d" "$month"
     fi
 }
 
@@ -89,12 +89,13 @@ photonumber_glob() {
 }
 
 filename_glob() {
-    local -r title=${1+$1}
+    local -r title=$(title_glob "${1+$1}")
     local -r year=${2+$2}
     local -r month=${3+$3}
     local -r dayofmonth=${4+$4}
-    local -r timeofday=${5+$5}
+    local -r date=$(date_filename_glob $year $month $dayofmonth)
+    local -r timeofday=$(timeofday_glob "${5+$5}")
+    local -r number=$(photonumber_glob "${6+$6}")
     local -r camera="*"
-    local -r photonumber_tail=${6+$6}
-    echo "$(title_glob "$title")_$(date_filename_glob $year $month $dayofmonth)_$(timeofday_glob "$timeofday")_*_$(photonumber_glob "$photonumber_tail")"
+    echo "${title}_${date}_${timeofday}_${camera}_${number}"
 }
