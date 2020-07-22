@@ -6,12 +6,13 @@ declare -r APP_TITLE="Archive processed photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-declare -r MOVE_PHOTOS_CMD="$BASE_DIR/lib/move_photos.sh"
 source "$BASE_DIR/lib/metadata.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/form_values.sh"
-source "$BASE_DIR/apps/lib/find_globs_factory.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
+
+PATH="$BASE_DIR:$PATH"
+
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 if [[ -z $SEARCH_DIR ]]; then
@@ -25,57 +26,36 @@ if [[ -z $ARCHIVE_DIR ]]; then
     exit 1
 fi
 
+dialog_text="Select which photos to archive:"
+album_values="$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")"
+year_values="$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "year" "$(date +%Y)")"
+month_values="$(get_memorized_value_preselected_in_all_values_list "$MEMORIZED_FORM_VALUES_FILE" "month" "^!$MONTHS")"
 
-options_string=$(run_yad "$APP_TITLE" "Select which photos to archive:" \
+options_string=$(run_yad "$APP_TITLE" "$dialog_text" \
     --form \
-    --field="Album:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")" \
-    --field="Year:CBE" "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "year" "$(date +%Y)")" \
-    --field="Month:CB" "$(get_memorized_value_preselected_in_all_values_list "$MEMORIZED_FORM_VALUES_FILE" "month" "!$MONTHS")" )
+    --field="Album:CBE" "$album_values" \
+    --field="Year:CBE" "$year_values" \
+    --field="Month:CB" "$month_values" )
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r ALBUM=$(echo "$options_string" | cut -d'|' -f 1 | tr ' ' '-')
-declare -r YEAR=$(echo "$options_string" | cut -d'|' -f 2)
-declare -r MONTH=$(echo "$options_string" | cut -d'|' -f 3)
+declare -r ALBUM=$(cut -d'|' -f 1 <<<"$options_string")
+declare -r YEAR=$(cut -d'|' -f 2 <<<"$options_string")
+declare -r MONTH=$(cut -d'|' -f 3 <<<"$options_string")
 
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 5
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
 memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
 
-
-converted_file_glob() {
-    local -r title=""
-    local -r photonumber_tail=""
-    local -r dayofmonth=""
-    local -r timeofday=""
-    echo "converted/$(filename_glob "$title" "$YEAR" "$(month_value_from_name "$MONTH")" "$dayofmonth" "$timeofday" "$photonumber_tail").jpg"
-}
-
-collect_archivable_photos() {
-    local -r dayofmonth=""
-    local -r year_dir_glob=$(year_glob $YEAR)
-    local -r album_dir_glob=$(album_glob "$ALBUM")
-    local -r day_dir_glob=$(date_path_glob "$YEAR" "$(month_value_from_name "$MONTH")" "$dayofmonth")
-
-    # search all output files, i.e. jpgs from the converted dirs
-    find "$SEARCH_DIR" -type f -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$(converted_file_glob)" | \
-    # get fullnames for all processed files (and make sure we have no duplicates after variants reduction)
-    while read -r processed_file; do
-        fullname_from_photofile "$processed_file" | sed -r 's/(.+_[0-9a-zA-Z]+)-[0-9]+$/\1/'
-    done | sort -u | \
-    # collect original files
-    while read -r fullname; do
-        find "$SEARCH_DIR" -regextype posix-extended -type f \
-            -iregex ".+/$fullname\.(ORF|RAW|JPG|CRW|CR2)$" ! -path '*/converted/*'
-    done
-}
-
-archivable_photos=$(collect_archivable_photos)
+#FIXME MONTH must be translated to number
+# - we don't need it zero-padded, collect_archivable_photos can take care of that
+archivable_photos=$(collect_archivable_photos \
+    ${ALBUM:+-a "$ALBUM"} ${YEAR:+-a "$YEAR"} ${MONTH:+-a "$MONTH"} "$SEARCH_DIR")
 
 if [[ -z $archivable_photos ]]; then
-    notify_warning "$APP_TITLE" "No archivable photos found that match the filer"
+    notify_warning "$APP_TITLE" "No archivable photos found that match the filter"
     exit 1
 fi
 
@@ -86,18 +66,12 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-# FIXME change to use archive_processed, not move_photos.sh (because it does not make sense to kind of duplicate
-# the logic from move_photos.sh in collect_archivable_photos)
-# TBD archive_processed expects to be passed a single directory in which it will look for archivable photos. However,
-# this script will produce a list of directories
-
-set -o pipefail
-"$MOVE_PHOTOS_CMD" -t "$ARCHIVE_DIR" "$archivable_photos" | xargs --no-run-if-empty chmod ugo-w
-action_rc=$?
-if [[ $action_rc = 0 ]]; then
-    notify_info "$APP_TITLE" "Archived $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\""
+archive_photos "$ARCHIVE_DIR" <<<"$archivable_photos"
+archive_photos=$?
+if [[ $archive_photos = 0 ]]; then
+    notify_info "$APP_TITLE" "Archived $(wc -l <<<"$archivable_photos") photo(s) to \"$ARCHIVE_DIR\""
 else
-    notify_error -e "$APP_TITLE" \
-        "Archiving $(echo "$archivable_photos" | wc -l) photo(s) to \"$ARCHIVE_DIR\" failed with return code $action_rc"
+    notify_error "$APP_TITLE" \
+        "Archiving $(wc -l <<<"$archivable_photos") photo(s) to \"$ARCHIVE_DIR\" failed with return code $archive_photos"
     exit 1
 fi

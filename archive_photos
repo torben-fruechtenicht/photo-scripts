@@ -1,0 +1,42 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
+
+PATH="$BASE_DIR/lib:$PATH"
+
+declare -r ARCHIVE_DIR=$(readlink -e "$1")
+if ! [[ -e $ARCHIVE_DIR ]]; then
+    echo "[ERROR] Archive directory $1 does not exist" >&2
+    exit 1
+fi
+shift 1
+
+if [[ ${1:-} = "-" ]]; then
+    declare -r READ_PHOTOS_FROM_STDIN=
+else 
+    declare -r PHOTOS=$@
+fi
+
+path_relative_to_sourceroot_from_file() {
+    local -r file=$1
+    local -r pattern="$PHOTOS_ROOT_DIR/($YEAR_DIR_PATTERN/$ALBUM_DIR_PATTERN/$DAY_DIR_PATTERN/(converted/)?$PHOTO_FILENAME_PATTERN)"
+    echo "$file" | sed -r 's|'"$pattern"'|\1|'
+}
+
+apply_archive() {
+    local -r file=$1
+    local -r target="$ARCHIVE_DIR/$(path_relative_to_sourceroot_from_file "$file")"
+
+    # FIXME return if target exists already
+
+    mv "$file" "$target" && chmod -w "$target" && echo "$target"
+}
+
+set -o pipefail
+if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
+    collect_associated_files.sh < /dev/stdin | while read -r file; do apply_archive "$file" "$file"; done
+else 
+    collect_associated_files.sh "$PHOTOS" | while read -r file; do apply_archive "$file"; done
+fi
