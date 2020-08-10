@@ -22,7 +22,7 @@ augment_user_keywords() {
         keywords="${keywords:+$keywords;}$ALBUM"
     fi
 
-    if [[ -v TITLE_AS_KEYWORD ]]; then
+    if [[ -v TITLE_AS_KEYWORD ]] && [[ $ALBUM != $TITLE ]]; then
         keywords="${keywords:+$keywords;}$TITLE"
     fi
 
