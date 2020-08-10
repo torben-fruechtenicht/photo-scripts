@@ -42,7 +42,7 @@ sidecar_add_iptc_keywords() {
 
 	local old_keywords=$(sed -rn '/\[IPTC\]/,/^$/ s/Keywords=(.+)+$/\1/p' "$sidecar_file")
 	for old_keyword in $old_keywords; do 
-		if ! [[ $new_keywords =~ .*${old_keyword//[\"]/}\;.* ]]; then
+		if ! [[ $new_keywords =~ .*${old_keyword//[\"]/}\.* ]]; then
 			keywords="$keywords$old_keyword;"
 		fi		
 	done
