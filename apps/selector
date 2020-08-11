@@ -9,7 +9,7 @@ declare -r CANCELLED_RC=101
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 source "$BASE_DIR/apps/lib/yad.sh"
-source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/find_globs_factory.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
@@ -20,14 +20,15 @@ if [[ -z $SEARCH_DIR ]]; then
     exit 1
 fi
 
-
-album_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")
-title_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")
-year_form_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "year" "$(date +%Y)")
-month_form_value=$(get_memorized_value_preselected_in_all_values_list \
-    "$MEMORIZED_FORM_VALUES_FILE" "month" "!$MONTHS")
-dayofmonth_form_value=$(get_memorized_value_preselected_in_all_values_list \
-    "$MEMORIZED_FORM_VALUES_FILE" "dayofmonth" "!$DAYS_OF_MONTH")
+album_form_value=$(add_blank_option_to_list "$(preselect_latest_in_list "$(remember_list_for_finding "album")")")
+title_form_value=$(add_blank_option_to_list "$(preselect_latest_in_list "$(remember_list_for_finding "title")")")
+year_form_value=$(add_blank_option_to_list "$(preselect_latest_in_list "$(remember_list_for_finding "year")")")
+if [[ -z $year_form_value ]]; then
+    year_form_value=$(date +%Y)
+fi
+month_form_value=$(add_blank_option_to_list "$(set_preselection_in_list "$(remember_value "month")" "$MONTHS")")
+dayofmonth_form_value=$(add_blank_option_to_list \
+    "$(set_preselection_in_list "$(remember_value "dayofmonth")" "$DAYS_OF_MONTH")")
 
 # TODO time of day should allow ranges
 options_string=$(run_yad "$APP_TITLE" "Select photos from $SEARCH_DIR matching" \

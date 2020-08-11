@@ -38,6 +38,7 @@ album_glob() {
     fi
 }
 
+# $1 - the month as a simple one-based integer (i.e. 1-12)
 month_glob() {
     local -r month=${1+$1}
     if [[ -z $month ]]; then
