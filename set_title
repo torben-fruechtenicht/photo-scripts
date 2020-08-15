@@ -10,6 +10,14 @@ source "$BASE_DIR/lib/jpeg.sh"
 
 PATH="$BASE_DIR/lib:$PATH"
 
+while getopts "f" opt; do
+    case $opt in
+        f ) 
+			declare -r FORCE_OVERWRITE=;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
 
 declare -r TITLE=$(echo "${1:-}" | tr ' ' '-')
 if [[ -z $TITLE ]]; then
@@ -57,10 +65,10 @@ apply_set_title() {
     local -r file=$1
     local -r filename=${file##*/}
 
-    if [[ $(old_title "$file") = $TITLE ]]; then
+    if ! [[ -v FORCE_OVERWRITE ]] && [[ $(old_title "$file") = $TITLE ]]; then
         echo "[WARN] Cannot change title of $file to \"$TITLE\", same as old title" >&2
         return
-    fi
+    fi    
 
     if ! [[ -w $file ]]; then
         chmod u+w "$file"
@@ -70,7 +78,7 @@ apply_set_title() {
     local -r newfile="$(dirname "$file")/$(new_filename "$filename" "$TITLE")"
 
     # this is a real error case unlike the other check above (which stems from careless user input)
-    if [[ -e $newfile ]]; then
+    if [[ -e $newfile ]] && ! [[ -v FORCE_OVERWRITE ]]; then
         echo "[ERROR] Cannot change title of $file to \"$TITLE\", file $newfile exists already" >&2
         exit 1
     fi
@@ -83,7 +91,10 @@ apply_set_title() {
         jpeg_set_iptc "$file" "Caption" "[$(fullname_from_photofile "$newfile")]"
     fi
 
-    mv "$file" "$newfile"
+
+    # do an additional check if $newfile exists because we might have skipped the check above because we're in 
+    # FORCE_OVERWRITE mode
+    ! test -e "$newfile" && mv "$file" "$newfile"
 
     if [[ -v restore_write_protection ]]; then
         chmod u-w "$newfile"
