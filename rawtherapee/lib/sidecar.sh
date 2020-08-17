@@ -80,7 +80,7 @@ sidecar_remove_iptc_keywords() {
 
 	local -r OLD_IFS=$IFS
 	IFS=";"
-	local sed_commands
+	local sed_commands=
 	for to_delete in $keywords; do
 		# NB TODO using just one pattern with "? before and after '"$to_delete"' does not work, first quote is not 
 		# 	removed
