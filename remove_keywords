@@ -65,7 +65,7 @@ process_converted_jpeg() {
 		local -r restore_write_protection=
 	fi
 
-	# jpeg_set_iptc_keywords "$KEYWORDS" "$jpgfile"
+	jpeg_remove_iptc_keywords "$jpgfile" "$KEYWORDS"
 
 	if [[ -v restore_write_protection ]]; then
 		chmod u-w "$jpgfile"

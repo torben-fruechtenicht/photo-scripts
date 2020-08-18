@@ -10,9 +10,19 @@ is_quoted() {
 
 quote() {
 	local -r string=$1
-	if ! __is_quoted "$string" && __contains_spaces "$string"; then
+	if contains_spaces "$string" && ! is_quoted "$string"; then
 		echo "\"$string\""
 	else
 		echo $string
 	fi	
+}
+
+unquote() {
+    local string=$1
+    if is_quoted "$string"; then
+        string="${string%\"}"
+        echo "${string#\"}"
+    else    
+        echo "$string"
+    fi
 }

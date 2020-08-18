@@ -10,7 +10,7 @@ jpeg_set_iptc() {
     local -r value=$3
 	
 	if [[ $key == "Keywords" ]]; then
-		echo "[ERROR] Keywords must be done with jpeg_set_iptc_keywords" >&2
+		echo "[ERROR] Keywords must be added with jpeg_set_iptc_keywords" >&2
 		return 1
 	fi
 
@@ -18,18 +18,18 @@ jpeg_set_iptc() {
 	echo "[INFO] set  Iptc.Application2.$key $value" >&2
 }
 
-jpeg_get_iptc() {
-	local -r key=$1
-	local -r jpg_file=$2
+__jpeg_get_iptc() {
+	local -r jpg_file=$1
+	local -r key=$2
 
 	exiv2 -PIt -K "Iptc.Application2.$key" "$jpg_file" 2> /dev/null
 }
 
 jpeg_set_iptc_keywords() {
-    local -r keywords=$1
-    local -r jpg_file=$2
+	local -r jpg_file=$1
+    local -r keywords=$2
 
-	local -r old_keywords=$(jpeg_get_iptc "Keywords" "$jpg_file")
+	local -r old_keywords=$(__jpeg_get_iptc "$jpg_file" "Keywords")
 
 	local -r OLD_IFS=$IFS
 	IFS=";"
@@ -39,15 +39,32 @@ jpeg_set_iptc_keywords() {
 			continue
 		fi
 
-		if [[ $new_keyword =~ .+[[:space:]].+ ]]; then
-			needs_keywords=
-		else 
-			unset needs_keywords
-		fi
-
-		exiv2 "-Madd Iptc.Application2.Keywords String '${needs_keywords+\"}$new_keyword${needs_keywords+\"}'" \
-			"$jpg_file" 2> /dev/null
+		exiv2 "-Madd Iptc.Application2.Keywords String '$(quote "$new_keyword")'" "$jpg_file"
 	done
 
 	IFS=$OLD_IFS
+}
+
+jpeg_remove_iptc_keywords() {
+	set -x
+	local -r jpg_file=$1
+	# $2 is a comma-separated list of keywords, no quotes needed (are removed anyway)
+    local -r keywords=$(tr --delete '"' <<<"$2")
+
+	local -r old_keywords=$(__jpeg_get_iptc "$jpg_file" "Keywords" | tr '\n' ';')
+
+	# removes *all* keywords, meaning we have to re-add all which should not be removed
+	exiv2 -M'del Iptc.Application2.Keywords' "$jpg_file"
+	
+	OLD_IFS=$IFS
+	IFS=";"
+	for old_keyword in $old_keywords; do
+		if [[ "$keywords" =~ (.*;)+$(unquote "$old_keyword")(;.*)*  ]]; then 
+			continue
+		else
+			exiv2 "-Madd Iptc.Application2.Keywords String '$(quote "$old_keyword")'" "$jpg_file"
+		fi
+	done
+	IFS=$OLD_IFS
+	set +x
 }
