@@ -5,7 +5,9 @@
 
 set -ue
 
-. "$(dirname "$(readlink -e "$0")")/../lib/sidecar.sh"
+declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../.."
+source "$BASEDIR/lib/strings.sh"
+source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 
 while getopts "v" opt; do
 	case $opt in

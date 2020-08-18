@@ -7,6 +7,7 @@ declare -r TEMPLATES_DIR_INVALID=102
 
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../.."
 
+source "$BASEDIR/lib/strings.sh"
 source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 source "$BASEDIR/lib/metadata.sh"
 

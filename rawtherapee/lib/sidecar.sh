@@ -1,23 +1,3 @@
-__contains_spaces() {
-	local -r string=$1
-	[[ $string =~ .+[[:space:]].+ ]]
-}
-
-__is_quoted() {
-	local -r string=$1
-	[[ $string =~ \".+\" ]]
-}
-
-__quote_if_spaces_exist() {
-	local -r keyword=$1
-	# first test takes care of existing with blanks, these have quotes already
-	if ! __is_quoted "$keyword" && __contains_spaces "$keyword"; then
-		echo "\"$keyword\""
-	else
-		echo $keyword
-	fi	
-}
-
 sidecar_set_property() {
     local -r sidecar=$1
     local -r section=$2
@@ -61,7 +41,7 @@ sidecar_add_iptc_keywords() {
 	done
 
 	for new_keyword in $new_keywords; do
-		keywords="$keywords$(__quote_if_spaces_exist "$new_keyword");"
+		keywords="$keywords$(quote "$new_keyword");"
 	done
 
 	IFS=$OLD_IFS
@@ -84,7 +64,8 @@ sidecar_remove_iptc_keywords() {
 	for to_delete in $keywords; do
 		# NB TODO using just one pattern with "? before and after '"$to_delete"' does not work, first quote is not 
 		# 	removed
-		if __contains_spaces "$to_delete" && ! __is_quoted "$to_delete"; then
+		#	TBD would putting the full string of to_delete incl. quotes into a group?
+		if contains_spaces "$to_delete" && ! is_quoted "$to_delete"; then
 			sed_commands=$sed_commands's/(Keywords=.*;?)"'"$to_delete"'";(.*)$/\1\2/;' 
 		else 
 			sed_commands=$sed_commands's/(Keywords=.*;?)'"$to_delete"';(.*)$/\1\2/;' 
