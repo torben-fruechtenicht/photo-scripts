@@ -8,7 +8,7 @@ declare -r NO_TARGET_DIR_RC=102
 declare -r NO_ALBUM_RC=103
 
 
-source "$(dirname "$(readlink -e "$0")")/lib/exif.sh"
+source "$(dirname "$(readlink -e "$0")")/lib/jpeg_exif.sh"
 
 declare -r TMP_DIR=$(mktemp -d)
 
