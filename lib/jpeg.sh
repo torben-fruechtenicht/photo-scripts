@@ -46,7 +46,6 @@ jpeg_set_iptc_keywords() {
 }
 
 jpeg_remove_iptc_keywords() {
-	set -x
 	local -r jpg_file=$1
 	# $2 is a comma-separated list of keywords, no quotes needed (are removed anyway)
     local -r keywords=$(tr --delete '"' <<<"$2")
@@ -59,12 +58,11 @@ jpeg_remove_iptc_keywords() {
 	OLD_IFS=$IFS
 	IFS=";"
 	for old_keyword in $old_keywords; do
-		if [[ "$keywords" =~ (.*;)+$(unquote "$old_keyword")(;.*)*  ]]; then 
+		if [[ "$keywords" =~ (.*;)*$(unquote "$old_keyword")(;.*)*  ]]; then 
 			continue
 		else
 			exiv2 "-Madd Iptc.Application2.Keywords String '$(quote "$old_keyword")'" "$jpg_file"
 		fi
 	done
 	IFS=$OLD_IFS
-	set +x
 }
