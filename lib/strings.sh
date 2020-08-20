@@ -26,3 +26,10 @@ unquote() {
         echo "$string"
     fi
 }
+
+trim_whitespace() (
+    local string=$1 
+	shopt -s extglob
+    string="${string##*( )}"
+    echo "${string%%*( )}"
+)

@@ -76,15 +76,6 @@ set_preselection_in_list() {
     sed 's/\('"$value"'\)/^\1/' <<<$list
 }
 
-
-trim_whitespace() (
-    shopt -s extglob
-
-    local string=$1 
-    string="${string##*( )}"
-    echo "${string%%*( )}"
-)
-
 ############################################################################################
 # Memorizing form values
 ############################################################################################
@@ -117,32 +108,32 @@ __filter_combobox_entries_exclude_value() (
 memorize_form_combobox_values() {
     local -r saved_values_file=$1
     local -r fieldname=$2
-    local -r current_value=$(trim_whitespace "$3")
-    if [[ -z $current_value ]]; then
+    local -r selected_entry=$(trim_whitespace "$3")
+    if [[ -z $selected_entry ]]; then
         return
     fi
     local -r max_saved=${4-10}
     
     if grep -q "$fieldname=" "$saved_values_file"; then
 
-        # get the saved values with any occurrence of $current_value already removed
+        # get the saved values with any occurrence of $selected_entry already removed
         local -r saved_values=$(grep "$fieldname" "$saved_values_file" | cut -d'=' -f2 |\
-            __filter_combobox_entries_exclude_value "$current_value")
+            __filter_combobox_entries_exclude_value "$selected_entry")
         if [[ -z $saved_values ]]; then
-            sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'/' "$saved_values_file"
+            sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$selected_entry"'/' "$saved_values_file"
         else
             # values_count would be the new size of the list after adding the current value
             local -r values_count=$(( $(__count_char_in_string '!' "$saved_values") + 1 ))
             if (( $values_count < $max_saved )); then
-                sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'!'"$saved_values"'/' "$saved_values_file"
+                sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$selected_entry"'!'"$saved_values"'/' "$saved_values_file"
             else 
                 local -r saved_values_without_last=$(echo ${saved_values%!*})
-                sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$current_value"'!'"$saved_values_without_last"'/' "$saved_values_file"
+                sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$selected_entry"'!'"$saved_values_without_last"'/' "$saved_values_file"
             fi
         fi
 
     else
-        echo "$fieldname=$current_value" >> "$saved_values_file"
+        echo "$fieldname=$selected_entry" >> "$saved_values_file"
     fi
 }
 
@@ -159,6 +150,18 @@ memorize_form_value() {
     else
         echo "$fieldname=$value" >> "$saved_values_file"
     fi    
+}
+
+############################################################################################
+# Form value accessors
+############################################################################################
+
+is_option_selected() {
+    local -r options=$1
+    local -r index=$2
+
+    local -r value_at_index=$(cut -d'!' -f "$index")
+    test "TRUE" = "$value_at_index"
 }
 
 ############################################################################################
