@@ -30,12 +30,46 @@ remember_value() (
 
 __purge_glob_entries_from_list() {
     local -r list=$1
+    local -r old_ifs=$IFS
     IFS=!
     for entry in $list; do
         if ! [[ $entry =~ .*\*.*|.*\?.* ]]; then
             echo "$entry"
         fi
     done | paste -s -d '!' -
+    IFS=$old_ifs
+}
+
+remember_list() {
+    # set -x
+    local -r fieldname=$1
+    # modifiers is a comma-separated string, each entry is a single char
+    local -r modifiers=$2
+    local -r preselected_entry=$3
+
+    local list="$(remember_value "$fieldname")"
+    
+    for (( i=0;i<${#modifiers};i++ )); do
+        case ${modifiers:$i:1} in 
+            # noglobs
+            g )
+                list=$(__purge_glob_entries_from_list "$list");;
+            # blank option
+            b )
+                # first remove all blanks, then add one blank to head of list
+                list=$(add_blank_option_to_list "$(remove_blank_option_from_list "$list")");;
+            # no blank options
+            n )
+                list=$(remove_blank_option_from_list "$list")
+        esac
+    done
+
+    if [[ -n $preselected_entry ]]; then
+        set_preselection_in_list "$preselected_entry" "$list"
+    else
+        preselect_latest_in_list "$list"
+    fi
+    set +x
 }
 
 remember_list_for_finding() {
@@ -62,6 +96,18 @@ add_blank_option_to_list() {
     if [[ -n $list ]]; then
         echo "!$list"
     fi
+}
+
+remove_blank_option_from_list() {
+    local -r list=$1
+    local -r old_ifs=$IFS
+    IFS=!
+    for entry in $list; do
+        if [[ -n $entry ]]; then
+            echo "$entry"
+        fi
+    done | paste -s -d '!' -
+    IFS=$old_ifs
 }
 
 set_blank_preselection_in_list() {
@@ -109,9 +155,6 @@ memorize_form_combobox_values() {
     local -r saved_values_file=$1
     local -r fieldname=$2
     local -r selected_entry=$(trim_whitespace "$3")
-    if [[ -z $selected_entry ]]; then
-        return
-    fi
     local -r max_saved=${4-10}
     
     if grep -q "$fieldname=" "$saved_values_file"; then
@@ -141,9 +184,6 @@ memorize_form_value() {
     local -r saved_values_file=$1
     local -r fieldname=$2
     local -r value=$(trim_whitespace "$3")
-    if [[ -z $value ]]; then
-        return
-    fi
 
     if grep -q "$fieldname=" "$saved_values_file"; then
         sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$value"'/' "$saved_values_file"
