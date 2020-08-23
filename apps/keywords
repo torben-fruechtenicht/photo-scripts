@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-# TODO add option to remove keywords
-
 set -u
 
 declare -r -x APP_TITLE="IPTC keyword editor"
@@ -9,7 +7,7 @@ declare -r -x APP_TITLE="IPTC keyword editor"
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 source "$BASE_DIR/apps/lib/yad.sh"
-source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
 PATH="$BASE_DIR:$BASE_DIR/apps:$PATH"
@@ -27,31 +25,61 @@ elif [[ -z $photos ]]; then
     exit 1
 fi
 
-keywords_label="Add keyword(s) (separated by \";\")"
-keywords_value="$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "keywords" "")"
-set_iptc_params=$(run_yad_selector_result_action_dialog \
+declare -r ADD_MODE=Add
+declare -r REMOVE_MODE=Remove
+
+dialog_text="Add or remove keywords"
+keywords_label="Keyword(s)\nSeparated by \";\". No quoting required"
+keywords_value=$(remember_list "keywords" "gn")
+mode_label="Mode, add or remove keywords"
+mode_values="$ADD_MODE!$REMOVE_MODE"
+edit_keywords_params=$(run_yad_selector_result_action_dialog \
     "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
     --form \
-    --field="$keywords_label:CBE" "$keywords_value")
+    --field="$keywords_label:CBE" "$keywords_value" \
+    --field="$mode_label:CB" "$mode_values")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r KEYWORDS=$(cut -d'|' -f 1 <<<"$set_iptc_params")
+declare -r KEYWORDS=$(cut -d'|' -f 1 <<<"$edit_keywords_params")
 if [[ -z $KEYWORDS ]]; then    
     notify_warning "$APP_TITLE" "At least one keyword is required"  
     exit 1
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
+declare -r MODE=$(cut -d'|' -f 2 <<<"$edit_keywords_params")
 
-add_keywords "$KEYWORDS" "$photos"
-add_keywords_rc=$?
-if [[ $add_keywords_rc = 0 ]]; then
-    notify_info "$APP_TITLE" "Adding IPTC keywords \"$KEYWORDS\" of $(wc -l <<<"$photos") photo(s) done"
-else
-    notify_error "$APP_TITLE" \
-        "Adding IPTC keywords \"$KEYWORDS\" of $(wc -l <<<"$photos") photo(s) failed with return code $add_keywords_rc"
-    exit 1
+add() {
+    local -r keywords=$1
+    local -r photos=$2
+    add_keywords "$keywords" "$photos"
+    cmd_rc=$?
+    if [[ $cmd_rc = 0 ]]; then
+        notify_info "$APP_TITLE" "Added keywords \"$keywords\" to $(wc -l <<<"$photos") photo(s)"
+    else
+        notify_error "$APP_TITLE" \
+            "Failed to add keywords \"$keywords\" to $(wc -l <<<"$photos") photo(s), return code was $cmd_rc"
+    fi
+}
+
+remove() {
+    local -r keywords=$1
+    local -r photos=$2
+    remove_keywords "$keywords" "$photos" 
+    cmd_rc=$?
+    if [[ $cmd_rc = 0 ]]; then
+        notify_info "$APP_TITLE" "Removed keywords \"$keywords\" from $(wc -l <<<"$photos") photo(s)"
+    else
+        notify_error "$APP_TITLE" \
+            "Failed to remove keywords \"$keywords\" from $(wc -l <<<"$photos") photo(s), return code was $cmd_rc"
+        exit 1
+    fi
+}
+
+if [[ $MODE = $ADD_MODE ]]; then
+    add "$KEYWORDS" "$photos"
+elif [[ $MODE = $REMOVE_MODE ]]; then
+    remove "$KEYWORDS" "$photos" 
 fi
-
