@@ -67,19 +67,20 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r ALBUM=$(trim_whitespace "$(echo "$user_edit_params" | cut -d'|' -f 1)")
+declare -r ALBUM=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 1)")
 if [[ -n $ALBUM ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
-    equals_TRUE "$(echo "$user_edit_params" | cut -d'|' -f 2)" && declare -r ALBUM_AS_KEYWORD=
+    is_option_selected "$user_edit_params" 2 && declare -r ALBUM_AS_KEYWORD=
 fi
 
-declare -r TITLE=$(trim_whitespace "$(echo "$user_edit_params" | cut -d'|' -f 3)")
+declare -r TITLE=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 3)")
 if [[ -n $TITLE ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
-    equals_TRUE "$(echo "$user_edit_params" | cut -d'|' -f 4)" && declare -r TITLE_AS_KEYWORD=
+    is_option_selected "$user_edit_params" 4 && declare -r TITLE_AS_KEYWORD=
 fi
 
-declare -r USER_KEYWORDS=$(trim_whitespace "$(echo "$user_edit_params" | cut -d'|' -f 5)")
+
+declare -r USER_KEYWORDS=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 5)")
 if [[ -n $USER_KEYWORDS ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
 fi

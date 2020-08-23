@@ -222,11 +222,18 @@ memorize_form_value() {
 # Form value accessors
 ############################################################################################
 
+get_option_at_index() {
+    local -r options=$1
+    local -r index=$2
+    cut -d'|' -f "$index" <<<"$options"
+}
+
 is_option_selected() {
+    set -x
     local -r options=$1
     local -r index=$2
 
-    local -r value_at_index=$(cut -d'!' -f "$index")
+    local -r value_at_index=$(get_option_at_index "$options" "$index")
     test "TRUE" = "$value_at_index"
 }
 
