@@ -21,9 +21,9 @@ if [[ -z $SEARCH_DIR ]]; then
     exit 1
 fi
 
-album_form_value=$(remember_list "album" "b")
-title_form_value=$(remember_list "title" "b")
-year_form_value=$(remember_list "year" "b")
+album_form_value=$(remember_list "album" "bl")
+title_form_value=$(remember_list "title" "bl")
+year_form_value=$(remember_list "year" "bl")
 if [[ -z $year_form_value ]]; then
     year_form_value=$(date +%Y)
 fi

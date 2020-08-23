@@ -50,37 +50,41 @@ __preselect_nth_in_list() {
     set_preselection_in_list "$list" "$value_at_index"
 }
 
+__get_latest_added_to_list() {
+    local -r list=$1    
+    cut -d'!' -f 1 <<<"$list"
+}
+
 prepare_list() {
-    local list=$1
-    # modifiers is a string of modifiers (single chars), valid modifiers are "g", "b", "n"
+    local -r list=$1
+    # modifiers is a string of modifiers (single chars), valid modifiers are "g", "b", "n", "l"
     local -r modifiers=${2:-}
-    local -r preselected_entry=${3:-}
+    local preselected_entry=${3:-}
+
+    local prepared_list=$list
 
     for (( i=0;i<${#modifiers};i++ )); do
         case ${modifiers:$i:1} in 
-            # noGlobs
+            # no_g_lobs
             g )
-                list=$(__purge_glob_entries_from_list "$list");;
-            # Blank option
+                prepared_list=$(__purge_glob_entries_from_list "$prepared_list");;
+            # _b_lank option
             b )
                 # ensure that there will be only one blank option by first removing all blanks
-                list=$(add_blank_option_to_list "$(remove_blank_option_from_list "$list")")
-                local -r blank_added=;;
-            # No blank options
+                prepared_list=$(add_blank_option_to_list "$(remove_blank_option_from_list "$prepared_list")");;
+            # _n_o blank options
             n )
-                list=$(remove_blank_option_from_list "$list");;
-            # no Preselected blank    
-            p ) 
-                local -r no_preselected_blank=;;
+                prepared_list=$(remove_blank_option_from_list "$prepared_list");;
+            # preselect _l_atest added    
+            l ) 
+                preselected_entry=$(__get_latest_added_to_list "$list")
         esac
     done
 
     if [[ -n $preselected_entry ]]; then
-        set_preselection_in_list "$list" "$preselected_entry"
-    elif [[ -v blank_added ]] && [[ -v no_preselected_blank ]]; then
-        __preselect_nth_in_list "$list" 2
+        set_preselection_in_list "$prepared_list" "$preselected_entry"
     else
-        preselect_latest_in_list "$list"
+        preselect_latest_in_list "$prepared_list"
     fi
 }
 
