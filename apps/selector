@@ -21,15 +21,14 @@ if [[ -z $SEARCH_DIR ]]; then
     exit 1
 fi
 
-album_form_value=$(add_blank_option_to_list "$(preselect_latest_in_list "$(remember_list_for_finding "album")")")
-title_form_value=$(add_blank_option_to_list "$(preselect_latest_in_list "$(remember_list_for_finding "title")")")
-year_form_value=$(add_blank_option_to_list "$(preselect_latest_in_list "$(remember_list_for_finding "year")")")
+album_form_value=$(remember_list "album" "bp")
+title_form_value=$(remember_list "title" "bp")
+year_form_value=$(remember_list "year" "bp")
 if [[ -z $year_form_value ]]; then
     year_form_value=$(date +%Y)
 fi
-month_form_value=$(add_blank_option_to_list "$(set_preselection_in_list "$(remember_value "month")" "$MONTHS")")
-dayofmonth_form_value=$(add_blank_option_to_list \
-    "$(set_preselection_in_list "$(remember_value "dayofmonth")" "$DAYS_OF_MONTH")")
+month_form_value=$(prepare_list "$MONTHS" "gb" "$(remember_value "month")")
+dayofmonth_form_value=$(prepare_list "$DAYS_OF_MONTH" "gb" "$(remember_value "dayofmonth")")
 
 # TODO time of day should allow ranges
 options_string=$(run_yad "$APP_TITLE" "Select photos from $SEARCH_DIR matching" \

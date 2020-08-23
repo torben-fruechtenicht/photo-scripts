@@ -40,36 +40,58 @@ __purge_glob_entries_from_list() {
     IFS=$old_ifs
 }
 
-remember_list() {
-    # set -x
-    local -r fieldname=$1
-    # modifiers is a comma-separated string, each entry is a single char
-    local -r modifiers=$2
-    local -r preselected_entry=$3
-
-    local list="$(remember_value "$fieldname")"
+__preselect_nth_in_list() {
+    local -r list=$1
+    local -r index=$2
     
+    local -r value_at_index=$(cut -d'!' -f $index <<<"$list")
+    test -z $value_at_index && return
+
+    set_preselection_in_list "$list" "$value_at_index"
+}
+
+prepare_list() {
+    local list=$1
+    # modifiers is a string of modifiers (single chars), valid modifiers are "g", "b", "n"
+    local -r modifiers=${2:-}
+    local -r preselected_entry=${3:-}
+
     for (( i=0;i<${#modifiers};i++ )); do
         case ${modifiers:$i:1} in 
-            # noglobs
+            # noGlobs
             g )
                 list=$(__purge_glob_entries_from_list "$list");;
-            # blank option
+            # Blank option
             b )
-                # first remove all blanks, then add one blank to head of list
-                list=$(add_blank_option_to_list "$(remove_blank_option_from_list "$list")");;
-            # no blank options
+                # ensure that there will be only one blank option by first removing all blanks
+                list=$(add_blank_option_to_list "$(remove_blank_option_from_list "$list")")
+                local -r blank_added=;;
+            # No blank options
             n )
-                list=$(remove_blank_option_from_list "$list")
+                list=$(remove_blank_option_from_list "$list");;
+            # no Preselected blank    
+            p ) 
+                local -r no_preselected_blank=;;
         esac
     done
 
     if [[ -n $preselected_entry ]]; then
-        set_preselection_in_list "$preselected_entry" "$list"
+        set_preselection_in_list "$list" "$preselected_entry"
+    elif [[ -v blank_added ]] && [[ -v no_preselected_blank ]]; then
+        __preselect_nth_in_list "$list" 2
     else
         preselect_latest_in_list "$list"
     fi
-    set +x
+}
+
+remember_list() {
+    local -r fieldname=$1
+    local -r modifiers=${2:-}
+    local -r preselected_entry=${3:-}
+
+    local list="$(remember_value "$fieldname")"
+    
+    prepare_list "$list" "$modifiers" "$preselected_entry"
 }
 
 remember_list_for_finding() {
@@ -117,8 +139,8 @@ set_blank_preselection_in_list() {
 }
 
 set_preselection_in_list() {
-    local -r value=$1
-    local -r list=$2
+    local -r list=$1
+    local -r value=$2
     sed 's/\('"$value"'\)/^\1/' <<<$list
 }
 
