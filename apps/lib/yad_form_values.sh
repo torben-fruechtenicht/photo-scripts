@@ -45,7 +45,7 @@ __preselect_nth_in_list() {
     local -r index=$2
     
     local -r value_at_index=$(cut -d'!' -f $index <<<"$list")
-    test -z $value_at_index && return
+    test -z "$value_at_index" && return
 
     set_preselection_in_list "$list" "$value_at_index"
 }
