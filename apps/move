@@ -8,8 +8,9 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 PATH="$BASE_DIR:$BASE_DIR/lib:$BASE_DIR/apps:$PATH"
 
+source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
-source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
@@ -23,7 +24,7 @@ elif [[ -z $photos ]]; then
     exit
 fi
 
-album_field_value=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")
+album_field_value=$(remember_list "album" "gnl")
 move_to_album_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
     --form \
     --field="Move to album:CBE" "$album_field_value" \
@@ -33,7 +34,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r TARGET_ALBUM_NAME=$(trim_whitespace "$(cut -d'|' -f 1 <<<"$move_to_album_params")")
+declare -r TARGET_ALBUM_NAME=$(trim_whitespace "$(get_option_at_index "$move_to_album_params" 1)")
 if [[ -z $TARGET_ALBUM_NAME ]]; then    
     notify_warning "$APP_TITLE" "New album name is required"  
     exit 1
@@ -42,8 +43,7 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$TARGET_ALB
 
 files=$photos
 
-declare -r RENAME_PHOTOS_OPTION=$(cut -d'|' -f 2 <<<"$move_to_album_params")
-if [[ $RENAME_PHOTOS_OPTION = "TRUE" ]]; then
+if is_option_selected "$move_to_album_params" 2; then
     files=$(set_title "$TARGET_ALBUM_NAME" "$files")
     rename_rc=$?
     if [[ $rename_rc = 0 ]]; then

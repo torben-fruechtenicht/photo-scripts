@@ -46,17 +46,17 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
 fi
 
 
-declare -r ALBUM=$(cut -d'|' -f 1 <<<"$options_string")
-declare -r TITLE=$(cut -d'|' -f 2 <<<"$options_string")
+declare -r ALBUM=$(get_option_at_index "$options_string" 1)
+declare -r TITLE=$(get_option_at_index "$options_string" 2)
 if [[ -z $ALBUM ]] && [[ -z $TITLE ]]; then
     notify_warning "$APP_TITLE" "One of album or title must be defined"
     exit 1
 fi
 
-declare -r YEAR=$(cut -d'|' -f 3 <<<"$options_string")
-declare -r MONTH=$(cut -d'|' -f 4 <<<"$options_string")
-declare -r DAY_OF_MONTH=$(cut -d'|' -f 5 <<<"$options_string")
-declare -r TIME_OF_DAY=$(cut -d'|' -f 6 <<<"$options_string")
+declare -r YEAR=$(get_option_at_index "$options_string" 3)
+declare -r MONTH=$(get_option_at_index "$options_string" 4)
+declare -r DAY_OF_MONTH=$(get_option_at_index "$options_string" 5)
+declare -r TIME_OF_DAY=$(get_option_at_index "$options_string" 6)
 
 unpad_number() {
     local -r number_optional_zeropadded=$1
@@ -65,7 +65,7 @@ unpad_number() {
 
 # if number_tail looks like a range (e.g. "2-17"), use an empty NUMBER_TAIL for find and set 
 # NUMBER_TAIL_MIN/MAX and NUMBER_TAIL_SIZE. otherwise NUMBER_TAIL is set to number_tail
-number_tail=$(echo "$options_string" | cut -d'|' -f 7)
+number_tail=$(get_option_at_index "$options_string" 7)
 if [[ $number_tail =~ [0-9]+-[0-9]+ ]]; then
     declare -r NUMBER_TAIL=""
     declare -r NUMBER_TAIL_MIN=$(unpad_number "$(echo "$number_tail" | cut -d'-' -f1)")

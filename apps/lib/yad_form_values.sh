@@ -13,47 +13,15 @@ fi
 # Preparing form values (remembering)
 ############################################################################################
 
-__lookup_memorized_value() {
-    local -r fieldname=$1
-    grep "^${fieldname}=" "$MEMORIZED_FORM_VALUES_FILE" | cut -d'=' -f2
-}   
-
 remember_value() (
     set -o noglob
 
     local -r fieldname=$1
 
     if [[ -e $MEMORIZED_FORM_VALUES_FILE ]]; then
-        echo "$(__lookup_memorized_value "$fieldname")"
+        grep "^${fieldname}=" "$MEMORIZED_FORM_VALUES_FILE" | cut -d'=' -f2
     fi
 )
-
-__purge_glob_entries_from_list() {
-    local -r list=$1
-    local -r old_ifs=$IFS
-    IFS=!
-    for entry in $list; do
-        if ! [[ $entry =~ .*\*.*|.*\?.* ]]; then
-            echo "$entry"
-        fi
-    done | paste -s -d '!' -
-    IFS=$old_ifs
-}
-
-__preselect_nth_in_list() {
-    local -r list=$1
-    local -r index=$2
-    
-    local -r value_at_index=$(cut -d'!' -f $index <<<"$list")
-    test -z "$value_at_index" && return
-
-    set_preselection_in_list "$list" "$value_at_index"
-}
-
-__get_latest_added_to_list() {
-    local -r list=$1    
-    cut -d'!' -f 1 <<<"$list"
-}
 
 prepare_list() {
     local -r list=$1
@@ -71,10 +39,10 @@ prepare_list() {
             # _b_lank option
             b )
                 # ensure that there will be only one blank option by first removing all blanks
-                prepared_list=$(add_blank_option_to_list "$(remove_blank_option_from_list "$prepared_list")");;
+                prepared_list=$(__add_blank_option_to_list "$(__remove_blank_option_from_list "$prepared_list")");;
             # _n_o blank options
             n )
-                prepared_list=$(remove_blank_option_from_list "$prepared_list");;
+                prepared_list=$(__remove_blank_option_from_list "$prepared_list");;
             # preselect _l_atest added    
             l ) 
                 preselected_entry=$(__get_latest_added_to_list "$list")
@@ -82,9 +50,10 @@ prepare_list() {
     done
 
     if [[ -n $preselected_entry ]]; then
-        set_preselection_in_list "$prepared_list" "$preselected_entry"
+        # FIXME check if preselected exists, if not add
+        __set_preselection_in_list "$prepared_list" "$preselected_entry"
     else
-        preselect_latest_in_list "$prepared_list"
+        __preselect_latest_in_list "$prepared_list"
     fi
 }
 
@@ -98,33 +67,38 @@ remember_list() {
     prepare_list "$list" "$modifiers" "$preselected_entry"
 }
 
-remember_list_for_finding() {
-    local -r fieldname=$1
-    remember_value "$fieldname"
+__purge_glob_entries_from_list() {
+    local -r list=$1
+    local -r old_ifs=$IFS
+    IFS=!
+    for entry in $list; do
+        if ! [[ $entry =~ .*\*.*|.*\?.* ]]; then
+            echo "$entry"
+        fi
+    done | paste -s -d '!' -
+    IFS=$old_ifs
 }
 
-remember_list_for_editing() (
-    set -o noglob
+__get_latest_added_to_list() {
+    local -r list=$1    
+    cut -d'!' -f 1 <<<"$list"
+}
 
-    local -r fieldname=$1
-    __purge_glob_entries_from_list "$(remember_value "$fieldname")"
-)
-
-preselect_latest_in_list() {
+__preselect_latest_in_list() {
     local -r list=$1
     if [[ -n $list ]]; then
         echo "^$list"
     fi
 }
 
-add_blank_option_to_list() {
+__add_blank_option_to_list() {
     local -r list=$1
     if [[ -n $list ]]; then
         echo "!$list"
     fi
 }
 
-remove_blank_option_from_list() {
+__remove_blank_option_from_list() {
     local -r list=$1
     local -r old_ifs=$IFS
     IFS=!
@@ -136,13 +110,7 @@ remove_blank_option_from_list() {
     IFS=$old_ifs
 }
 
-set_blank_preselection_in_list() {
-    local -r list=$1
-    # TODO check if there is already a blank entry in the list and preselect that one
-    echo "^!$list"
-}
-
-set_preselection_in_list() {
+__set_preselection_in_list() {
     local -r list=$1
     local -r value=$2
     sed 's/\('"$value"'\)/^\1/' <<<$list
@@ -229,7 +197,6 @@ get_option_at_index() {
 }
 
 is_option_selected() {
-    set -x
     local -r options=$1
     local -r index=$2
 

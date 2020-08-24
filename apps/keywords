@@ -43,13 +43,13 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r KEYWORDS=$(cut -d'|' -f 1 <<<"$edit_keywords_params")
+declare -r KEYWORDS=$(get_option_at_index "$edit_keywords_params" 1)
 if [[ -z $KEYWORDS ]]; then    
     notify_warning "$APP_TITLE" "At least one keyword is required"  
     exit 1
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
-declare -r MODE=$(cut -d'|' -f 2 <<<"$edit_keywords_params")
+declare -r MODE=$(get_option_at_index "$edit_keywords_params" 2)
 
 add() {
     local -r keywords=$1

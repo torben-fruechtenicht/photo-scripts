@@ -6,8 +6,9 @@ declare -r -x APP_TITLE="Rename photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
+source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
-source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
 PATH="$BASE_DIR:$BASE_DIR/apps:$PATH"
@@ -25,7 +26,7 @@ elif [[ -z $photos ]]; then
     exit 1
 fi   
 
-title_field_values=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "")
+title_field_values=$(remember_list "title" "gnl")
 rename_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
     --form \
     --field="Change photo title(s) to:CBE" "$title_field_values")
@@ -34,7 +35,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r NEW_TITLE=$(trim_whitespace "$(cut -d'|' -f 1 <<<"$rename_params")")
+declare -r NEW_TITLE=$(trim_whitespace "$(get_option_at_index "$rename_params" 1)")
 if [[ -z $NEW_TITLE ]]; then    
     notify_warning "$APP_TITLE" "New photo title is required"  
     exit 1
