@@ -6,9 +6,10 @@ declare -r APP_TITLE="Archive processed photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
+source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/lib/metadata.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
-source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
 PATH="$BASE_DIR:$PATH"
@@ -27,9 +28,10 @@ if [[ -z $ARCHIVE_DIR ]]; then
 fi
 
 dialog_text="Select which photos to archive:"
-album_values="$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "")"
-year_values="$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "year" "$(date +%Y)")"
-month_values="$(get_memorized_value_preselected_in_all_values_list "$MEMORIZED_FORM_VALUES_FILE" "month" "^!$MONTHS")"
+album_values=$(remember_list "album" "b")
+current_year=$(date +%Y)
+year_values=$(remember_list "year" "gn" "$current_year")
+month_values=$(prepare_list "$MONTHS" "gb" "$(remember_value "month")")
 
 options_string=$(run_yad "$APP_TITLE" "$dialog_text" \
     --form \
@@ -41,9 +43,9 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r ALBUM=$(cut -d'|' -f 1 <<<"$options_string")
-declare -r YEAR=$(cut -d'|' -f 2 <<<"$options_string")
-declare -r MONTH=$(cut -d'|' -f 3 <<<"$options_string")
+declare -r ALBUM=$(get_option_at_index "$options_string" 1)
+declare -r YEAR=$(get_option_at_index "$options_string" 2)
+declare -r MONTH=$(get_option_at_index "$options_string" 3)
 
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 5
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
@@ -52,7 +54,7 @@ memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
 #FIXME MONTH must be translated to number
 # - we don't need it zero-padded, collect_archivable_photos can take care of that
 archivable_photos=$(collect_archivable_photos \
-    ${ALBUM:+-a "$ALBUM"} ${YEAR:+-a "$YEAR"} ${MONTH:+-a "$MONTH"} "$SEARCH_DIR")
+    ${ALBUM:+-a "$ALBUM"} ${YEAR:+-y "$YEAR"} ${MONTH:+-m "$MONTH"} "$SEARCH_DIR")
 
 if [[ -z $archivable_photos ]]; then
     notify_warning "$APP_TITLE" "No archivable photos found that match the filter"
@@ -67,11 +69,11 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
 fi
 
 archive_photos "$ARCHIVE_DIR" <<<"$archivable_photos"
-archive_photos=$?
-if [[ $archive_photos = 0 ]]; then
+archive_photos_rc=$?
+if [[ $archive_photos_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Archived $(wc -l <<<"$archivable_photos") photo(s) to \"$ARCHIVE_DIR\""
 else
     notify_error "$APP_TITLE" \
-        "Archiving $(wc -l <<<"$archivable_photos") photo(s) to \"$ARCHIVE_DIR\" failed with return code $archive_photos"
+        "Archiving $(wc -l <<<"$archivable_photos") photo(s) to \"$ARCHIVE_DIR\" failed with return code $archive_photos_rc"
     exit 1
 fi
