@@ -6,8 +6,9 @@ declare -r APP_TITLE="Import photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
+source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
-source "$BASE_DIR/apps/lib/form_values.sh"
+source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
 PATH="$BASE_DIR:$BASE_DIR/rawtherapee/profile-builder:$PATH"
@@ -43,18 +44,16 @@ declare -r DEFAULT_TITLE_VALUE=""
 
 dialog_txt="Import photos from $DCIM_DIR to $TARGET_DIR"
 
-album_cb_values=$(remove_wildcard_entries \
-    "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "album" "$DEFAULT_ALBUM_VALUE")")
+album_cb_values=$(remember_list "album" "gn" "$DEFAULT_ALBUM_VALUE")
 if [[ -z $album_cb_values ]]; then
     album_cb_values=$DEFAULT_ALBUM_VALUE
 fi
-title_cb_values=$(remove_wildcard_entries \
-    "$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "title" "$DEFAULT_TITLE_VALUE")")
+title_cb_values=$(remember_list "title" "gn" "$DEFAULT_TITLE_VALUE")
 if [[ -z $title_cb_values ]]; then
     title_cb_values=$DEFAULT_TITLE_VALUE
 fi    
 creator_value=${CREATOR_OPTION+$CREATOR_OPTION}
-keywords_cb_values=$(get_memorized_values_or_default "$MEMORIZED_FORM_VALUES_FILE" "keywords" "")
+keywords_cb_values=$(remember_list "keywords" "gn")
 
 # TODO use textfield for creator if CREATOR_OPTION is set, otherwise use memorized values in CBE
 # afterwards: if CREATOR_OPTION is set, fetch memorized values and combine with CREATOR_OPTION (set as selected entry)
@@ -71,7 +70,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-album_string=$(trim_whitespace "$(cut -d'|' -f 1 <<<"$options_string")")
+album_string=$(trim_whitespace "$(get_option_at_index "$options_string" 1)")
 if [[ -n $album_string ]]; then
     declare -r ALBUM=$album_string
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
@@ -79,15 +78,15 @@ else
     declare -r ALBUM="New photos"
 fi
 
-title_string=$(trim_whitespace "$(cut -d'|' -f 2 <<<"$options_string")")
+title_string=$(trim_whitespace "$(get_option_at_index "$options_string" 2)")
 test -n "$title_string" && declare -r TITLE="$title_string" && \
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
 
-creator_string=$(trim_whitespace "$(cut -d'|' -f 3 <<<"$options_string")")
+creator_string=$(trim_whitespace "$(get_option_at_index "$options_string" 3)")
 test -n "$creator_string" && declare -r CREATOR=$creator_string 
 # TODO memorize creator
 
-keywords_string=$(trim_whitespace "$(cut -d'|' -f 4 <<<"$options_string")")
+keywords_string=$(trim_whitespace "$(get_option_at_index "$options_string" 4)")
 test -n "$keywords_string" && declare -r KEYWORDS=$keywords_string && \
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
 
