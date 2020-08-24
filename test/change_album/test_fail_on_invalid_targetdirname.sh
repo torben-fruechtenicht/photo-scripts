@@ -8,4 +8,4 @@ PATH="$PROJECT_ROOT:$PATH"
 
 declare -r TARGET_ALBUM_NAME="$OUTPUT_DIR"
 set -o pipefail
-! find "$OUTPUT_DIR" -type f -name '*.ORF' | change_album "$TARGET_ALBUM_NAME" -
+! find "$OUTPUT_DIR" -type f -name '*.ORF' | change_album "$TARGET_ALBUM_NAME"
