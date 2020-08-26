@@ -9,6 +9,8 @@ declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTE
 
 declare -r PHOTO_FILENAME_PATTERN="${PHOTO_FULLNAME_PATTERN}${FILE_EXT_PATTERN}"
 
+# DEPRECATED
+# just copy the code, this is too trivial
 fullname_from_photofile() {
     local -r photo_filename=$(basename "$1")
     echo "${photo_filename%%.*}"

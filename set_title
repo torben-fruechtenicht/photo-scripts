@@ -6,6 +6,7 @@ shopt -s nocasematch
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
 source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/lib/metadata.sh"
+source "$BASE_DIR/lib/iptc.sh"
 source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
 
@@ -85,11 +86,11 @@ apply_set_title() {
     fi
 
     if is_rawtherapee_sidecar "$file"; then
-        sidecar_set_property "$file" "IPTC" "Headline" "$(headline_from_photofile "$newfile")"
-        sidecar_set_property "$file" "IPTC" "Caption" "[$(fullname_from_photofile "$newfile")]"
+        sidecar_set_property "$file" "IPTC" "Headline" "$(iptc_headline_from_photofile "$newfile")"
+        sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from_photofile "$newfile")"
     elif is_converted_jpeg "$file"; then
-        jpeg_set_iptc "$file" "Headline" "$(headline_from_photofile "$newfile")"
-        jpeg_set_iptc "$file" "Caption" "[$(fullname_from_photofile "$newfile")]"
+        jpeg_set_iptc "$file" "Headline" "$(iptc_headline_from_photofile "$newfile")"
+        jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from_photofile "$newfile")"
     fi
 
 

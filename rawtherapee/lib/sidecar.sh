@@ -10,7 +10,7 @@ sidecar_set_property() {
         # https://unix.stackexchange.com/a/416126
         sed -i  '/\['"$section"'\]/,/^$/ s|^'"$property"=.*$'|'"$property"'='"$value"'|' "$sidecar"    
     elif (( $(sed -n '/\['"$section"'\]/,/^$/p' "$sidecar" | wc -l) > 2 )); then        
-        # the section is only two lines long, i.e. there are no entries: just replace the whole section + added 
+        # the section is only two lines long, i.e. there are no entries: just replace the whole section + add 
         # new entry
         test -v VERBOSE && echo "[INFO] ADD $section $property=$value (1st entry)" >&2
         sed -i '/\['"$section"'\]/ a '"$property"'='"$value"'' "$sidecar"
