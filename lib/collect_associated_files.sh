@@ -20,7 +20,8 @@ print_associated_files() {
 
     is_original_photofile "$photo" || return
 
-    local -r sourcephoto_fullname=$(fullname_from_photofile "$photo")        
+    local -r photo_filename=$(basename "$photo")
+    local -r sourcephoto_fullname=${photo_filename%%.*}
     # Find all files, i.e. actual photo file and all associated files: search for the basename without
     # extensions in the directory of $photo and below. 
     find $(dirname "$photo") -type f -path "*/${sourcephoto_fullname}*"

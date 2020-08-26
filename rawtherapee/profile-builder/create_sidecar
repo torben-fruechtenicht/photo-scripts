@@ -171,7 +171,8 @@ for photofile in $PHOTO_FILES; do
 		sidecar_add_iptc_keywords "$sidecar_file" "$old_keywords"
 	fi
 
-	fullname=$(fullname_from_photofile "$photofile")
+	photo_filename=$(basename "$photofile")
+	fullname=${photo_filename%%.*}
 	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(headline_from_photofile "$photofile" )"
 	sidecar_set_property "$sidecar_file" "IPTC" "Caption" "[$fullname]"
 	

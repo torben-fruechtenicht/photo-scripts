@@ -45,7 +45,8 @@ find "$SEARCH_DIR" \
     -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/converted/$filename_glob.jpg" |\
 # get fullnames for all processed files (and make sure we have no duplicates after variants reduction)
 while read -r processed_file; do
-    fullname_from_photofile "$processed_file" | sed -r 's/(.+_[0-9a-zA-Z]+)-[0-9]+$/\1/'
+    photo_filename=$(basename "$processed_file")
+    sed -r 's/(.+_[0-9a-zA-Z]+)-[0-9]+$/\1/' <<<"$(echo ${photo_filename%%.*})"
 done | sort -u | \
 # collect original files
 while read -r fullname; do
