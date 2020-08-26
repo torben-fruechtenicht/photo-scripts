@@ -4,7 +4,7 @@ set -eu
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
 
-PATH="$BASE_DIR/lib:$PATH"
+PATH="$BASE_DIR:$PATH"
 
 source "$BASE_DIR/lib/photofiles.sh"
 
@@ -47,7 +47,7 @@ apply_archive() {
 
 set -o pipefail
 if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
-    collect_associated_files.sh < /dev/stdin | while read -r file; do apply_archive "$file" "$file"; done
+    collect_associated_files < /dev/stdin | while read -r file; do apply_archive "$file" "$file"; done
 else 
-    collect_associated_files.sh "$PHOTOS" | while read -r file; do apply_archive "$file"; done
+    collect_associated_files "$PHOTOS" | while read -r file; do apply_archive "$file"; done
 fi

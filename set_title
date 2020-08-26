@@ -10,7 +10,7 @@ source "$BASE_DIR/lib/iptc.sh"
 source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
 
-PATH="$BASE_DIR/lib:$PATH"
+PATH="$BASE_DIR:$PATH"
 
 while getopts "f" opt; do
     case $opt in
@@ -107,7 +107,7 @@ apply_set_title() {
 
 set -o pipefail
 if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
-    collect_associated_files.sh < /dev/stdin | while read -r file; do apply_set_title "$file"; done
+    collect_associated_files < /dev/stdin | while read -r file; do apply_set_title "$file"; done
 else 
-    collect_associated_files.sh "$PHOTOS" | while read -r file; do apply_set_title "$file"; done
+    collect_associated_files "$PHOTOS" | while read -r file; do apply_set_title "$file"; done
 fi 

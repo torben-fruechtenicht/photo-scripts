@@ -8,7 +8,7 @@ source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
 
-PATH="$BASE_DIR/lib:$PATH"
+PATH="$BASE_DIR:$PATH"
 
 
 declare -r KEYWORDS=$1
@@ -83,7 +83,7 @@ apply_remove_keywords() {
 
 set -o pipefail
 if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
-    collect_associated_files.sh < /dev/stdin | while read -r file; do apply_remove_keywords "$file"; done
+    collect_associated_files < /dev/stdin | while read -r file; do apply_remove_keywords "$file"; done
 else 
-    collect_associated_files.sh "$PHOTOS" | while read -r file; do apply_remove_keywords "$file"; done
+    collect_associated_files "$PHOTOS" | while read -r file; do apply_remove_keywords "$file"; done
 fi 

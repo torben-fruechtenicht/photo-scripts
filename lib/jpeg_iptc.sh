@@ -15,7 +15,6 @@ jpeg_set_iptc() {
 	fi
 
 	exiv2 -M"set Iptc.Application2.$key String $value" "$jpg_file" 2> /dev/null
-	echo "[INFO] set  Iptc.Application2.$key $value" >&2
 }
 
 __jpeg_get_iptc() {
