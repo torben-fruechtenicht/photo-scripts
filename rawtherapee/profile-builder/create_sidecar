@@ -8,8 +8,9 @@ declare -r TEMPLATES_DIR_INVALID=102
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../.."
 
 source "$BASEDIR/lib/strings.sh"
-source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 source "$BASEDIR/lib/metadata.sh"
+source "$BASEDIR/lib/iptc.sh"
+source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 
 while getopts "c:k:ov" opt; do
     case $opt in
@@ -173,8 +174,8 @@ for photofile in $PHOTO_FILES; do
 
 	photo_filename=$(basename "$photofile")
 	fullname=${photo_filename%%.*}
-	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(headline_from_photofile "$photofile" )"
-	sidecar_set_property "$sidecar_file" "IPTC" "Caption" "[$fullname]"
+	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(iptc_headline_from_photofile "$photofile" )"
+	sidecar_set_property "$sidecar_file" "IPTC" "Caption" "$(iptc_caption_from_photofile "$photofile" )"
 	
 	if [[ -n "$lens_from_exif" ]]; then
 		iptc_lens="$lens_from_exif;"

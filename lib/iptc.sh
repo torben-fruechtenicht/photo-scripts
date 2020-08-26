@@ -1,7 +1,5 @@
 # Functions for producing the values to put into IPTC
 
-! test -v $PHOTO_FULLNAME_PATTERN && echo "[ERROR] Missing paths.sh" >&2
-
 iptc_headline_from_photofile() {
     local -r photo_filename=$(basename "$1")
     local -r fullname=${photo_filename%%.*}
