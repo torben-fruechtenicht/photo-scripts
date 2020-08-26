@@ -4,7 +4,7 @@ set -eu
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
 
-source "$BASE_DIR/lib/metadata.sh"
+source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/apps/lib/find_globs_factory.sh"
 
 # callers pass in year, month, album, day. if a param is not given, wildcards will be used

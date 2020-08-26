@@ -9,13 +9,6 @@ declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTE
 
 declare -r PHOTO_FILENAME_PATTERN="${PHOTO_FULLNAME_PATTERN}${FILE_EXT_PATTERN}"
 
-headline_from_photofile() {
-    local -r fullname=$(fullname_from_photofile "$1")
-    # FIXME use own pattern from pattern vars, only group the required parts. 
-    # FIXME all pattern vars should not include groupings (unless for quantifiers)
-    echo "$fullname" | sed -r 's/'"$PHOTO_FULLNAME_PATTERN"'/\1 \5/'
-}
-
 is_original_photofile() ( 
 # use "()" instead of "{}" so that the function body is executed as a subshell (shopt call can not
 # interfere with the calling script)

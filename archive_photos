@@ -6,7 +6,7 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
 
 PATH="$BASE_DIR/lib:$PATH"
 
-source "$BASE_DIR/lib/metadata.sh"
+source "$BASE_DIR/lib/photofiles.sh"
 
 declare -r ARCHIVE_DIR=$(readlink -e "$1")
 if ! [[ -e $ARCHIVE_DIR ]]; then

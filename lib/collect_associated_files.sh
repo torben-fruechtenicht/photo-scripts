@@ -4,7 +4,7 @@ set -eu
 shopt -s nocasematch
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
-source "$BASE_DIR/lib/metadata.sh"
+source "$BASE_DIR/lib/photofiles.sh"
 
 PATH="$BASE_DIR/lib:$PATH"
 
