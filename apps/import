@@ -27,18 +27,6 @@ declare -r DCIM_DIR=${1+$1}
 declare -r TARGET_DIR=${2+$2}
 declare -r SIDECAR_TEMPLATES_DIR=${3+$3}
 
-remove_wildcard_entries() (
-    local -r entries=$1
-
-    IFS='!'
-
-    for entry in $entries; do
-        if ! [[ $entry =~ .*\*.*|.*\?.* ]]; then
-            echo "$entry"
-        fi
-    done | paste -s -d '!' -
-)
-
 declare -r DEFAULT_ALBUM_VALUE="New photos"
 declare -r DEFAULT_TITLE_VALUE=""
 
@@ -55,8 +43,6 @@ fi
 creator_value=${CREATOR_OPTION+$CREATOR_OPTION}
 keywords_cb_values=$(remember_list "keywords" "gn")
 
-# TODO use textfield for creator if CREATOR_OPTION is set, otherwise use memorized values in CBE
-# afterwards: if CREATOR_OPTION is set, fetch memorized values and combine with CREATOR_OPTION (set as selected entry)
 # TODO add option to add album + title as keywords
 #   don't do it if user entered no values and we are using "New photos"
 options_string=$(run_yad "$APP_TITLE" "$dialog_txt" \

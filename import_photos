@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -eu
+set -eux
 
 
 declare -r NO_DCIM_DIR_RC=101
@@ -60,9 +60,10 @@ build_photonumber_canon_exif_filenumber() {
 }
 
 build_photonumber_olympus_filename() {
+    local -r photofile=$1
     # format of photo number: <MONTH><DAY><NUMBER>, zero-digit values of month or day
     # are *not zero-padded* but with leading underscore
-    basename "$1" | tr '_' '0'
+    basename "${photofile%.*}" | tr '_' '0'
 }
 
 camera_id() {
@@ -113,7 +114,8 @@ build_targetpath() {
 
     local -r camera=$(camera_name "$photofile")
     local -r photonumber=$(build_photonumber "$photofile")
-    local -r filename="${TITLE}_${date_numerical}_${timeofday}_${camera}_${photonumber}"
+    local -r extension=${photofile##*.}
+    local -r filename="${TITLE}_${date_numerical}_${timeofday}_${camera}_${photonumber}.${extension}"
 
     echo "$target_dir/$filename"
 }
