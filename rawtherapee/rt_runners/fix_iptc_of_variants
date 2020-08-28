@@ -1,0 +1,62 @@
+#!/bin/bash
+
+set -eu
+
+declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../../"
+
+source "$BASEDIR/lib/strings.sh"
+source "$BASEDIR/lib/iptc.sh"
+source "$BASEDIR/lib/jpeg_iptc.sh"
+source "$BASEDIR/lib/photofiles.sh"
+source "$BASEDIR/rawtherapee/lib/sidecar.sh"
+
+declare -r CREATED_FILE=$(readlink -f "$1")
+if ! [[ -e $CREATED_FILE ]]; then
+    echo "[ERROR] Created file $CREATED_FILE does not exist" >&2
+    exit 1
+fi
+
+is_relevant_file() {
+    local -r file=$1
+
+    if ! [[ $file =~ .*/converted/.* ]]; then
+        echo "[INFO] Created file $CREATED_FILE is not from converted directory, skipping" >&2
+        return 1
+    fi    
+
+    # since rawtherapee will first create the jpg file and then the pp3 file, we simply look for 
+    # the latter and assume that the jpg file will there, too
+    if [[ "$file" =~ .*\.jpg\.out\.pp3$ ]] && [[ "$file" =~ .*-[0-9]+\.jpg\.out\.pp3$ ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+
+
+if ! is_relevant_file "$CREATED_FILE"; then
+    exit
+fi
+
+photo_name=${CREATED_FILE%.out.pp3}
+echo "Fixing variant $photo_name" >&2
+
+sleep 10
+
+pp3_file=$CREATED_FILE
+jpg_file="${photo_name}"
+
+if ! [[ -e $jpg_file ]]; then
+    echo "[ERROR] JPEG output file $jpg_file does not exist" >&2
+    exit 1
+fi
+
+iptc_headline=$(iptc_headline_from_photofile "$jpg_file")
+iptc_caption=$(iptc_caption_from_photofile "$jpg_file")
+
+sidecar_set_property "$pp3_file" "IPTC" "Headline" "$iptc_headline"
+sidecar_set_property "$pp3_file" "IPTC" "Caption" "$iptc_caption"
+
+jpeg_set_iptc "$jpg_file" "Headline" "$iptc_headline"
+jpeg_set_iptc "$jpg_file" "Caption" "$iptc_caption"
