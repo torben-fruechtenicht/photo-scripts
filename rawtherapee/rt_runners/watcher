@@ -13,10 +13,7 @@ cleanup() {
     test -e "$LOCK_FILE" && rm $LOCK_FILE
 
     # inotifywait with "-monitor" will not exit if this script is killed so it has to be killed seperately
-    local -r inotifywait_pid=$(pgrep -f "inotifywait --monitor.*$WATCH_DIR".*)
-    if [[ -n $inotifywait_pid ]]; then
-        kill $inotifywait_pid
-    fi
+    pkill -f "inotifywait --monitor.*$WATCH_DIR.*"
 }
 trap cleanup EXIT
 
