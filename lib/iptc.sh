@@ -5,7 +5,7 @@ iptc_headline_from_photofile() {
     local -r fullname=${photo_filename%%.*}
     # FIXME use own pattern from pattern vars, only group the required parts. 
     # FIXME all pattern vars should not include groupings (unless for quantifiers)
-    echo "$fullname" | sed -r 's/'"$PHOTO_FULLNAME_PATTERN"'/\1 \5/'
+    sed -r 's/'"$PHOTO_FULLNAME_PATTERN"'/\1 \5/' <<<"$fullname"
 }
 
 iptc_caption_from_photofile() {

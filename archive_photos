@@ -21,17 +21,6 @@ else
     declare -r PHOTOS=$@
 fi
 
-declare -r PHOTOS_ROOT_DIR="/.+"
-declare -r YEAR_DIR_PATTERN="[0-9]{4}"
-declare -r ALBUM_DIR_PATTERN="[^/]+"
-declare -r DAY_DIR_PATTERN="[0-9]{4}-[0-9]{2}-[0-9]{2}"
-
-path_relative_to_sourceroot_from_file() {
-    local -r file=$1
-    local -r pattern="$PHOTOS_ROOT_DIR/($YEAR_DIR_PATTERN/$ALBUM_DIR_PATTERN/$DAY_DIR_PATTERN/(converted/)?$PHOTO_FILENAME_PATTERN)"
-    echo "$file" | sed -r 's|'"$pattern"'|\1|'
-}
-
 apply_archive() {
     local -r file=$1
     local -r target="$ARCHIVE_DIR/$(path_relative_to_sourceroot_from_file "$file")"
