@@ -35,5 +35,7 @@ echo "$$" > $LOCK_FILE
 echo "[INFO] Starting to watch $WATCH_DIR for new files..." >&2
 inotifywait --monitor --recursive --quiet --event create --format %w%f $WATCH_DIR | while read new_file; do
     echo "[INFO] Received 'create' event for $new_file" >&2
+    sleep 2
+    test -e "$new_file" || continue
     fix_iptc_of_variants "$new_file" 
 done

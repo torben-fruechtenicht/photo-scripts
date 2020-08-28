@@ -19,6 +19,8 @@ fi
 is_relevant_file() {
     local -r file=$1
 
+    test -d "$file" && return 1
+
     if ! [[ $file =~ .*/converted/.* ]]; then
         echo "[INFO] Created file $CREATED_FILE is not from converted directory, skipping" >&2
         return 1

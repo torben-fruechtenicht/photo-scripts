@@ -26,5 +26,6 @@ declare -r WATCHER_PID=$!
 #           will wait until watcher exits. If  that happens, check the rc. if bad rc, exit rt, too.
 #           => this will very probably not work this way (because of the ||) but still worth it to think about it
 
-# NOTE script will wait until rawtherapee ends and then our EXIT trap will take care of cleaning up
+# NOTE script will wait until rawtherapee ends and then our EXIT trap will take care of cleaning up (incl. killing
+# the watcher)
 rawtherapee >> "$APP_DIR/rawtherapee.log" 2>&1
