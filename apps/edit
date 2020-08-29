@@ -134,16 +134,14 @@ if [[ -n $KEYWORDS ]]; then
     fi
 fi
 
-files=$photos
-
 if [[ -n $TITLE ]]; then
-    files=$(set_title "$TITLE" $files)
+    photos=$(set_title "$TITLE" "$photos")
     rename_rc=$?
     if [[ $rename_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$TITLE\" done"
+        notify_info "$APP_TITLE" "Changing title of $(wc -l <<<"$photos") photo(s) to \"$TITLE\" done"
     else
         notify_error "$APP_TITLE" \
-            "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$TITLE\" failed with return code $rename_rc"
+            "Changing title of $(wc -l <<<"$photos") photo(s) to \"$TITLE\" failed with return code $rename_rc"
         exit 1
     fi
 fi
@@ -151,13 +149,13 @@ fi
 if [[ -n $ALBUM ]]; then
     # if we changed photo titles, $files will now also contain all associated files. But we can safely pass
     # $files to change_album because it will just throw away all irrelevant files
-    change_album "$ALBUM" "$files"
+    change_album "$ALBUM" "$photos"
     change_album_rc=$?
     if [[ $change_album_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Moving $(echo "$photos" | wc -l) photos to \"$ALBUM\" done"
+        notify_info "$APP_TITLE" "Moving $(wc -l <<<"$photos") photos to \"$ALBUM\" done"
     else
         notify_error -e "$APP_TITLE" \
-            "Moving $(echo "$photos" | wc -l) photos to \"$ALBUM\" failed with return code $change_album_rc"
+            "Moving $(wc -l <<<"$photos") photos to \"$ALBUM\" failed with return code $change_album_rc"
         exit 1
     fi
 elif [[ -n $TITLE ]] || [[ -n $KEYWORDS ]]; then 

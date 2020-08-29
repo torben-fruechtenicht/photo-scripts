@@ -15,11 +15,8 @@ else
 fi
 
 
-print_associated_files() {
+find_associated_files_by_fullname() {
     local -r photo=$1
-
-    is_original_photofile "$photo" || return
-
     local -r photo_filename=$(basename "$photo")
     local -r sourcephoto_fullname=${photo_filename%%.*}
     # Find all files, i.e. actual photo file and all associated files: search for the basename without
@@ -34,10 +31,14 @@ print_associated_files() {
 # work around that quite nicely.
 if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
     while read -r photo; do 
-        print_associated_files "$(readlink -e "$photo")"
+        if is_original_photofile "$photo"; then
+            find_associated_files_by_fullname "$(readlink -e "$photo")"
+        fi
     done < /dev/stdin | sort -u
 else 
     for photo in $PHOTOS; do
-        print_associated_files "$(readlink -e "$photo")"
+        if is_original_photofile "$photo"; then
+            find_associated_files_by_fullname "$(readlink -e "$photo")"
+        fi
     done | sort -u
 fi 
