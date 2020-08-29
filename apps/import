@@ -43,12 +43,12 @@ fi
 creator_value=${CREATOR_OPTION+$CREATOR_OPTION}
 keywords_cb_values=$(remember_list "keywords" "gn")
 
-# TODO add option to add album + title as keywords
-#   don't do it if user entered no values and we are using "New photos"
 options_string=$(run_yad "$APP_TITLE" "$dialog_txt" \
     --form \
     --field="Album:CBE" "$album_cb_values" \
+    --field="Add album name as a keyword:CHK" "TRUE" \
     --field="Photo title:CBE" "$title_cb_values" \
+    --field="Add title as a keyword:CHK" "TRUE" \
     --field="Photographer/creator" "$creator_value" \
     --field="Keywords (separated by \";\"):CBE" "$keywords_cb_values")
 yad_rc=$?
@@ -59,22 +59,44 @@ fi
 album_string=$(trim_whitespace "$(get_option_at_index "$options_string" 1)")
 if [[ -n $album_string ]]; then
     declare -r ALBUM=$album_string
+    is_option_selected "$options_string" 2 && declare -r ALBUM_AS_KEYWORD=
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
 else 
     declare -r ALBUM="New photos"
 fi
 
-title_string=$(trim_whitespace "$(get_option_at_index "$options_string" 2)")
-test -n "$title_string" && declare -r TITLE="$title_string" && \
+title_string=$(trim_whitespace "$(get_option_at_index "$options_string" 3)")
+if [[ -n "$title_string" ]]; then
+    declare -r TITLE="$title_string"
+    is_option_selected "$options_string" 4 && declare -r TITLE_AS_KEYWORD=
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
+fi
 
-creator_string=$(trim_whitespace "$(get_option_at_index "$options_string" 3)")
+creator_string=$(trim_whitespace "$(get_option_at_index "$options_string" 5)")
 test -n "$creator_string" && declare -r CREATOR=$creator_string 
 # TODO memorize creator
 
-keywords_string=$(trim_whitespace "$(get_option_at_index "$options_string" 4)")
-test -n "$keywords_string" && declare -r KEYWORDS=$keywords_string && \
-    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
+augment_user_keywords() {
+    local keywords=$1
+
+    if [[ -v ALBUM_AS_KEYWORD ]]; then
+        keywords="${keywords:+$keywords;}$ALBUM"
+    fi
+
+    if [[ -v TITLE_AS_KEYWORD ]] && [[ $ALBUM != $TITLE ]]; then
+        keywords="${keywords:+$keywords;}$TITLE"
+    fi
+
+    echo "$keywords"
+}
+
+keywords_string=$(trim_whitespace "$(get_option_at_index "$options_string" 6)")
+if [[ -n "$keywords_string" ]]; then
+    declare -r USER_KEYWORDS=$keywords_string
+    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
+fi
+declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
+
 
 
 imported_photos=$(import_photos ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} "$DCIM_DIR" "$TARGET_DIR")
