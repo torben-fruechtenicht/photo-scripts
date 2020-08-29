@@ -27,12 +27,17 @@ print_associated_files() {
     find $(dirname "$photo") -type f -path "*/${sourcephoto_fullname}*"
 }
 
+# About the "sort -u" as the last pipeline step: if we have both a raw and a jpg version of a photo (i.e. there
+# are two original files), we will find the jpg file as an associated file or the raw file (and vice versa). 
+# this leads to problems when changing title or album (because commands will try to change things twice, failing 
+# the 2nd time because the file was changed already because it was collected twice). But using "sort -u" will
+# work around that quite nicely.
 if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
     while read -r photo; do 
-        print_associated_files "$(readlink -e "$photo")" | sort
-    done < /dev/stdin
+        print_associated_files "$(readlink -e "$photo")"
+    done < /dev/stdin | sort -u
 else 
     for photo in $PHOTOS; do
-        print_associated_files "$(readlink -e "$photo")" | sort
-    done
+        print_associated_files "$(readlink -e "$photo")"
+    done | sort -u
 fi 
