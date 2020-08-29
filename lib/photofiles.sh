@@ -28,24 +28,24 @@ is_original_photofile() (
 
 albumpath_from_file() {
     local -r file=$1
-    local -r pattern="($ROOTDIR_PATTERN/$YEAR_DIR_PATTERN/$ALBUM_DIR_PATTERN)/$DAY_DIR_PATTERN/(converted/)?$PHOTO_FILENAME_PATTERN"
+    local -r pattern="(${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN})/${DAY_DIR_PATTERN}/(converted/)?${PHOTO_FILENAME_PATTERN}"
     sed -r 's|'"$pattern"'|\1|' <<<"$file"
 }
 
 albumname_from_file() {
     local -r file=$1
-    local -r pattern="$ROOTDIR_PATTERN/$YEAR_DIR_PATTERN/($ALBUM_DIR_PATTERN)/$DAY_DIR_PATTERN/(converted/)?$PHOTO_FILENAME_PATTERN"
+    local -r pattern="${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/(${ALBUM_DIR_PATTERN})/${DAY_DIR_PATTERN}/(converted/)?${PHOTO_FILENAME_PATTERN}"
     sed -r 's|'"$pattern"'|\1|' <<<"$file"
 }
 
 path_relative_to_sourceroot_from_file() {
     local -r file=$1
-    local -r pattern="${ROOTDIR_PATTERN}/($YEAR_DIR_PATTERN/$ALBUM_DIR_PATTERN/$DAY_DIR_PATTERN/(converted/)?$PHOTO_FILENAME_PATTERN)"
+    local -r pattern="${ROOTDIR_PATTERN}/(${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN}/${DAY_DIR_PATTERN}/(converted/)?${PHOTO_FILENAME_PATTERN})"
     sed -r 's|'"$pattern"'|\1|' <<<"$file"
 }
 
 path_relative_to_album_from_file() {
     local -r file=$1
-    local -r pattern="$PHOTOS_ROOT_DIR/$YEAR_DIR_PATTERN/$ALBUM_DIR_PATTERN/($DAY_DIR_PATTERN/(converted/)?$PHOTO_FILENAME_PATTERN)"
+    local -r pattern="${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN}/(${DAY_DIR_PATTERN}/(converted/)?${PHOTO_FILENAME_PATTERN})"
     sed -r 's|'"$pattern"'|\1|' <<<"$file"
 }

@@ -9,6 +9,7 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 PATH="$BASE_DIR:$BASE_DIR/lib:$BASE_DIR/apps:$PATH"
 
 source "$BASE_DIR/lib/strings.sh"
+source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
@@ -51,15 +52,16 @@ album_field_value=$(remember_list "album" "gb")
 title_field_value=$(remember_list "title" "gb")
 keywords_field_value=$(remember_list "keywords" "gb")
 
-# TODO add option to remove old album and title from keywords
  
 user_edit_params=$(
     run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "$dialog_text" \
         --form \
         --field="Album:CBE" "$album_field_value" \
         --field="Add album name as a keyword:CHK" "TRUE" \
+        --field="Remove old album name keyword:CHK" "TRUE" \
         --field="Title:CBE" "$title_field_value" \
         --field="Add title as a keyword:CHK" "TRUE" \
+        --field="Remove old title keyword:CHK" "TRUE" \
         --field="Keywords (separated by \";\"):CBE" "$keywords_field_value" 
 )
 yad_rc=$?
@@ -72,19 +74,53 @@ if [[ -n $ALBUM ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
     is_option_selected "$user_edit_params" 2 && declare -r ALBUM_AS_KEYWORD=
 fi
+is_option_selected "$user_edit_params" 3 && declare -r REMOVE_OLD_ALBUM_KEYWORD=
 
-declare -r TITLE=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 3)")
+declare -r TITLE=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 4)")
 if [[ -n $TITLE ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
-    is_option_selected "$user_edit_params" 4 && declare -r TITLE_AS_KEYWORD=
+    is_option_selected "$user_edit_params" 5 && declare -r TITLE_AS_KEYWORD=
 fi
+is_option_selected "$user_edit_params" 6 && declare -r REMOVE_OLD_TITLE_KEYWORD=
 
-
-declare -r USER_KEYWORDS=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 5)")
+declare -r USER_KEYWORDS=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 7)")
 if [[ -n $USER_KEYWORDS ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
 fi
 declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
+
+
+if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]] || [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
+    for photo in $photos; do
+
+        old_album=$(albumname_from_file "$photo")
+        old_title=$(cut -d'_' -f1 <<<"$(basename "$photo")")
+
+        keywords_to_remove=""
+
+        if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
+            # protect against removing the album keyword if it is the same as the title keyword:
+            # only remove the "shared" keyword if we want to remove the title keyword anyway (i.e.
+            # REMOVE_OLD_TITLE_KEYWORD is set)
+            if [[ "$old_album" != "$old_title" ]] || [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
+                keywords_to_remove="$old_album"
+            fi    
+        fi
+
+        if [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
+            # see above about the conditions
+            if [[ "$old_album" != "$old_title" ]] || [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
+                keywords_to_remove="${keywords_to_remove:+$keywords_to_remove;}$old_title"
+            fi    
+        fi
+
+        if [[ -n "$keywords_to_remove" ]]; then
+            remove_keywords "$keywords_to_remove" "$photo" > /dev/null # we're not interested in the printed files
+        fi
+
+    done
+fi
+
 
 if [[ -n $KEYWORDS ]]; then
     add_keywords "$KEYWORDS" "$photos" > /dev/null # we're not interested in the printed files
