@@ -40,9 +40,8 @@ title_cb_values=$(remember_list "title" "gn" "$DEFAULT_TITLE_VALUE")
 if [[ -z $title_cb_values ]]; then
     title_cb_values=$DEFAULT_TITLE_VALUE
 fi    
-creator_value=${CREATOR_OPTION+$CREATOR_OPTION}
 keywords_cb_values=$(remember_list "keywords" "gn")
-creator_cb_values=$(remember_list "creator" "gn" "$CREATOR_OPTION")
+creator_cb_values=$(remember_list "creator" "gn" "${CREATOR_OPTION+$CREATOR_OPTION}")
 
 options_string=$(run_yad "$APP_TITLE" "$dialog_txt" \
     --form \
@@ -50,7 +49,7 @@ options_string=$(run_yad "$APP_TITLE" "$dialog_txt" \
     --field="Add album name as a keyword:CHK" "TRUE" \
     --field="Photo title:CBE" "$title_cb_values" \
     --field="Add title as a keyword:CHK" "TRUE" \
-    --field="Photographer/creator" "$creator_value" \
+    --field="Photographer/creator:CBE" "$creator_cb_values" \
     --field="Keywords (separated by \";\"):CBE" "$keywords_cb_values")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
@@ -67,17 +66,17 @@ else
 fi
 
 title_string=$(trim_whitespace "$(get_option_at_index "$options_string" 3)")
-if [[ -n "$title_string" ]]; then
+if [[ -n $title_string ]]; then
     declare -r TITLE="$title_string"
     is_option_selected "$options_string" 4 && declare -r TITLE_AS_KEYWORD=
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
 fi
 
 creator_string=$(trim_whitespace "$(get_option_at_index "$options_string" 5)")
-test -n "$creator_string" && declare -r CREATOR=$creator_string 
-# TODO memorize creator
-#   this requires special handling for default value and params-supplied value
-#   value from params must always be preselected
+if [[ -n $creator_string ]]; then
+    declare -r CREATOR=$creator_string 
+    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "creator" "$CREATOR" 10
+fi
 
 augment_user_keywords() {
     local keywords=$1

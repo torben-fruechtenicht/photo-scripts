@@ -23,6 +23,31 @@ remember_value() (
     fi
 )
 
+__list_includes_value() {
+    local -r list=$1
+    local -r value=$2
+
+    local -r old_ifs=$IFS
+    IFS=!
+    for entry in $list; do
+        if [[ $entry = $to_add ]]; then
+            echo "$to_add"
+        fi
+    done
+    IFS=$old_ifs
+}
+
+__add_option_to_list_if_missing() {
+    local -r list=$1
+    local -r to_add=$2
+
+    if [[ -z $(__list_includes_value "$list" "$to_add") ]]; then
+        echo "$to_add!$list"    
+    else 
+        echo "$list"
+    fi
+}
+
 prepare_list() {
     local -r list=$1
     # modifiers is a string of modifiers (single chars), valid modifiers are "g", "b", "n", "l"
@@ -50,7 +75,7 @@ prepare_list() {
     done
 
     if [[ -n $preselected_entry ]]; then
-        # FIXME check if preselected exists, if not add
+        prepared_list=$(__add_option_to_list_if_missing "$prepared_list" "$preselected_entry")
         __set_preselection_in_list "$prepared_list" "$preselected_entry"
     else
         __preselect_latest_in_list "$prepared_list"
