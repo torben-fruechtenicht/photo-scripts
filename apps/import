@@ -42,6 +42,7 @@ if [[ -z $title_cb_values ]]; then
 fi    
 creator_value=${CREATOR_OPTION+$CREATOR_OPTION}
 keywords_cb_values=$(remember_list "keywords" "gn")
+creator_cb_values=$(remember_list "creator" "gn" "$CREATOR_OPTION")
 
 options_string=$(run_yad "$APP_TITLE" "$dialog_txt" \
     --form \
@@ -75,15 +76,17 @@ fi
 creator_string=$(trim_whitespace "$(get_option_at_index "$options_string" 5)")
 test -n "$creator_string" && declare -r CREATOR=$creator_string 
 # TODO memorize creator
+#   this requires special handling for default value and params-supplied value
+#   value from params must always be preselected
 
 augment_user_keywords() {
     local keywords=$1
 
-    if [[ -v ALBUM_AS_KEYWORD ]]; then
+    if [[ -v ALBUM_AS_KEYWORD ]] && ! [[ $ALBUM = $DEFAULT_ALBUM_VALUE ]]; then
         keywords="${keywords:+$keywords;}$ALBUM"
     fi
 
-    if [[ -v TITLE_AS_KEYWORD ]] && [[ $ALBUM != $TITLE ]]; then
+    if [[ -v TITLE_AS_KEYWORD ]] && [[ -n $TITLE ]] && [[ $ALBUM != $TITLE ]]; then
         keywords="${keywords:+$keywords;}$TITLE"
     fi
 
