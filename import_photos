@@ -25,9 +25,9 @@ declare -r FILETYPES_RAW_AND_JPG="raw+jpeg"
 while getopts "t:a:y:" opt; do
     case $opt in
         a )
-            declare -r ALBUM="$(tr ' ' '-' <<<"$OPTARG")";;
+            declare -r ALBUM=$(tr ' ' '-' <<<"$OPTARG");;
         t )
-            declare -r TITLE="$(tr ' ' '-' <<<"$OPTARG")";;
+            declare -r TITLE=$(tr ' ' '-' <<<"$OPTARG");;
         y )
             if ! [[ $OPTARG =~ ^${FILETYPES_RAW_ONLY}|${FILETYPES_JPG_ONLY}|${FILETYPES_RAW_AND_JPG}$ ]]; then 
                 echo "[ERROR] Invalid filetypes option $OPTARG"

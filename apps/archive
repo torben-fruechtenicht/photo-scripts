@@ -51,10 +51,8 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 5
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
 memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
 
-#FIXME MONTH must be translated to number
-# - we don't need it zero-padded, collect_archivable_photos can take care of that
 archivable_photos=$(collect_archivable_photos \
-    ${ALBUM:+-a "$ALBUM"} ${YEAR:+-y "$YEAR"} ${MONTH:+-m "$MONTH"} "$SEARCH_DIR")
+    ${ALBUM:+-a "$ALBUM"} ${YEAR:+-y "$YEAR"} ${MONTH:+-m "$(month_value_from_name "$MONTH")"} "$SEARCH_DIR")
 
 if [[ -z $archivable_photos ]]; then
     notify_warning "$APP_TITLE" "No archivable photos found that match the filter"
