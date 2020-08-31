@@ -37,11 +37,11 @@ equals_TRUE() {
 }
 
 
-photos=$(selector "$SEARCH_DIR")
+declare -r PHOTOS=$(selector "$SEARCH_DIR")
 selector_rc=$? 
 if [[ $selector_rc == 101 ]]; then
     exit
-elif [[ -z $photos ]]; then
+elif [[ -z $PHOTOS ]]; then
     notify_warning "$APP_TITLE" "No matching photos found"
     exit 1
 fi
@@ -54,7 +54,7 @@ keywords_field_value=$(remember_list "keywords" "gb")
 
  
 user_edit_params=$(
-    run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "$dialog_text" \
+    run_yad_selector_result_action_dialog "$APP_TITLE" "$PHOTOS" "$SEARCH_DIR" "$dialog_text" \
         --form \
         --field="Album:CBE" "$album_field_value" \
         --field="Add album name as a keyword:CHK" "TRUE" \
@@ -89,9 +89,11 @@ if [[ -n $USER_KEYWORDS ]]; then
 fi
 declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
 
+files=$PHOTOS
+declare -r PHOTOS_COUNT=$(wc -l <<<"$PHOTOS")
 
 if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]] || [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
-    for photo in $photos; do
+    for photo in $files; do
 
         old_album=$(albumname_from_file "$photo")
         old_title=$(cut -d'_' -f1 <<<"$(basename "$photo")")
@@ -123,25 +125,25 @@ fi
 
 
 if [[ -n $KEYWORDS ]]; then
-    add_keywords "$KEYWORDS" "$photos" > /dev/null # we're not interested in the printed files
+    add_keywords "$KEYWORDS" "$files" > /dev/null # we're not interested in the printed files
     add_keywords_rc=$?
     if [[ $add_keywords_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Added keywords \"$KEYWORDS\" to $(echo "$photos" | wc -l) photo(s)"
+        notify_info "$APP_TITLE" "Added keywords \"$KEYWORDS\" to $PHOTOS_COUNT photo(s)"
     else
         notify_error "$APP_TITLE" \
-            "Failed adding keywords \"$KEYWORDS\" to $(echo "$photos" | wc -l) photo(s) with return code $add_keywords_rc"
+            "Failed adding keywords \"$KEYWORDS\" to $PHOTOS_COUNT photo(s) with return code $add_keywords_rc"
         exit 1
     fi
 fi
 
 if [[ -n $TITLE ]]; then
-    photos=$(set_title "$TITLE" "$photos")
+    files=$(set_title "$TITLE" "$files")
     rename_rc=$?
     if [[ $rename_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Changing title of $(wc -l <<<"$photos") photo(s) to \"$TITLE\" done"
+        notify_info "$APP_TITLE" "Changing title of $PHOTOS_COUNT photo(s) to \"$TITLE\" done"
     else
         notify_error "$APP_TITLE" \
-            "Changing title of $(wc -l <<<"$photos") photo(s) to \"$TITLE\" failed with return code $rename_rc"
+            "Changing title of $PHOTOS_COUNT photo(s) to \"$TITLE\" failed with return code $rename_rc"
         exit 1
     fi
 fi
@@ -149,13 +151,13 @@ fi
 if [[ -n $ALBUM ]]; then
     # if we changed photo titles, $files will now also contain all associated files. But we can safely pass
     # $files to change_album because it will just throw away all irrelevant files
-    change_album "$ALBUM" "$photos"
+    change_album "$ALBUM" "$files"
     change_album_rc=$?
     if [[ $change_album_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Moving $(wc -l <<<"$photos") photos to \"$ALBUM\" done"
+        notify_info "$APP_TITLE" "Moving $PHOTOS_COUNT photos to \"$ALBUM\" done"
     else
         notify_error -e "$APP_TITLE" \
-            "Moving $(wc -l <<<"$photos") photos to \"$ALBUM\" failed with return code $change_album_rc"
+            "Moving $PHOTOS_COUNT photos to \"$ALBUM\" failed with return code $change_album_rc"
         exit 1
     fi
 elif [[ -n $TITLE ]] || [[ -n $KEYWORDS ]]; then 

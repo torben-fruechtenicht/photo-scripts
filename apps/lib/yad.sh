@@ -38,7 +38,7 @@ __remove_searchdir_from_photos_list() {
 
 __render_selected_photos_list() {
     local -r photos=$1
-    local -r list_size=$(echo "$photos" | wc -l)
+    local -r list_size=$(wc -l <<<"$photos")
     local -r max_list_size=25
 
     # TODO spreach across 2 columns if more than M entries in list
@@ -46,7 +46,7 @@ __render_selected_photos_list() {
     #   -> but actually, this would make the dialog too wide
 
     if (( $list_size > $max_list_size )); then
-        echo -e "$(echo "$photos" | head -n $max_list_size)\r... (list truncated to first $max_list_size entries"
+        echo -e "$(head -n $max_list_size <<<"$photos")\r... (list truncated to first $max_list_size entries"
     else 
         echo "$photos"
     fi
