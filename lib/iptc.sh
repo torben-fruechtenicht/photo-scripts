@@ -23,5 +23,5 @@ iptc_caption_from_photofile() {
     # TBD similar case: same but there is also some extra caption text given when updating caption with 
     #   existing text?
 
-    echo "[$fullname]}"
+    echo "[$fullname]"
 }
