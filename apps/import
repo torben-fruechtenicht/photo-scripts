@@ -98,14 +98,23 @@ if [[ -n "$keywords_string" ]]; then
     declare -r USER_KEYWORDS=$keywords_string
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
 fi
-declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
+declare -r KEYWORDS=$(augment_user_keywords "${USER_KEYWORDS-}")
 
 declare -r FILETYPES=$(get_option_at_index "$options_string" 7)
 
 imported_photos=$(import_photos ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} ${FILETYPES+-y "$FILETYPES"} "$DCIM_DIR" "$TARGET_DIR")
 import_photos_rc=$?
+
+count_lines() {
+    if [[ -z $1 ]]; then
+        echo 0
+    else
+        wc -l <<<"$1"
+    fi
+}
+
 if [[ $import_photos_rc = 0 ]]; then
-    imported_photos_count=$(echo "$imported_photos" | wc -l)
+    imported_photos_count=$(count_lines "$imported_photos")
     notify_info "$APP_TITLE" "Imported $imported_photos_count photo(s)"
 else
     notify_error "$APP_TITLE" "Importing photos from $DCIM_DIR failed with return code $import_photos_rc"
@@ -116,7 +125,7 @@ created_sidecars=$(create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWO
     $(echo $imported_photos))
 create_sidecar_rc=$?
 if [[ $create_sidecar_rc = 0 ]]; then
-    sidecars_count=$(echo "$created_sidecars" | wc -l)
+    sidecars_count=$(count_lines "$created_sidecars")
     notify_info "$APP_TITLE" "Created $sidecars_count sidecar(s)"
 else
     notify_error "$APP_TITLE" "Creating sidecars failed with return code $create_sidecar_rc"
