@@ -103,7 +103,7 @@ build_photonumber() {
 camera_name() { 
     local -r photofile=$1
     case "$(camera_id "$photofile")" in 
-        Panasonic_DMC )
+        Panasonic_DMC-FZ50 )
             echo "fz50";;
         Canon_CanonPowerShotG9 )
             echo "g9";;
