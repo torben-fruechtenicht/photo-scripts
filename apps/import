@@ -121,7 +121,7 @@ else
     exit 1
 fi
 
-created_sidecars=$(create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWORDS"} "$SIDECAR_TEMPLATES_DIR" \
+created_sidecars=$(create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} "$SIDECAR_TEMPLATES_DIR" \
     $(echo $imported_photos))
 create_sidecar_rc=$?
 if [[ $create_sidecar_rc = 0 ]]; then
