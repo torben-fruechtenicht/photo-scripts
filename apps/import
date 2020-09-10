@@ -132,7 +132,15 @@ else
     exit 1
 fi
 
-total_size_mb=$(du -ch $imported_photos | tail -1 | cut -f 1)
-duration_in_minutes=$(( $SECONDS / 60 ))
-notify_info -i "$APP_TITLE" \
-    "Imported $imported_photos_count photo(s) ($total_size_mb MB) in $duration_in_minutes minutes."
+print_duration() {
+    local m s
+    ((m=${SECONDS}/60))
+    ((s=${SECONDS}%60))
+    if [[ $m != 0 ]]; then
+        echo "$m minutes $s seconds"
+    else 
+        echo "$s seconds"
+    fi
+}
+
+notify_info "$APP_TITLE" "Import done ($imported_photos_count photo(s), took $(print_duration)."
