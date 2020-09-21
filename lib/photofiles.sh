@@ -8,11 +8,15 @@ declare -r DATE_PATTERN="([0-9]{8})" # \2
 declare -r TIME_PATTERN="([0-9]{4})" # \3
 declare -r CAMERA_PATTERN="([a-zA-Z0-9-]+)" # \4
 declare -r NUMBER_PATTERN="([0-9A-Z]+(-[a-zA-Z0-9-]+)?)" # \5
+declare -r VARIANT_NUMBER_PATTERN="([0-9A-Z]+(-[a-zA-Z0-9-]+))" # \5
 declare -r FILE_EXT_PATTERN="(\.[a-ZA-Z0-9]{3})+" # \6
 
 declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}"
+declare -r PHOTOID_PATTERN=$PHOTO_FULLNAME_PATTERN
 
 declare -r PHOTO_FILENAME_PATTERN="${PHOTO_FULLNAME_PATTERN}${FILE_EXT_PATTERN}"
+
+declare -r OUTPUT_DIR_PATTERN="${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN}/${DAY_DIR_PATTERN}/converted"
 
 is_original_photofile() ( 
     local -r file=$1
@@ -25,6 +29,22 @@ is_original_photofile() (
         [[ $file =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]] && \
         ! [[ $file =~ .+/converted/^/+$ ]]
 )
+
+is_output_file() {
+    local -r file=$1
+    [[ $file =~ ${OUTPUT_DIR_PATTERN}/${PHOTOID_PATTERN}\.(jpg|jpg.out.pp3)$ ]]
+}
+
+is_output_photofile() {
+    local -r file=$1
+    is_output_file "$file" && [[ $file =~ .+\.(jpg|JPG)$ ]]
+}
+
+is_variant() {
+    local -r file=$1
+    [[ $file =~ \
+        (.+/)?${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${VARIANT_NUMBER_PATTERN} ]]
+}
 
 albumpath_from_file() {
     local -r file=$1
