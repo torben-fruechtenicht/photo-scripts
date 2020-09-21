@@ -14,12 +14,9 @@ function kill_postsaveprocessor() {
 }
 trap kill_postsaveprocessor EXIT
 
-echo "$(date) Starting RawTherapee with watched output directories" >> "$APP_DIR/rawtherapee.log"
-
 postsaveprocessor "$WATCH_DIR" >> "$APP_DIR/rawtherapee_output_watcher.log" 2>&1 & 
 declare -r POSTSAVEPROCESSOR_PID=$!
 
-
-# NOTE script will wait until rawtherapee ends and then our EXIT trap will take care of cleaning up (incl. killing
-# the watcher)
-rawtherapee >> "$APP_DIR/rawtherapee.log" 2>&1
+# NOTE script will wait until rawtherapee ends and then our EXIT trap will take care of cleaning up (i.e. killing
+# the postsaveprocessor)
+rawtherapee
