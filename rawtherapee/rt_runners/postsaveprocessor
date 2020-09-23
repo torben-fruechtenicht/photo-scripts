@@ -51,10 +51,8 @@ fix_variantfile_iptc() {
     iptc_caption=$(iptc_caption_from_photofile "$file")
     case "$new_file" in 
         *.pp3 )
-            set -x
             sidecar_set_property "$file" "IPTC" "Headline" "$iptc_headline"
-            sidecar_set_property "$file" "IPTC" "Caption" "$iptc_caption"
-            set +x;;
+            sidecar_set_property "$file" "IPTC" "Caption" "$iptc_caption";;
         *.jpg )    
             jpeg_set_iptc "$file" "Headline" "$iptc_headline"
             jpeg_set_iptc "$file" "Caption" "$iptc_caption";;
