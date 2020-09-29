@@ -73,15 +73,15 @@ declare -r ALBUM=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 1)
 if [[ -n $ALBUM ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
     is_option_selected "$user_edit_params" 2 && declare -r ALBUM_AS_KEYWORD=
+    is_option_selected "$user_edit_params" 3 && declare -r REMOVE_OLD_ALBUM_KEYWORD=
 fi
-is_option_selected "$user_edit_params" 3 && declare -r REMOVE_OLD_ALBUM_KEYWORD=
 
 declare -r TITLE=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 4)")
 if [[ -n $TITLE ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
     is_option_selected "$user_edit_params" 5 && declare -r TITLE_AS_KEYWORD=
+    is_option_selected "$user_edit_params" 6 && declare -r REMOVE_OLD_TITLE_KEYWORD=
 fi
-is_option_selected "$user_edit_params" 6 && declare -r REMOVE_OLD_TITLE_KEYWORD=
 
 declare -r USER_KEYWORDS=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 7)")
 if [[ -n $USER_KEYWORDS ]]; then
@@ -137,7 +137,9 @@ if [[ -n $KEYWORDS ]]; then
 fi
 
 if [[ -n $TITLE ]]; then
-    files=$(set_title "$TITLE" "$files")
+    # save the printed list of files because for moving (next step) we of course need the filenames with
+    # changed titles
+    files=$(set_title "$TITLE" "$files") 
     rename_rc=$?
     if [[ $rename_rc = 0 ]]; then
         notify_info "$APP_TITLE" "Changing title of $PHOTOS_COUNT photo(s) to \"$TITLE\" done"
@@ -151,7 +153,7 @@ fi
 if [[ -n $ALBUM ]]; then
     # if we changed photo titles, $files will now also contain all associated files. But we can safely pass
     # $files to change_album because it will just throw away all irrelevant files
-    change_album "$ALBUM" "$files"
+    change_album "$ALBUM" "$files"  > /dev/null 
     change_album_rc=$?
     if [[ $change_album_rc = 0 ]]; then
         notify_info "$APP_TITLE" "Moving $PHOTOS_COUNT photos to \"$ALBUM\" done"
@@ -160,6 +162,4 @@ if [[ -n $ALBUM ]]; then
             "Moving $PHOTOS_COUNT photos to \"$ALBUM\" failed with return code $change_album_rc"
         exit 1
     fi
-elif [[ -n $TITLE ]] || [[ -n $KEYWORDS ]]; then 
-    echo "$files"
 fi
