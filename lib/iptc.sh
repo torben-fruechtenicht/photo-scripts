@@ -25,3 +25,20 @@ iptc_caption_from_photofile() {
 
     echo "[$fullname]"
 }
+
+iptc_caption_from_photofile2() {
+    local -r photo_filename=$(basename "$1")
+    local -r description=$2
+    local -r photoid=${photo_filename%%.*}
+
+    echo "${description:+$description\n\n}[$photoid]"
+}
+
+get_description_from_iptc_caption() {
+    local -r caption=$1
+
+    # TODO just return if caption is only the photoid (with brackets)
+
+    # TODO extract with sed pattern (everything before photoid line and any extra blank lines before until last 
+    # description line)
+}

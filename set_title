@@ -52,16 +52,6 @@ old_title() {
     echo ${basename%%_*}
 }
 
-is_rawtherapee_sidecar() {
-	local -r file=$1
-	[[ $file =~ .*\.pp[23]$ ]]
-}
-
-is_converted_jpeg() {
-	local -r file=$1
-	[[ $file =~ .*/converted/.*\.jpg$ ]]
-}
-
 apply_set_title() {
 
     local -r file=$1
@@ -88,7 +78,7 @@ apply_set_title() {
     if is_rawtherapee_sidecar "$file"; then
         sidecar_set_property "$file" "IPTC" "Headline" "$(iptc_headline_from_photofile "$newfile")"
         sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from_photofile "$newfile")"
-    elif is_converted_jpeg "$file"; then
+    elif is_output_photofile "$file"; then
         jpeg_set_iptc "$file" "Headline" "$(iptc_headline_from_photofile "$newfile")"
         jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from_photofile "$newfile")"
     fi

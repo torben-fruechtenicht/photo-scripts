@@ -2,11 +2,17 @@ sidecar_set_property() {
     local -r sidecar=$1
     local -r section=$2
     local -r property=$3
-    local -r value=$4
+    local value=$4
+
+	# for the Caption property only (which can be multiple lines): 
+	# newlines in the sed RHS will already produce a real linebreak in the sed output. therefore
+	# we have to escape the backslashes
+	if [[ $property = "Caption" ]] && grep -q '\\n' <<<"$value"; then
+		value=$(sed 's/\\n/\\\\n/g' <<<"$value")
+	fi
 
     if sed -n '/\['"$section"'\]/,/^$/p' "$sidecar" | grep -q "$property="; then
-        # if the entry already exists, just overwrite with new value
-        test -v VERBOSE && echo "[INFO] UPDATE $section $property=$value" >&2        
+        # if the entry already exists, just overwrite with new value    
         # https://unix.stackexchange.com/a/416126
         sed -i  '/\['"$section"'\]/,/^$/ s|^'"$property"=.*$'|'"$property"'='"$value"'|' "$sidecar"    
     elif (( $(sed -n '/\['"$section"'\]/,/^$/p' "$sidecar" | wc -l) > 2 )); then        
@@ -19,6 +25,14 @@ sidecar_set_property() {
         test -v VERBOSE && echo "[INFO] ADD $section $property=$value" >&2
         sed -i 's|\['"$section"'\]|\['"$section"'\]\n'"$property"'='"$value"'|' "$sidecar"
     fi
+}
+
+sidecar_get_property() {
+	local -r sidecar=$1
+    local -r section=$2
+    local -r property=$3
+
+	sed -n '/\['"$section"'\]/,/^$/p' "$sidecar" | grep "$property=" | cut -d'=' -f2
 }
 
 sidecar_add_iptc_keywords() {

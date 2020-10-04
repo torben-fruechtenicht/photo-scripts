@@ -1,0 +1,64 @@
+#! /usr/bin/env bash
+
+set -eux
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
+
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/lib/iptc.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
+source "$BASE_DIR/lib/jpeg_iptc.sh"
+
+PATH="$BASE_DIR:$PATH"
+
+declare -r DESCRIPTION=${1:-}
+if [[ -z $DESCRIPTION ]]; then
+    echo "[ERROR] Description parameter missing" >&2
+    exit 1
+fi
+
+shift 1
+
+if [[ $# = 0 ]]; then
+    declare -r READ_PHOTOS_FROM_STDIN=
+else 
+    declare -r PHOTOS=$@
+fi
+
+apply_set_description() {
+    local -r file=$1
+    local -r description=$2
+
+    if ! [[ -w $file ]]; then
+        chmod u+w "$file"
+        local -r restore_write_protection=
+    fi
+
+    # TODO TBD check if description exists already - what to do then?
+
+    # FIXME sidecar_set_property will not write newlines (they are interpreted)
+    # https://www.linuxquestions.org/questions/linux-software-2/sed-insert-a-newline-why-does-not-it-work-158806/#post6005202
+    # if using the above tip works - can this affect any other callers of sidecar_set_property?
+
+    if is_rawtherapee_sidecar "$file"; then
+        sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from_photofile2 "$file" "$description")"
+    elif is_output_photofile "$file"; then
+        jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from_photofile2 "$file" "$description")"
+    fi
+
+
+    if [[ -v restore_write_protection ]]; then
+        chmod u-w "$file"
+    fi
+}
+
+set -o pipefail
+if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
+    collect_associated_files < /dev/stdin | while read -r file; do 
+        apply_set_description "$file" "$DESCRIPTION"
+    done
+else 
+    collect_associated_files "$PHOTOS" | while read -r file; 
+        do apply_set_description "$file" "$DESCRIPTION"
+    done
+fi

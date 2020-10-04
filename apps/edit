@@ -62,7 +62,8 @@ user_edit_params=$(
         --field="Title:CBE" "$title_field_value" \
         --field="Add title as a keyword:CHK" "TRUE" \
         --field="Remove old title keyword:CHK" "TRUE" \
-        --field="Keywords (separated by \";\"):CBE" "$keywords_field_value" 
+        --field="Keywords (separated by \";\"):CBE" "$keywords_field_value" \
+        --field="Description:TXT"
 )
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
@@ -88,6 +89,8 @@ if [[ -n $USER_KEYWORDS ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
 fi
 declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
+
+declare -r DESCRIPTION=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 8)")
 
 files=$PHOTOS
 declare -r PHOTOS_COUNT=$(wc -l <<<"$PHOTOS")
@@ -160,6 +163,18 @@ if [[ -n $ALBUM ]]; then
     else
         notify_error -e "$APP_TITLE" \
             "Moving $PHOTOS_COUNT photos to \"$ALBUM\" failed with return code $change_album_rc"
+        exit 1
+    fi
+fi
+
+if [[ -n $DESCRIPTION ]]; then
+    set_description "$DESCRIPTION" "$files"
+    set_description_rc=$?
+    if [[ $set_description_rc = 0 ]]; then
+        notify_info "$APP_TITLE" "Setting description of $PHOTOS_COUNT photos done"
+    else
+        notify_error -e "$APP_TITLE" \
+            "Setting description of $PHOTOS_COUNT photos failed with return code $set_description_rc"
         exit 1
     fi
 fi

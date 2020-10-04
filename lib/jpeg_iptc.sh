@@ -17,7 +17,7 @@ jpeg_set_iptc() {
 	exiv2 -M"set Iptc.Application2.$key String $value" "$jpg_file" 2> /dev/null
 }
 
-__jpeg_get_iptc() {
+jpeg_get_iptc() {
 	local -r jpg_file=$1
 	local -r key=$2
 
@@ -28,7 +28,7 @@ jpeg_set_iptc_keywords() {
 	local -r jpg_file=$1
     local -r keywords=$2
 
-	local -r old_keywords=$(__jpeg_get_iptc "$jpg_file" "Keywords")
+	local -r old_keywords=$(jpeg_get_iptc "$jpg_file" "Keywords")
 
 	local -r OLD_IFS=$IFS
 	IFS=";"
@@ -49,7 +49,7 @@ jpeg_remove_iptc_keywords() {
 	# $2 is a comma-separated list of keywords, no quotes needed (are removed anyway)
     local -r keywords=$(tr --delete '"' <<<"$2")
 
-	local -r old_keywords=$(__jpeg_get_iptc "$jpg_file" "Keywords" | tr '\n' ';')
+	local -r old_keywords=$(jpeg_get_iptc "$jpg_file" "Keywords" | tr '\n' ';')
 
 	# removes *all* keywords, meaning we have to re-add all which should not be removed
 	exiv2 -M'del Iptc.Application2.Keywords' "$jpg_file"
