@@ -1,0 +1,64 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/lib/iptc.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
+source "$BASE_DIR/lib/jpeg_iptc.sh"
+
+declare -r FILE=$(readlink -e "$1")
+if [[ -z $FILE ]]; then
+    echo "[ERROR] $1 does not exist" >&2
+    exit 1
+fi
+
+declare -r PHOTOID=$2
+if [[ -z $PHOTOID ]]; then
+    echo "[ERROR] No photoid given" >&2
+    exit 1
+fi
+
+
+is_photoid_only_caption() {
+    local -r caption=$1
+    [[ "$caption" =~ ^\[$PHOTOID_PATTERN\]$ ]]
+}
+
+if is_rawtherapee_sidecar "$FILE"; then
+    
+    headline=$(iptc_headline_from_photofile "$PHOTOID")
+    sidecar_set_property "$FILE" "IPTC" "Headline" "$headline"
+
+    old_caption=$(sidecar_get_property "$FILE" "IPTC" "Caption")
+    if is_photoid_only_caption "$old_caption"; then
+        old_description=""
+    else 
+        old_description=$(sed -r 's/(.*)\\n\\n\['"$PHOTOID_PATTERN"'\]/\1/' <<<"$old_caption")
+    fi    
+    
+    caption=$(iptc_caption_from "$PHOTOID" "$old_description")
+    sidecar_set_property "$FILE" "IPTC" "Caption" "$caption"
+
+elif is_output_photofile "$FILE"; then
+
+    headline=$(iptc_headline_from_photofile "$PHOTOID")
+    jpeg_set_iptc "$FILE" "Headline" "$headline"
+
+    old_caption=$(jpeg_get_iptc "$FILE" "Caption")
+    if is_photoid_only_caption "$old_caption"; then
+        old_description=""
+    else 
+        # so the problem is that the caption from jpeg exif includes the real linebreaks. 
+        # therefore, let's use some head/sed/paste magic to get the old description
+        # in the sidecar format (because everything else is based on that)
+        old_description=$(head -n -2 <<<"$old_caption" | sed -r '$ ! s/^(.*)$/\1\\n/' |\
+            paste -s -d '')
+    fi    
+    caption=$(iptc_caption_from "$PHOTOID" "$old_description")
+    jpeg_set_iptc "$FILE" "Caption" "$caption"
+
+else
+    echo "[INFO] $FILE does not support IPTC metadata" >&2
+fi

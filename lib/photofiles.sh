@@ -46,6 +46,11 @@ is_variant() {
         (.+/)?${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${VARIANT_NUMBER_PATTERN} ]]
 }
 
+is_rawtherapee_sidecar() {
+	local -r file=$1
+	[[ $file =~ .*\.pp[23]$ ]]
+}
+
 albumpath_from_file() {
     local -r file=$1
     local -r pattern="(${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN})/${DAY_DIR_PATTERN}/(converted/)?${PHOTO_FILENAME_PATTERN}"

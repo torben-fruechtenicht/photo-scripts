@@ -4,13 +4,8 @@ set -eu
 shopt -s nocasematch
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
-source "$BASE_DIR/lib/strings.sh"
-source "$BASE_DIR/lib/photofiles.sh"
-source "$BASE_DIR/lib/iptc.sh"
-source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
-source "$BASE_DIR/lib/jpeg_iptc.sh"
 
-PATH="$BASE_DIR:$PATH"
+PATH="$BASE_DIR:$BASE_DIR/lib:$PATH"
 
 while getopts "f" opt; do
     case $opt in
@@ -39,25 +34,14 @@ else
 fi
 
 
-new_filename() {
-    local -r filename=$1
-    local -r newtitle=$2
-
-    echo "${newtitle}_${filename#*_}"
-}
-
-old_title() {
-    local file=$1
-    local basename=$(basename "$1")
-    echo ${basename%%_*}
-}
-
 apply_set_title() {
 
     local -r file=$1
     local -r filename=${file##*/}
 
-    if ! [[ -v FORCE_OVERWRITE ]] && [[ $(old_title "$file") = $TITLE ]]; then
+    local -r photoid=$(basename "$file")
+    local -r old_title=${photoid%%_*}
+    if ! [[ -v FORCE_OVERWRITE ]] && [[ $old_title = $TITLE ]]; then
         echo "[WARN] Cannot change title of $file to \"$TITLE\", same as old title" >&2
         return
     fi    
@@ -67,7 +51,8 @@ apply_set_title() {
         local -r restore_write_protection=
     fi
 
-    local -r newfile="$(dirname "$file")/$(new_filename "$filename" "$TITLE")"
+    local -r new_filename="${TITLE}_${filename#*_}"
+    local -r newfile="$(dirname "$file")/$new_filename"
 
     # this is a real error case unlike the other check above (which stems from careless user input)
     if [[ -e $newfile ]] && ! [[ -v FORCE_OVERWRITE ]]; then
@@ -75,14 +60,7 @@ apply_set_title() {
         exit 1
     fi
 
-    if is_rawtherapee_sidecar "$file"; then
-        sidecar_set_property "$file" "IPTC" "Headline" "$(iptc_headline_from_photofile "$newfile")"
-        sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from_photofile "$newfile")"
-    elif is_output_photofile "$file"; then
-        jpeg_set_iptc "$file" "Headline" "$(iptc_headline_from_photofile "$newfile")"
-        jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from_photofile "$newfile")"
-    fi
-
+    set_title_in_iptc "$file" "$newfile"
 
     # do an additional check if $newfile exists because we might have skipped the check above because we're in 
     # FORCE_OVERWRITE mode

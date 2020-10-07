@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -eux
+set -eu
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
 
@@ -41,9 +41,9 @@ apply_set_description() {
     # if using the above tip works - can this affect any other callers of sidecar_set_property?
 
     if is_rawtherapee_sidecar "$file"; then
-        sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from_photofile2 "$file" "$description")"
+        sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from "$file" "$description")"
     elif is_output_photofile "$file"; then
-        jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from_photofile2 "$file" "$description")"
+        jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from "$file" "$description")"
     fi
 
 

@@ -26,19 +26,14 @@ iptc_caption_from_photofile() {
     echo "[$fullname]"
 }
 
-iptc_caption_from_photofile2() {
+iptc_caption_from() {
     local -r photo_filename=$(basename "$1")
     local -r description=$2
     local -r photoid=${photo_filename%%.*}
 
+    # we need the linebreaks as literals here because that's the way we have to write them
+    # into sidecar files. in jpeg files, there are real linebreaks. which makes it more
+    # complex when we have to extract the description part out of the caption value: we need
+    # 2 functions for jpeg and sidecar files.
     echo "${description:+$description\n\n}[$photoid]"
-}
-
-get_description_from_iptc_caption() {
-    local -r caption=$1
-
-    # TODO just return if caption is only the photoid (with brackets)
-
-    # TODO extract with sed pattern (everything before photoid line and any extra blank lines before until last 
-    # description line)
 }
