@@ -51,6 +51,7 @@ options_string=$(run_yad "$APP_TITLE" "$dialog_txt" \
     --field="Add title as a keyword:CHK" "TRUE" \
     --field="Photographer/creator:CBE" "$creator_cb_values" \
     --field="Keywords (separated by \";\"):CBE" "$keywords_cb_values" \
+    --field="Description:TXT" "" \
     --field="File types:CB" "^raw!jpeg!raw+jpeg")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
@@ -100,7 +101,9 @@ if [[ -n "$keywords_string" ]]; then
 fi
 declare -r KEYWORDS=$(augment_user_keywords "${USER_KEYWORDS-}")
 
-declare -r FILETYPES=$(get_option_at_index "$options_string" 7)
+declare -r DESCRIPTION=$(get_option_at_index "$options_string" 7)
+
+declare -r FILETYPES=$(get_option_at_index "$options_string" 8)
 
 imported_photos=$(import_photos ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} ${FILETYPES+-y "$FILETYPES"} "$DCIM_DIR" "$TARGET_DIR")
 import_photos_rc=$?
@@ -121,8 +124,8 @@ else
     exit 1
 fi
 
-created_sidecars=$(create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} "$SIDECAR_TEMPLATES_DIR" \
-    $(echo $imported_photos))
+created_sidecars=$(create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} ${DESCRIPTION:+-d "$DESCRIPTION"} \
+    "$SIDECAR_TEMPLATES_DIR" $(echo $imported_photos))
 create_sidecar_rc=$?
 if [[ $create_sidecar_rc = 0 ]]; then
     sidecars_count=$(count_lines "$created_sidecars")

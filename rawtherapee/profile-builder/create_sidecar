@@ -13,13 +13,15 @@ source "$BASEDIR/lib/iptc.sh"
 source "$BASEDIR/lib/exif.sh"
 source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 
-while getopts "c:k:ov" opt; do
+while getopts "c:k:d:ov" opt; do
     case $opt in
         c ) 
 			declare -r CREATOR=$OPTARG;;   
 		k ) 
 			# CSV string, using ";". no quoting needed for keywords with blanks
 			declare -r KEYWORDS=$OPTARG;;
+		d )
+			declare -r DESCRIPTION=$OPTARG;;
 		o ) 
 			# old keywords will be kept
 			declare -r OVERWRITE_EXISTING=;;
@@ -120,6 +122,7 @@ for photofile in $PHOTO_FILES; do
 	fi
 
 	if [[ -v CREATOR ]]; then
+		# TODO add new iptc copyright fields: https://developers.google.com/search/docs/data-types/image-license-metadata
 		set_iptc_creator_copyright "$sidecar_file" "$CREATOR" "$photofile"
 	fi
 
@@ -134,7 +137,8 @@ for photofile in $PHOTO_FILES; do
 	photo_filename=$(basename "$photofile")
 	fullname=${photo_filename%%.*}
 	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(iptc_headline_from_photofile "$photofile" )"
-	sidecar_set_property "$sidecar_file" "IPTC" "Caption" "$(iptc_caption_from_photofile "$photofile" )"
+	sidecar_set_property "$sidecar_file" "IPTC" "Caption" \
+		"$(iptc_caption_from "$(photoid "$photofile")" "${DESCRIPTION+$DESCRIPTION}")"
 	
 	if [[ -n "$lens_from_exif" ]]; then
 		iptc_lens="$lens_from_exif;"
