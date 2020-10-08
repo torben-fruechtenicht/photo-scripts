@@ -5,6 +5,8 @@ shopt -s nocasematch
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
 
+source "$BASEDIR/lib/photofiles.sh"
+
 PATH="$BASE_DIR:$BASE_DIR/lib:$PATH"
 
 while getopts "f" opt; do
@@ -60,7 +62,7 @@ apply_set_title() {
         exit 1
     fi
 
-    set_title_in_iptc "$file" "$newfile"
+    set_title_in_iptc "$file" "$(photoid "$newfile")"
 
     # do an additional check if $newfile exists because we might have skipped the check above because we're in 
     # FORCE_OVERWRITE mode

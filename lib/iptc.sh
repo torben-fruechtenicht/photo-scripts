@@ -27,9 +27,8 @@ iptc_caption_from_photofile() {
 }
 
 iptc_caption_from() {
-    local -r photo_filename=$(basename "$1")
+    local -r photoid=$1
     local -r description=$2
-    local -r photoid=${photo_filename%%.*}
 
     # we need the linebreaks as literals here because that's the way we have to write them
     # into sidecar files. in jpeg files, there are real linebreaks. which makes it more

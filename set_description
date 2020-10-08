@@ -36,14 +36,10 @@ apply_set_description() {
 
     # TODO TBD check if description exists already - what to do then?
 
-    # FIXME sidecar_set_property will not write newlines (they are interpreted)
-    # https://www.linuxquestions.org/questions/linux-software-2/sed-insert-a-newline-why-does-not-it-work-158806/#post6005202
-    # if using the above tip works - can this affect any other callers of sidecar_set_property?
-
     if is_rawtherapee_sidecar "$file"; then
-        sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from "$file" "$description")"
+        sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from "$(photoid "$file")" "$description")"
     elif is_output_photofile "$file"; then
-        jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from "$file" "$description")"
+        jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from "$(photoid "$file")" "$description")"
     fi
 
 
