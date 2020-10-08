@@ -18,6 +18,11 @@ declare -r PHOTO_FILENAME_PATTERN="${PHOTO_FULLNAME_PATTERN}${FILE_EXT_PATTERN}"
 
 declare -r OUTPUT_DIR_PATTERN="${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN}/${DAY_DIR_PATTERN}/converted"
 
+photoid() {
+    local -r filename=$(basename "$1")
+    echo ${filename%%.*}
+}
+
 is_original_photofile() ( 
     local -r file=$1
     shopt -s nocasematch
@@ -32,18 +37,23 @@ is_original_photofile() (
 
 is_output_file() {
     local -r file=$1
-    [[ $file =~ ${OUTPUT_DIR_PATTERN}/${PHOTOID_PATTERN}\.(jpg|jpg.out.pp3)$ ]]
+    [[ $file =~ ${OUTPUT_DIR_PATTERN}/${PHOTOID_PATTERN}\..+$ ]]
 }
 
 is_output_photofile() {
     local -r file=$1
-    is_output_file "$file" && [[ $file =~ .+\.(jpg|JPG)$ ]]
+    is_output_file "$file" && is_jpeg "$file"
 }
 
 is_variant() {
     local -r file=$1
     [[ $file =~ \
         (.+/)?${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${VARIANT_NUMBER_PATTERN} ]]
+}
+
+is_jpeg() {
+    local -r file=$1
+    [[ $file =~ .+\.(jpg|JPG)$ ]]
 }
 
 is_rawtherapee_sidecar() {

@@ -41,7 +41,7 @@ if is_rawtherapee_sidecar "$FILE"; then
     caption=$(iptc_caption_from "$PHOTOID" "$old_description")
     sidecar_set_property "$FILE" "IPTC" "Caption" "$caption"
 
-elif is_output_photofile "$FILE"; then
+elif is_jpeg "$FILE"; then
 
     headline=$(iptc_headline_from_photofile "$PHOTOID")
     jpeg_set_iptc "$FILE" "Headline" "$headline"

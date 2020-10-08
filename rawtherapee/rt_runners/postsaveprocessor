@@ -5,13 +5,9 @@ set -u
 declare -r APP_DIR=$(readlink -m "$HOME/.local/share/photo-scripts/")
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../../"
 
-source "$BASEDIR/lib/strings.sh"
-source "$BASEDIR/lib/iptc.sh"
-source "$BASEDIR/lib/jpeg_iptc.sh"
 source "$BASEDIR/lib/photofiles.sh"
-source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 
-export PATH="$(dirname $(readlink -f $0)):$PATH"
+export PATH="$BASEDIR/lib:$PATH"
 
 declare -r LOCK_FILE="$APP_DIR/rawtherapee_output_watcher.lock"
 
@@ -38,34 +34,18 @@ trap cleanup EXIT
 # TODO allow multiple watch dirs
 declare -r WATCH_DIR="$(readlink -f $1)"
 if [[ -z $WATCH_DIR ]]; then
-	echo "[ERROR] Watched directory does not exist" >&2
+	echo "[ERROR] Watched directory $WATCH_DIR does not exist" >&2
 	exit 1
 fi
 
-fix_variantfile_iptc() {
-    local -r file=$1
-
-    echo "[INFO] Fixing IPTC headline and caption of variant output file $file" >&2
-
-    iptc_headline=$(iptc_headline_from_photofile "$file")
-    iptc_caption=$(iptc_caption_from_photofile "$file")
-    case "$new_file" in 
-        *.pp3 )
-            sidecar_set_property "$file" "IPTC" "Headline" "$iptc_headline"
-            sidecar_set_property "$file" "IPTC" "Caption" "$iptc_caption";;
-        *.jpg )    
-            jpeg_set_iptc "$file" "Headline" "$iptc_headline"
-            jpeg_set_iptc "$file" "Caption" "$iptc_caption";;
-    esac
-}
-
 echo "[INFO] Starting to watch $WATCH_DIR for new files..." >&2
 inotifywait --monitor --recursive --quiet --event create --format %w%f $WATCH_DIR | while read new_file; do
-    echo "[INFO] Received 'create' event for $new_file" >&2
+    # echo "[INFO] Received 'create' event: $new_file" >&2
     
     if is_output_file "$new_file" && is_variant "$new_file"; then
         # wait a bit so that the file has been fully written
         sleep 5
-        fix_variantfile_iptc "$new_file"        
+        echo "[INFO] Setting title in IPTC: $new_file" >&2
+        set_title_in_iptc "$new_file" $(photoid "$new_file")     
     fi
 done
