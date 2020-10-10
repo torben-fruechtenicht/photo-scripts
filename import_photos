@@ -74,10 +74,14 @@ build_photonumber_canon_exif_filenumber() {
 }
 
 build_photonumber_olympus_filename() {
-    local -r photofile=$1
-    # format of photo number: <MONTH><DAY><NUMBER>, zero-digit values of month or day
-    # are *not zero-padded* but with leading underscore
-    basename "${photofile%.*}" | tr '_' '0'
+    # format of photo number: <MONTH><DAY><NUMBER>
+    # MONTH is _1 to _9, _A, _B, C for Jan to Sep + Oct, Nov, Dec
+    # DAY is a regular 1-31 day value
+    # NUMBER is a four-digit number
+    local -r photofile_path=$1
+    local -r photofile_name=$(basename "$photofile_path")
+    local -r without_ext=${photofile_name%%.*}
+    echo "${without_ext:1}"
 }
 
 camera_id() {
