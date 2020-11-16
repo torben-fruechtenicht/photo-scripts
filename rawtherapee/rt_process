@@ -1,0 +1,71 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r APP_DIR=$(readlink -m "$HOME/.local/share/photo-scripts/")
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+
+export PATH="$APP_DIR:$PATH"
+
+source "$BASE_DIR/lib/photofiles.sh"
+
+while getopts "p:c:q:" opt; do
+    case $opt in
+        c )
+            # 1-100
+            declare -r JPEG_COMPRESSION=$OPTARG;;
+        q )
+            # 1-3
+            declare -r JPEG_QUALITY=$OPTARG;;
+        p ) 
+            declare -r PROFILES=$OPTARG;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+declare -r SOURCE=$(readlink -m "$1")
+if ! [[ -e $SOURCE ]] && ! [[ -f $SOURCE ]]; then
+    echo "[ERROR] Source file $SOURCE does not exist"
+    exit 1
+fi
+
+if [[ $# = 2 ]]; then
+    declare -r TARGET=$(readlink -m "$2")
+fi
+
+
+next_variant() {
+    local -r source_photoid=$1
+    local -r targetdir=$2
+
+    local -r sed_pattern="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}"'_[0-9A-Z]+-([a-zA-Z0-9-]+)'"${FILE_EXT_PATTERN}"
+    local -r highest_variantnumber=$(find "$targetdir" -type f -name "$source_photoid*.JPG" |\
+        sed -r -n 's/'"$sed_pattern"'/\5/p' |\
+        sort | head -n 1)
+    # TODO this will output "1" if there is *no* file yet (which is only aesthetically inconvenient)
+    echo $(($highest_variantnumber + 1))
+}
+
+compute_targetfile() {
+    source_filename=$(basename "$1")
+    targetdir=$2
+    photoid=${source_filename%%.*} 
+    echo "$targetdir/$photoid-$(next_variant "$photoid" "$targetdir").JPG"
+}
+
+if ! [[ -v TARGET ]]; then
+    sourcedir=$(dirname "$SOURCE")
+    targetdir="$sourcedir/converted"
+    # TODO check if targetdir exists, create if not (will rawtherapee create it?)
+    declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$targetdir")
+elif [[ -d $TARGET ]]; then
+    targetdir=$TARGET
+    # TODO check if targetdir exists, create if not (will rawtherapee create it?)
+    declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$targetdir")
+else 
+    declare -r TARGETFILE="$TARGET"
+fi
+
+# "-c" is not a real option but rather a marker, "only input files/dirs after this" - that's why all other options must go
+# before that marker
+rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE"
