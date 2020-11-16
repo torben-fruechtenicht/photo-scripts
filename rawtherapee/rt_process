@@ -39,7 +39,7 @@ next_variant() {
     local -r targetdir=$2
 
     local -r sed_pattern="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}"'_[0-9A-Z]+-([a-zA-Z0-9-]+)'"${FILE_EXT_PATTERN}"
-    local -r highest_variantnumber=$(find "$targetdir" -type f -name "$source_photoid*.JPG" |\
+    local -r highest_variantnumber=$(find "$targetdir" -type f -name "$source_photoid*.jpg" |\
         sed -r -n 's/'"$sed_pattern"'/\5/p' |\
         sort | head -n 1)
     # TODO this will output "1" if there is *no* file yet (which is only aesthetically inconvenient)
@@ -51,7 +51,8 @@ compute_targetfile() {
     local -r targetdir=$2
     local -r photoid=${source_filename%%.*} 
     local -r next_variant=$(next_variant "$photoid" "$targetdir")
-    echo "$targetdir/$photoid-$next_variant.JPG"
+    # actually, we don't need to add the extension, Rawtherapee will select the correct one
+    echo "$targetdir/$photoid-$next_variant.jpg"
 }
 
 target_is_directory() {
