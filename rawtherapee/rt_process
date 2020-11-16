@@ -47,20 +47,26 @@ next_variant() {
 }
 
 compute_targetfile() {
-    source_filename=$(basename "$1")
-    targetdir=$2
-    photoid=${source_filename%%.*} 
-    echo "$targetdir/$photoid-$(next_variant "$photoid" "$targetdir").JPG"
+    local -r source_filename=$(basename "$1")
+    local -r targetdir=$2
+    local -r photoid=${source_filename%%.*} 
+    local -r next_variant=$(next_variant "$photoid" "$targetdir")
+    echo "$targetdir/$photoid-$next_variant.JPG"
+}
+
+target_is_directory() {
+    local -r target=$1
+    ! [[ $target =~ .+\..+ ]]
 }
 
 if ! [[ -v TARGET ]]; then
     sourcedir=$(dirname "$SOURCE")
     targetdir="$sourcedir/converted"
-    # TODO check if targetdir exists, create if not (will rawtherapee create it?)
+    test -e "$targetdir" || mkdir --parents "$targetdir"
     declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$targetdir")
-elif [[ -d $TARGET ]]; then
+elif target_is_directory "$TARGET"; then
     targetdir=$TARGET
-    # TODO check if targetdir exists, create if not (will rawtherapee create it?)
+    test -e "$targetdir" || mkdir --parents "$targetdir"
     declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$targetdir")
 else 
     declare -r TARGETFILE="$TARGET"
