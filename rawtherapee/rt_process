@@ -39,9 +39,8 @@ next_variant() {
 
     if [[ -z $existing ]]; then
         # we need this branch, otherwise the next one would match, too (because there is always one line)
-        # TBD would echo -n work? or use a here string?
         echo
-    elif [[ $(echo "$existing" | wc -l) = 1 ]]; then
+    elif [[ $(wc -l <<<"$existing") = 1 ]]; then
         if [[ $existing =~ .+-([0-9])+\..+ ]]; then
             echo $((${BASH_REMATCH[1]} + 1))
         else 
@@ -86,12 +85,10 @@ else
 fi
 
 
+if [[ -e $TARGETFILE ]]; then
+    echo "[ERROR] Target file $TARGETFILE exists already" >&2
+    exit 1
+fi
 # "-c" is not a real option but rather a marker, "only input files/dirs after this" - that's why all other options must go
 # before that marker
-rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE"
-# rt_out=$(rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE" 2>&1)
-# rt_rc=$?
-# if [[ $rt_rc != 0 ]]; then
-#     echo "[ERROR] Failed running RawTherapee, return code was $rt_rc" >&2
-#     exit 1
-# fi
+rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE" &> /dev/null
