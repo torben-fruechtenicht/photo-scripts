@@ -38,21 +38,36 @@ next_variant() {
     local -r source_photoid=$1
     local -r targetdir=$2
 
-    local -r sed_pattern="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}"'_[0-9A-Z]+-([a-zA-Z0-9-]+)'"${FILE_EXT_PATTERN}"
-    local -r highest_variantnumber=$(find "$targetdir" -type f -name "$source_photoid*.jpg" |\
-        sed -r -n 's/'"$sed_pattern"'/\5/p' |\
-        sort | head -n 1)
-    # TODO this will output "1" if there is *no* file yet (which is only aesthetically inconvenient)
-    echo $(($highest_variantnumber + 1))
+    local -r existing=$(find "$targetdir" -type f -name "$source_photoid*.jpg")
+
+    if [[ -z $existing ]]; then
+        echo
+    elif [[ $(echo "$existing" | wc -l) = 1 ]]; then
+        if [[ $existing =~ .+-([0-9])+\..+ ]]; then
+            echo $((${BASH_REMATCH[1]} + 1))
+        else 
+            echo "1"
+        fi
+    else    
+        local -r highest_variant=$(sort <<<"$existing" | head -n -1 | tail -n 1)   
+        [[ $highest_variant =~ .+-([0-9])+\..+ ]]
+        echo $((${BASH_REMATCH[1]} + 1))
+    fi
 }
 
 compute_targetfile() {
+    set -x
     local -r source_filename=$(basename "$1")
     local -r targetdir=$2
     local -r photoid=${source_filename%%.*} 
     local -r next_variant=$(next_variant "$photoid" "$targetdir")
     # actually, we don't need to add the extension, Rawtherapee will select the correct one
-    echo "$targetdir/$photoid-$next_variant.jpg"
+    if [[ -n $next_variant ]]; then
+        echo "$targetdir/$photoid-$next_variant.jpg"
+    else 
+        echo "$targetdir/$photoid.jpg"
+    fi    
+    set +x
 }
 
 target_is_directory() {
@@ -63,16 +78,16 @@ target_is_directory() {
 if ! [[ -v TARGET ]]; then
     sourcedir=$(dirname "$SOURCE")
     targetdir="$sourcedir/converted"
-    test -e "$targetdir" || mkdir --parents "$targetdir"
+    test -e "$targetdir" || mkdir "$targetdir"
     declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$targetdir")
 elif target_is_directory "$TARGET"; then
-    targetdir=$TARGET
-    test -e "$targetdir" || mkdir --parents "$targetdir"
-    declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$targetdir")
+    test -e "$TARGET" || mkdir "$TARGET"
+    declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$TARGET")
 else 
     declare -r TARGETFILE="$TARGET"
 fi
 
+
 # "-c" is not a real option but rather a marker, "only input files/dirs after this" - that's why all other options must go
 # before that marker
-rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE"
+rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE" &> /dev/null
