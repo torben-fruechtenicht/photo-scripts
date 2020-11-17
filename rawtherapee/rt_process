@@ -3,11 +3,8 @@
 set -eu
 
 declare -r APP_DIR=$(readlink -m "$HOME/.local/share/photo-scripts/")
-declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 export PATH="$APP_DIR:$PATH"
-
-source "$BASE_DIR/lib/photofiles.sh"
 
 while getopts "p:c:q:" opt; do
     case $opt in
@@ -41,6 +38,8 @@ next_variant() {
     local -r existing=$(find "$targetdir" -type f -name "$source_photoid*.jpg")
 
     if [[ -z $existing ]]; then
+        # we need this branch, otherwise the next one would match, too (because there is always one line)
+        # TBD would echo -n work? or use a here string?
         echo
     elif [[ $(echo "$existing" | wc -l) = 1 ]]; then
         if [[ $existing =~ .+-([0-9])+\..+ ]]; then
@@ -49,14 +48,14 @@ next_variant() {
             echo "1"
         fi
     else    
-        local -r highest_variant=$(sort <<<"$existing" | head -n -1 | tail -n 1)   
+        # FIXME TBD why must grep have "-v"?!
+        local -r highest_variant=$(grep -v "$source_photoid-*.jpg" <<<"$existing" | sort | tail -n 1)   
         [[ $highest_variant =~ .+-([0-9])+\..+ ]]
         echo $((${BASH_REMATCH[1]} + 1))
     fi
 }
 
 compute_targetfile() {
-    set -x
     local -r source_filename=$(basename "$1")
     local -r targetdir=$2
     local -r photoid=${source_filename%%.*} 
@@ -67,7 +66,6 @@ compute_targetfile() {
     else 
         echo "$targetdir/$photoid.jpg"
     fi    
-    set +x
 }
 
 target_is_directory() {
@@ -90,4 +88,10 @@ fi
 
 # "-c" is not a real option but rather a marker, "only input files/dirs after this" - that's why all other options must go
 # before that marker
-rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE" &> /dev/null
+rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE"
+# rt_out=$(rawtherapee --cli -s -O "$TARGETFILE" -c "$SOURCE" 2>&1)
+# rt_rc=$?
+# if [[ $rt_rc != 0 ]]; then
+#     echo "[ERROR] Failed running RawTherapee, return code was $rt_rc" >&2
+#     exit 1
+# fi
