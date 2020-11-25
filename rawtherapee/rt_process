@@ -43,15 +43,15 @@ next_variant() {
         # we need this branch, otherwise the next one would match, too (because there is always one line)
         echo
     elif [[ $(wc -l <<<"$existing") = 1 ]]; then
-        if [[ $existing =~ .+-([0-9])+\..+ ]]; then
+        if [[ $existing =~ .+-([0-9]+)\..+ ]]; then
             echo $((${BASH_REMATCH[1]} + 1))
         else 
             echo "1"
         fi
     else    
         # FIXME TBD why must grep have "-v"?!
-        local -r highest_variant=$(grep -v "$source_photoid-*.jpg" <<<"$existing" | sort | tail -n 1)   
-        [[ $highest_variant =~ .+-([0-9])+\..+ ]]
+        local -r highest_variant=$(grep -v "$source_photoid-*.jpg" <<<"$existing" | sort --version-sort | tail -n 1)   
+        [[ $highest_variant =~ .+-([0-9]+)\..+ ]]
         echo $((${BASH_REMATCH[1]} + 1))
     fi
 }
@@ -74,6 +74,18 @@ target_is_directory() {
     ! [[ $target =~ .+\..+ ]]
 }
 
+print_duration() {
+    local mins secs
+    ((mins=${SECONDS}/60))
+    ((secs=${SECONDS}%60))
+    if [[ $mins != 0 ]]; then
+        echo "$mins minutes $secs seconds"
+    else 
+        echo "$secs seconds"
+    fi
+}
+
+
 if ! [[ -v TARGET ]]; then
     sourcedir=$(dirname "$SOURCE")
     targetdir="$sourcedir/converted"
@@ -93,4 +105,9 @@ if [[ -e $TARGETFILE ]]; then
 fi
 # "-c" is not a real option but rather a marker, "only input files/dirs after this" - that's why all other options must go
 # before that marker
-rawtherapee --cli ${PROFILES--s} ${PROFILES+$PROFILES} ${SAVE_SIDECAR+-O}${SAVE_SIDECAR--o} "$TARGETFILE" -c "$SOURCE" &> /dev/null
+rawtherapee --cli \
+    ${PROFILES--s} ${PROFILES+$PROFILES} \
+    ${SAVE_SIDECAR+-O}${SAVE_SIDECAR--o} "$TARGETFILE" \
+    -c "$SOURCE" &> /dev/null && echo "$TARGETFILE"
+
+echo "[INFO] Processing took $(print_duration)" >&2
