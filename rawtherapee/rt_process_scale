@@ -24,7 +24,7 @@ while getopts "c:q:h" opt; do
             # 1-100
             declare -r JPEG_COMPRESSION=$OPTARG;;
         q )
-            # 1-3
+            # 1-3 (Best compression/Balanced/Best quality)
             declare -r JPEG_QUALITY=$OPTARG;;
         h ) 
             declare -r SCALE_BY_HEIGHT=;;
@@ -105,7 +105,7 @@ scale_photo() {
     # apply any scaling in that case, only copy the image file unchanged
 
     rt_process -p "$source_profile" -p "$SCALING_PROFILE_FILE" \
-        ${JPEG_COMPRESSION+-j$JPEG_COMPRESSION} ${JPEG_QUALITY+-js$JPEG_QUALITY} \
+        ${JPEG_COMPRESSION+-c $JPEG_COMPRESSION} ${JPEG_QUALITY+-q $JPEG_QUALITY} \
         "$photofile" "$targetfile"
     local -r rc=$?
     if [[ $rc != 0 ]]; then
