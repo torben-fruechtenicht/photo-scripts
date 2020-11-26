@@ -78,10 +78,19 @@ build_photonumber_olympus_filename() {
     # MONTH is _1 to _9, _A, _B, C for Jan to Sep + Oct, Nov, Dec
     # DAY is a regular 1-31 day value
     # NUMBER is a four-digit number
+
     local -r photofile_path=$1
     local -r photofile_name=$(basename "$photofile_path")
     local -r without_ext=${photofile_name%%.*}
-    echo "${without_ext:1}"
+    if [[ $without_ext =~ _[ABC][0-9]+ ]]; then
+        case ${without_ext:1:1} in 
+            A ) echo "10${without_ext:2}";;
+            B ) echo "11${without_ext:2}";;
+            C ) echo "12${without_ext:2}";;
+        esac
+    else 
+        echo "0${without_ext:1}"
+    fi
 }
 
 camera_id() {
