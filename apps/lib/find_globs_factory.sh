@@ -20,9 +20,14 @@ month_glob() {
     fi
 }
 
+_is_valid_dayofmonth() {
+    local -r dayofmonth=$((10#$1))
+    (( 1 <= $dayofmonth )) && (( $dayofmonth <= 31  ))
+}
+
 dayofmonth_glob() {
     local -r dayofmonth=${1+$1}
-    if [[ $dayofmonth =~ ^[0-9]{2}$ ]] && (( 1 <= $dayofmonth )) && (( $dayofmonth <= 31  )); then
+    if [[ $dayofmonth =~ ^[0-9]{2}$ ]] && $(_is_valid_dayofmonth "$dayofmonth"); then
         echo "$dayofmonth"
     else 
         echo "??"
