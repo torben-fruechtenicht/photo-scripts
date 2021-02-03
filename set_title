@@ -9,10 +9,12 @@ source "$BASEDIR/lib/photofiles.sh"
 
 PATH="$BASEDIR:$BASEDIR/lib:$PATH"
 
-while getopts "f" opt; do
+while getopts "fc" opt; do
     case $opt in
         f ) 
 			declare -r FORCE_OVERWRITE=;;
+        c ) 
+            shopt -u nocasematch
 	esac
 done
 shift $(expr $OPTIND - 1 )
