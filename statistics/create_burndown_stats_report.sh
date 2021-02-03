@@ -33,7 +33,31 @@ print_numbers() {
         done
     ))
 
-    echo "$current_value ($previous_values)"
+    echo "values $album_stats_file: $current_value $previous_values" >&2
+
+    if ! [[ $current_value = 0 ]] && ! [[ $previous_values =~ ^0(/0)*$ ]]; then
+        echo "$current_value ($previous_values)"
+    fi
+}
+
+print_album_stats() {
+    local -r statsfile=$1
+
+    local -r incoming_stats=$(print_numbers "incoming" "1 7 30 90" "$statsfile")
+    local -r archived_stats=$(print_numbers "archive" "7 30 90" "$statsfile")
+
+    if [[ -z $incoming_stats ]] && [[ -z $archived_stats ]]; then
+        return
+    fi
+
+    echo "$(basename "$statsfile" | cut -d'_' -f2)"                
+    if [[ -n $incoming_stats ]]; then
+        echo "incoming: $incoming_stats"
+    fi
+
+    if [[ -n $archived_stats ]]; then
+        echo "archived: $archived_stats"
+    fi
 }
 
 collect_current_counts() {
@@ -88,10 +112,11 @@ cd "$STATS_REPO" && find -type f | cut -d'_' -f 1 | sort -u -r | while read -r y
 
     find -type f -name "${year}_*" | sort |\
         while read -r statsfile; do
-            echo "$(basename "$statsfile" | cut -d'_' -f2)"                
-            echo "incoming: $(print_numbers "incoming" "1 7 30 90" "$statsfile")"
-            echo "archived: $(print_numbers "archive" "7 30 90" "$statsfile")"
-            echo
+            album_stats=$(print_album_stats "$statsfile")
+            if [[ -n $album_stats ]]; then
+                echo "$album_stats"
+                echo
+            fi
             # if changed_since_days 7 incoming "$statsfile"; then
             #     echo "changed last 7 days" >&2
             # fi
