@@ -14,6 +14,15 @@ source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
+while getopts "c" opt; do
+    case $opt in
+        c ) 
+            declare -r NOCASEMATCH=
+        ;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
 declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
 
 
@@ -142,7 +151,7 @@ fi
 if [[ -n $TITLE ]]; then
     # save the printed list of files because for moving (next step) we of course need the filenames with
     # changed titles
-    files=$(set_title "$TITLE" "$files") 
+    files=$(set_title ${NOCASEMATCH+-c} "$TITLE" "$files") 
     rename_rc=$?
     if [[ $rename_rc = 0 ]]; then
         notify_info "$APP_TITLE" "Changing title of $PHOTOS_COUNT photo(s) to \"$TITLE\" done"
@@ -156,7 +165,7 @@ fi
 if [[ -n $ALBUM ]]; then
     # if we changed photo titles, $files will now also contain all associated files. But we can safely pass
     # $files to change_album because it will just throw away all irrelevant files
-    change_album "$ALBUM" "$files"  > /dev/null 
+    change_album ${NOCASEMATCH+-c} "$ALBUM" "$files"  > /dev/null 
     change_album_rc=$?
     if [[ $change_album_rc = 0 ]]; then
         notify_info "$APP_TITLE" "Moving $PHOTOS_COUNT photos to \"$ALBUM\" done"

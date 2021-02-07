@@ -11,6 +11,14 @@ source "$BASE_DIR/lib/jpeg_iptc.sh"
 
 PATH="$BASE_DIR:$PATH"
 
+while getopts "c" opt; do
+    case $opt in
+        c ) 
+            shopt -u nocasematch
+        ;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
 
 declare -r ALBUM=$(echo "${1:-}" | tr ' ' '-')
 if [[ -z $ALBUM ]]; then
