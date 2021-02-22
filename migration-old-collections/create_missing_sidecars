@@ -1,0 +1,37 @@
+#! /usr/bin/env bash
+
+# the migrate script will output paths of missing sidecar files, the actual file is created here.
+
+set -ue
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+
+PATH="$BASE_DIR/rawtherapee/profile-builder:$PATH"
+
+declare -r SIDECAR_TEMPLATES="$HOME/Bilder/rawtherapee-profiles/templates/"
+
+while getopts "c:k:" opt; do
+    case $opt in
+        c ) 
+			declare -r CREATOR=$OPTARG
+            ;;   
+		k ) 
+			# CSV string, using ";". no quoting needed for keywords with blanks
+			declare -r KEYWORDS=$OPTARG
+            ;;
+	esac
+done
+
+
+while read -r file; do
+
+    # we must only echo the name of the sidecar file *after* it has been written, otherwise any later part of the
+    # pipeline can already receive the name and try to do stuff with it
+    if [[ $file =~ .+\.raw.pp3 ]] && ! [[ -e $file ]]; then
+        create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWORDS"}  "$SIDECAR_TEMPLATES" "${file%%.*}.raw" 
+        echo "$file"
+    else
+        echo "$file"
+    fi
+
+done < /dev/stdin

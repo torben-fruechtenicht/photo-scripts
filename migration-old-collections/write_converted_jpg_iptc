@@ -1,0 +1,53 @@
+#! /usr/bin/env bash
+
+set -ue
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+
+source "$BASE_DIR/lib/strings.sh"
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/lib/jpeg_iptc.sh"
+source "$BASE_DIR/lib/iptc.sh"
+
+
+function write_jpeg_iptc() (
+    set +e
+
+    local -r file=$1
+
+    if [[ -v CREATOR ]]; then
+        jpeg_set_iptc "$file" "Byline" "$CREATOR" 
+
+        local -r year_from_exif=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
+	    jpeg_set_iptc "$file" "Copyright" "Copyright (c) $CREATOR $year_from_exif"
+    fi
+
+    jpeg_set_iptc "$file" "Headline" "$(iptc_headline_from_photofile "$file" )"
+	jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from "$(photoid "$file")" "")"
+
+    jpeg_set_iptc_keywords "$file" "$KEYWORDS"
+)
+
+
+while getopts "c:k:" opt; do
+    case $opt in
+        c ) 
+			declare -r CREATOR=$OPTARG
+            ;;   
+		k ) 
+			# CSV string, using ";". no quoting needed for keywords with blanks
+			declare -r KEYWORDS=$OPTARG
+            ;;
+	esac
+done
+
+
+while read -r file; do
+
+    if [[ $file =~ .+/converted/.+\.jpg ]]; then
+        write_jpeg_iptc "$file"
+    fi
+
+    echo "$file"
+    
+done < /dev/stdin

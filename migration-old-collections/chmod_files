@@ -1,0 +1,17 @@
+#! /usr/bin/env bash
+
+set -ue
+
+while read -r file; do
+    echo "$file"
+
+    if [[ $file =~ .+/.+\.raw$ ]]; then
+        mask=444
+    elif [[ $file =~ .+/converted/.+\.jpg ]]; then
+        mask=644
+    elif [[ $file =~ .+\.pp[23] ]]; then
+        mask=644
+    fi
+    chmod $mask "$file"
+
+done < /dev/stdin

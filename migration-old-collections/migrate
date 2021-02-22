@@ -1,0 +1,82 @@
+#! /usr/bin/env bash
+
+set -eu
+
+PATH="$(dirname "$(readlink -e "$0")"):$PATH"
+
+while getopts "c:k:f:" opt; do
+    case $opt in
+        f )
+            declare -r FILTER_BY_PATH=$OPTARG
+            ;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+
+declare -r source_rootdir=$1
+declare -r target_rootdir=$2
+declare -r target_album=$3
+declare -r camera=$4
+
+
+function to_normalized_filename() {
+    # filename pattern: <TITLE_INCL_UNDERSCORES>_<DAY>_<TIMEOFDAY>-<NUMBER>.<EXT>
+
+    # only filename, excl. path
+    local -r sourcefile=$1
+
+    local -r file_without_ext=${sourcefile%.*}
+    local -r ext=${sourcefile#*.}
+
+    local -r front_part=$(cut -d'-' -f1 <<<$file_without_ext)
+    local -r number=$(cut -d'-' -f2 <<<$file_without_ext)
+
+    local -r title=$(sed -r 's/([a-z_]+)_[0-9]+_[0-9]+/\1/' <<<$front_part | tr _ -)
+    local -r day=$(sed -r 's/[a-z_]+_([0-9]+)_[0-9]+/\1/' <<<$front_part)
+    local -r time=$(sed -r 's/[a-z_]+_[0-9]+_([0-9]+)/\1/' <<<$front_part)
+
+    echo "${title}_${day}_${time}_${camera}_${number}.${ext}"
+}
+
+# expected path pattern relative to source_rootdir: 
+# <DAY>/<ALBUM>/<FILE> + <DAY>/<ALBUM>/converted/<FILE> OR <DAY>/<FILE> + <DAY>/converted/<FILE>
+
+cd $source_rootdir
+find . -regextype posix-extended -type f \
+    ${FILTER_BY_PATH+-path "*$FILTER_BY_PATH*" } \
+    \( -iregex "./[0-9]+/.+\.(raw|pp.)" -or -iregex "./[0-9]+/converted/.+\.jpg" \
+        -or -iregex "./[0-9]+/[a-z_]+/.+\.(raw|pp.)" -or -iregex "./[0-9]+/[a-z_]+/converted/.+\.jpg" \) \
+    -printf '%P\n' |\
+while read file; do  
+
+    source_dir=$(dirname "$file")
+
+    if [[ ${source_dir##*/} = "converted" ]]; then
+        maybe_converted="converted"
+    else 
+        maybe_converted=
+    fi
+    target_year_dir=${source_dir:0:4}
+    target_day_dir="${source_dir:0:4}-${source_dir:4:2}-${source_dir:6:2}"    
+    target_dir="${target_rootdir}/${target_year_dir}/${target_album}/${target_day_dir}${maybe_converted:+/$maybe_converted}"
+    if ! [[ -e $target_dir ]]; then
+        mkdir --parents $target_dir
+    fi
+
+    target_path="${target_dir}/$(to_normalized_filename "$(basename "$file")")"
+
+    cp --update --preserve=all "$file" "$target_path"
+    echo "$target_path"
+
+    # if no pp3 sidecar file exists for the source raw file, just output the corresponding target sidecar filename so that
+    # a postprocessor can create it
+    if [[ $target_path =~ .+/.+\.raw ]]; then
+        # check if sidecar exists must be performed on the old file: any potential sidecars at the target location might
+        # not yet have been copied
+        sidecar_file="${file%.*}.raw.pp3"
+        if ! [[ -e $sidecar_file ]]; then
+            echo "${target_path%.*}.raw.pp3"
+        fi
+    fi
+done

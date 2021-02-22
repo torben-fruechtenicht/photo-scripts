@@ -1,0 +1,21 @@
+#! /usr/bin/env bash
+
+set -ue
+
+# there is no way to do "test -e $glob" (where $glob expands to more than one file) 
+# in the bash shell, unfortunately.
+# the secure way out of this dilemma is to use compgen
+# see https://stackoverflow.com/a/34195247/1295519
+function glob_matches() {
+    local -r glob=$1
+    compgen -G "$glob" > /dev/null
+}
+
+while read -r file; do
+    echo "$file"
+
+    if [[ $file =~ .+/converted/.+\.jpg ]] && glob_matches "$file?*"; then
+        rm $file?*
+    fi
+
+done < /dev/stdin
