@@ -2,6 +2,8 @@
 
 set -eu
 
+declare -r SIDECAR_TEMPLATES_DIR="$HOME/Bilder/rawtherapee-profiles/templates"
+
 source_dir=$1
 target_rootdir=$2
 camera=$3
@@ -9,9 +11,6 @@ photofile_extension=$4
 album=$5
 creator=$6
 keywords=$7
-
-declare -r SIDECAR_TEMPLATES_DIR="$HOME/Bilder/rawtherapee-profiles/templates"
-declare -r DAYDIR_POS_IN_PATH=6
 
 tmpdir=$(mktemp -d)
 
@@ -25,10 +24,9 @@ cd "$(dirname "$0")/.."
     ./items-builder/add_daydir | \
     ./items-builder/add_target_filename "$camera" | \
     ./items-builder/prepare_missing_sidecars -c "$creator" -k "$keywords" "$photofile_extension" "$SIDECAR_TEMPLATES_DIR" "$tmpdir" | \
-    ./import_items "$target_rootdir" #| \
-    # ./post-processors/fix_photofile_timestamps | \
-    # ./post-processors/write_converted_jpg_iptc  -c "$creator" -k "$keywords" | \
-    # ./post-processors/cleanup_exiv2_tmpfiles
-    # ./post-processors/chmod_files | \
+    ./import_items "$target_rootdir" | \
+    ./post-processors/fix_photofile_timestamps | \
+    ./post-processors/write_converted_jpg_iptc  -c "$creator" -k "$keywords" | \
+    ./post-processors/chmod_files 
 
 rm -rf "$tmpdir"    

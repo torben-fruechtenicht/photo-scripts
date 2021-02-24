@@ -2,7 +2,7 @@
 
 set -ue
 
-declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/../.."
 
 source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/lib/photofiles.sh"
@@ -28,6 +28,15 @@ function write_jpeg_iptc() (
     jpeg_set_iptc_keywords "$file" "$KEYWORDS"
 )
 
+# there is no way to do "test -e $glob" (where $glob expands to more than one file) 
+# in the bash shell, unfortunately.
+# the secure way out of this dilemma is to use compgen
+# see https://stackoverflow.com/a/34195247/1295519
+function glob_matches() {
+    local -r glob=$1
+    compgen -G "$glob" > /dev/null
+}
+
 
 while getopts "c:k:" opt; do
     case $opt in
@@ -46,10 +55,12 @@ while read -r file; do
 
     if [[ $file =~ .+/converted/.+\.jpg ]]; then
         write_jpeg_iptc "$file"
+
+        if glob_matches "$file?*"; then
+            rm $file?*
+        fi
     fi
 
     echo "$file"
     
 done < /dev/stdin
-
-# TODO TBD can't this action already delete any leftover tmp files?
