@@ -13,7 +13,7 @@ source "$BASEDIR/lib/iptc.sh"
 source "$BASEDIR/lib/exif.sh"
 source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 
-while getopts "c:k:d:ov" opt; do
+while getopts "c:k:d:t:ov" opt; do
     case $opt in
         c ) 
 			declare -r CREATOR=$OPTARG;;   
@@ -27,6 +27,8 @@ while getopts "c:k:d:ov" opt; do
 			declare -r OVERWRITE_EXISTING=;;
 		v )
 			declare -r VERBOSE=;;
+		t )
+			declare -r SIDECAR_TARGET_DIR=$OPTARG;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -68,6 +70,15 @@ set_iptc_creator_copyright() {
 	sidecar_set_property "$sidecar_file" "IPTC" "Copyright" "Copyright (c) $creator $year_from_exif"
 }
 
+function sidecar_targetdir() {
+	local -r photofile=$1
+	if  [[ -v SIDECAR_TARGET_DIR ]]; then
+		echo "$SIDECAR_TARGET_DIR/$(basename "$photofile").pp3"
+	else 
+		echo "$photofile.pp3"
+	fi
+}
+
 for photofile in $PHOTO_FILES; do
 
 	photofile=$(readlink -e "$photofile")
@@ -75,7 +86,7 @@ for photofile in $PHOTO_FILES; do
 
 	is_original_photofile $photofile || continue
 	
-	sidecar_file="$photofile.pp3"
+	sidecar_file=$(sidecar_targetdir "$photofile")
 
 	if [[ -e $sidecar_file ]] && ! [[ -v OVERWRITE_EXISTING ]]; then
 		test -v VERBOSE && echo "[SKIP] Sidecar $sidecar_file exists" >&2

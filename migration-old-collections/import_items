@@ -1,0 +1,22 @@
+#! /usr/bin/env bash
+
+set -eu
+
+target_rootdir=$1
+
+while read -r import_item; do
+    source=$(cut -d'|' -f1 <<<"$import_item")
+    target=$(cut -d'|' -f2 <<<"$import_item")
+
+    target_path=${target_rootdir}/${target}
+    
+    target_dir=$(dirname "$target_path")
+    if ! [[ -e $target_dir ]]; then
+        mkdir --parents "$target_dir"
+    fi
+
+    cp --update --preserve=all "$source" "$target_path"
+    
+    echo "$target_path"
+
+done < /dev/stdin

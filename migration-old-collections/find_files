@@ -1,0 +1,19 @@
+#! /usr/bin/env bash
+
+set -eu
+
+while getopts "f:" opt; do
+    case $opt in
+        f )
+            declare -r FILTER_BY_PATH=$OPTARG
+            ;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+declare -r source_rootdir=$(readlink -e "$1")
+declare -r photofile_extension=$2
+
+find "$source_rootdir" -regextype posix-extended -type f \
+    ${FILTER_BY_PATH+-path "*$FILTER_BY_PATH*" } \
+    \( -iregex ".+/.+\.($photofile_extension|pp[23])" -or -iregex ".+/converted/.+\.jpg" \) 

@@ -38,7 +38,7 @@ jpeg_set_iptc_keywords() {
 			continue
 		fi
 
-		exiv2 "-Madd Iptc.Application2.Keywords String '$(quote "$new_keyword")'" "$jpg_file"
+		exiv2 "-Madd Iptc.Application2.Keywords String '$(quote "$new_keyword")'" "$jpg_file" 2> /dev/null
 	done
 
 	IFS=$OLD_IFS
@@ -52,7 +52,7 @@ jpeg_remove_iptc_keywords() {
 	local -r old_keywords=$(jpeg_get_iptc "$jpg_file" "Keywords" | tr '\n' ';')
 
 	# removes *all* keywords, meaning we have to re-add all which should not be removed
-	exiv2 -M'del Iptc.Application2.Keywords' "$jpg_file"
+	exiv2 -M'del Iptc.Application2.Keywords' "$jpg_file" 2> /dev/null
 	
 	OLD_IFS=$IFS
 	IFS=";"
@@ -60,7 +60,7 @@ jpeg_remove_iptc_keywords() {
 		if [[ "$keywords" =~ (.*;)*$(unquote "$old_keyword")(;.*)*  ]]; then 
 			continue
 		else
-			exiv2 "-Madd Iptc.Application2.Keywords String '$(quote "$old_keyword")'" "$jpg_file"
+			exiv2 "-Madd Iptc.Application2.Keywords String '$(quote "$old_keyword")'" "$jpg_file" 2> /dev/null
 		fi
 	done
 	IFS=$OLD_IFS

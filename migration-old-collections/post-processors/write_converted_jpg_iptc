@@ -51,3 +51,5 @@ while read -r file; do
     echo "$file"
     
 done < /dev/stdin
+
+# TODO TBD can't this action already delete any leftover tmp files?

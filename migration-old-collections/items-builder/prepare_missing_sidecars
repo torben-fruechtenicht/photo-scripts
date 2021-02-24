@@ -1,0 +1,42 @@
+#! /usr/bin/env bash
+
+set -ue
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/../.."
+
+PATH="$BASE_DIR/rawtherapee/profile-builder:$PATH"
+
+while getopts "c:k:" opt; do
+    case $opt in
+        c ) 
+			declare -r CREATOR=$OPTARG
+            ;;   
+		k ) 
+			# CSV string, using ";". no quoting needed for keywords with blanks
+			declare -r KEYWORDS=$OPTARG
+            ;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+photofile_extension=$1
+sidecar_templates_dir=$2
+sidecars_tmpdir=$3
+
+while read -r import_item; do
+
+    # this action only reacts to what is in $import_item so we can echo it straight away (i.e. next action can already work on it)
+    echo "$import_item"
+
+    source=$(cut -d'|' -f1 <<<"$import_item")
+    if ! [[ $source =~ .+\.${photofile_extension} ]] || [[ -e ${source}.pp3 ]]; then
+        continue
+    fi
+
+    target=$(cut -d'|' -f2 <<<"$import_item")
+
+    sidecar_file=$(create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWORDS"} -t "$sidecars_tmpdir" \
+        "$sidecar_templates_dir" "$source")
+    echo "${sidecar_file}|${target}.pp3"
+    
+done < /dev/stdin

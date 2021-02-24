@@ -1,0 +1,7 @@
+#! /usr/bin/env bash
+
+set -eu
+
+while read source; do  
+    echo "$source|"
+done < /dev/stdin

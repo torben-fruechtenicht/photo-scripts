@@ -1,0 +1,34 @@
+#! /usr/bin/env bash
+
+set -eu
+
+source "$(dirname "$0")/builder_lib.sh"
+
+declare -r camera=$1
+
+while read import_item; do  
+    # filename pattern: <TITLE_INCL_UNDERSCORES>_<DAY>_<TIMEOFDAY>-<NUMBER>.<EXT>
+
+    source_path=$(cut -d'|' -f1 <<<"$import_item")
+    source_file=$(basename "$source_path")
+    source_dir=$(dirname "$source_path")
+
+    file_without_ext=${source_file%.*}
+    ext=${source_file#*.}
+
+    front_part=$(cut -d'-' -f1 <<<$file_without_ext)
+    number=$(cut -d'-' -f2 <<<$file_without_ext)
+
+    title=$(sed -r 's/([a-z_]+)_[0-9]+_[0-9]+(-[0-9])?/\1/' <<<$front_part | tr _ -)
+    day=$(sed -r 's/[a-z_]+_([0-9]+)_[0-9]+(-[0-9])?/\1/' <<<$front_part)
+    time=$(sed -r 's/[a-z_]+_[0-9]+_([0-9]+)(-[0-9])?/\1/' <<<$front_part)
+
+    target_filename="${title}_${day}_${time}_${camera}_${number}.${ext}"
+
+    if [[ $source_dir =~ .+/converted ]]; then
+        echo_item_added_targetpath "$import_item" "converted/$target_filename"
+    else 
+        echo_item_added_targetpath "$import_item" "$target_filename"
+    fi
+    
+done < /dev/stdin

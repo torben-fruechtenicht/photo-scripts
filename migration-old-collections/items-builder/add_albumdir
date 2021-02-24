@@ -1,0 +1,11 @@
+#! /usr/bin/env bash
+
+set -eu
+
+source "$(dirname "$0")/builder_lib.sh"
+
+declare -r album=$1
+
+while read import_item; do  
+    echo_item_added_targetpath "$import_item" "$album"
+done < /dev/stdin

@@ -2,6 +2,18 @@
 
 # the migrate script will output paths of missing sidecar files, the actual file is created here.
 
+# FIXME the way missing sidecars are handled is not very elegant. it would be nicer if this action could be contained
+# in just one action instead of being spread across two action.
+# TBD would this work?
+# 1. move action before copy_files
+# 2. create_missing_sidecars takes source file and checks if a pp3 exists
+# 3. if not, instantly create the missing sidecar *in a tmp directory* (i.e. outside of the source and target directories)
+# 4. echo the full path of the sidecar in the tmp directory as source and compute the target file from the target raw file
+#       which we read from stdin
+# 4.1 echo the actual raw file, too
+# 4. copy_files as next step will now pick up the sidecar from the tmp dir and copy it to target
+# 5. after the while loop has finished, remove the tmp directory
+
 set -ue
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
