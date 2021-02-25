@@ -17,15 +17,30 @@ function write_jpeg_iptc() (
 
     if [[ -v CREATOR ]]; then
         jpeg_set_iptc "$file" "Byline" "$CREATOR" 
+        if [[ $? != 0 ]]; then
+            echo "[ERROR] Failed writing IPTC byline of $file" >&2
+        fi
 
         local -r year_from_exif=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$file" 2> /dev/null | cut -d':' -f 1)
-	    jpeg_set_iptc "$file" "Copyright" "Copyright (c) $CREATOR $year_from_exif"
+        jpeg_set_iptc "$file" "Copyright" "Copyright (c) $CREATOR $year_from_exif"
+        if [[ $? != 0 ]]; then
+            echo "[ERROR] Failed writing IPTC copyright of $file" >&2
+        fi
     fi
 
     jpeg_set_iptc "$file" "Headline" "$(iptc_headline_from_photofile "$file" )"
+    if [[ $? != 0 ]]; then
+        echo "[ERROR] Failed writing IPTC headline of $file" >&2
+    fi
 	jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from "$(photoid "$file")" "")"
+    if [[ $? != 0 ]]; then
+        echo "[ERROR] Failed writing IPTC caption of $file" >&2
+    fi
 
     jpeg_set_iptc_keywords "$file" "$KEYWORDS"
+    if [[ $? != 0 ]]; then
+        echo "[ERROR] Failed writing IPTC keywords of $file" >&2
+    fi
 )
 
 # there is no way to do "test -e $glob" (where $glob expands to more than one file) 
