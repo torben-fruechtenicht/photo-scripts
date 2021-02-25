@@ -7,7 +7,7 @@ And yes, using this very flexible approach comes at a cost of higher load becaus
 
 How it works:
 - find files (the source files)
-- from the sources files, prepare the target destinations and any missing files (not created in the original source directories but in a tmp directory)
+- from the sources files, prepare the target destinations and any missing files
 - copy all files
 - apply some post processing (e.g. fixing timestamps, writing missing metadata)
 
