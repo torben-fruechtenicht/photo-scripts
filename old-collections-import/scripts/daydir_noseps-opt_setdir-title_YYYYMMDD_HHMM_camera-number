@@ -17,13 +17,12 @@ tmpdir=$(mktemp -d)
 cd "$(dirname "$0")/.."
 
 # artilleriewerk_schonenbourg_20081005_1507-000030
-./find_files "$source_dir" "$photofile_extension" | \
-    ./items-builder/new_item_from_source "$target_rootdir" | \
+./find_files -f "artilleriewerk_schonenbourg_20081005_1507" "$source_dir" "$photofile_extension" | \
     ./items-builder/add_yeardir | \
     ./items-builder/add_albumdir "$album" | \
     ./items-builder/add_daydir | \
     ./items-builder/add_target_filename "$camera" | \
-    ./items-builder/prepare_missing_sidecars -c "$creator" -k "$keywords" "$photofile_extension" "$SIDECAR_TEMPLATES_DIR" "$tmpdir" | \
+    ./items-builder/prepare_missing_sidecars -c "$creator" -k "$keywords" "$photofile_extension" "$SIDECAR_TEMPLATES_DIR" "$tmpdir"  | \
     ./import_items "$target_rootdir" | \
     ./post-processors/fix_photofile_timestamps | \
     ./post-processors/write_converted_jpg_iptc  -c "$creator" -k "$keywords" | \

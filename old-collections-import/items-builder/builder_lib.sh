@@ -6,8 +6,8 @@ function echo_item_added_targetpath() {
         targetpath_part=${targetpath_part:1}
     fi
 
-    if [[ $import_item =~ .+\|$ ]]; then
-        echo "$import_item$targetpath_part"      
+    if ! [[ $import_item =~ \|{1} ]]; then
+        echo "$import_item|$targetpath_part"      
     else
         echo "$import_item/$targetpath_part"      
     fi
