@@ -3,7 +3,7 @@
 set -eu
 source "$(dirname "$0")/items-builder/builder_lib.sh"
 
-target_rootdir=$1
+target_rootdir=$(readlink -e "$1")
 
 while read -r import_item; do
 
