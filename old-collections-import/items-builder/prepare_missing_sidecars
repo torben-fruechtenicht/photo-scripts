@@ -2,8 +2,9 @@
 
 set -ue
 
-declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/../.."
+source "$(dirname "$0")/builder_lib.sh"
 
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/../.."
 PATH="$BASE_DIR/rawtherapee/profile-builder:$PATH"
 
 while getopts "c:k:" opt; do
@@ -28,15 +29,14 @@ while read -r import_item; do
     # this action only reacts to what is in $import_item so we can echo it straight away (i.e. next action can already work on it)
     echo "$import_item"
 
-    source=$(cut -d'|' -f1 <<<"$import_item")
+    source=$(source_from_import_item "$import_item")
     if ! [[ $source =~ .+\.${photofile_extension} ]] || [[ -e ${source}.pp3 ]]; then
         continue
     fi
 
-    target=$(cut -d'|' -f2 <<<"$import_item")
-
     sidecar_file=$(create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS+-k "$KEYWORDS"} -t "$sidecars_tmpdir" \
         "$sidecar_templates_dir" "$source")
+    target=$(target_from_import_item "$import_item")
     echo "${sidecar_file}|${target}.pp3"
     
 done < /dev/stdin

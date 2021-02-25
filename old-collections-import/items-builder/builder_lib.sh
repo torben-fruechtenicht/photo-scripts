@@ -13,3 +13,13 @@ function echo_item_added_targetpath() {
     fi
 }
 
+function source_from_import_item() {
+    local -r import_item=$1
+    cut -d'|' -f1 <<<"$import_item"
+}
+
+function target_from_import_item() {
+    local -r import_item=$1
+    cut -d'|' -f2 <<<"$import_item"
+}
+

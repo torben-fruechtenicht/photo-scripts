@@ -9,9 +9,11 @@ declare -r camera=$1
 while read import_item; do  
     # filename pattern: <TITLE_INCL_UNDERSCORES>_<DAY>_<TIMEOFDAY>-<NUMBER>.<EXT>
 
-    source_path=$(cut -d'|' -f1 <<<"$import_item")
-    source_file=$(basename "$source_path")
-    source_dir=$(dirname "$source_path")
+    source=$(source_from_import_item "$import_item")
+    source_file=$(basename "$source")
+    source_dir=$(dirname "$source")
+
+    # FIXME TBD there is probably some unneeded complexity in the lines below (still there from the first iterations of this step)
 
     file_without_ext=${source_file%.*}
     ext=${source_file#*.}

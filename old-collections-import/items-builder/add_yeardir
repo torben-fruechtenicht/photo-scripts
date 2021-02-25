@@ -5,7 +5,7 @@ set -eu
 source "$(dirname "$0")/builder_lib.sh"
 
 while read import_item; do  
-    source=$(cut -d'|' -f1 <<<"$import_item")
+    source=$(source_from_import_item "$import_item")
     source_file=${source##*/}
 
     day=$(sed -r 's/[a-z_]+_([0-9]+)_[0-9]+-[0-9]+(-[0-9])?.[a-zA-Z]+/\1/' <<<$source_file)
