@@ -4,28 +4,29 @@ set -eu
 
 source "$(dirname "$0")/builder_lib.sh"
 
-declare -r camera=$1
+#   \1 title
+#   \2 day as YYYYMMDD
+#   \3 time of day as HH:MM
+#   \4 photo number with optional variant, e.g. "2343423" or "343434-5"
+#   \5 variant, unused/grouping only
+#   \6 file extension
+declare -r SED_PATTERN='([a-zA-Z_]+)_([0-9]{8})_([0-9]{4})-([0-9]+(-[0-9]+)?)\.([a-z0-9]{3})'
 
-while read import_item; do  
-    # filename pattern: <TITLE_INCL_UNDERSCORES>_<DAY>_<TIMEOFDAY>-<NUMBER>.<EXT>
+camera=$1
 
+while read -r import_item; do  
+    
     source=$(source_from_import_item "$import_item")
     source_file=$(basename "$source")
     source_dir=$(dirname "$source")
 
-    # FIXME TBD there is probably some unneeded complexity in the lines below (still there from the first iterations of this step)
+    title=$(sed -r 's/'"$SED_PATTERN"'/\1/' <<<$source_file | tr _ -)
+    day=$(sed -r 's/'"$SED_PATTERN"'/\2/' <<<$source_file)
+    time=$(sed -r 's/'"$SED_PATTERN"'/\3/' <<<$source_file)
+    number=$(sed -r 's/'"$SED_PATTERN"'/\4/' <<<$source_file)
+    extension=$(sed -r 's/'"$SED_PATTERN"'/\6/' <<<$source_file)
 
-    file_without_ext=${source_file%.*}
-    ext=${source_file#*.}
-
-    front_part=$(cut -d'-' -f1 <<<$file_without_ext)
-    number=$(cut -d'-' -f2 <<<$file_without_ext)
-
-    title=$(sed -r 's/([a-z_]+)_[0-9]+_[0-9]+(-[0-9])?/\1/' <<<$front_part | tr _ -)
-    day=$(sed -r 's/[a-z_]+_([0-9]+)_[0-9]+(-[0-9])?/\1/' <<<$front_part)
-    time=$(sed -r 's/[a-z_]+_[0-9]+_([0-9]+)(-[0-9])?/\1/' <<<$front_part)
-
-    target_filename="${title}_${day}_${time}_${camera}_${number}.${ext}"
+    target_filename="${title}_${day}_${time}_${camera}_${number}.${extension}"
 
     if [[ $source_dir =~ .+/converted ]]; then
         echo_item_added_targetpath "$import_item" "converted/$target_filename"
