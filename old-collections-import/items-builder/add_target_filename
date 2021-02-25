@@ -12,6 +12,12 @@ source "$(dirname "$0")/builder_lib.sh"
 #   \6 file extension
 declare -r SED_PATTERN='([a-zA-Z_]+)_([0-9]{8})_([0-9]{4})-([0-9]+(-[0-9]+)?)\.([a-z0-9]{3})'
 
+function uppercase_first_chars() (
+    for title_part in $(tr "-" "\n" < /dev/stdin); do
+        echo ${title_part^}
+    done | paste -s -d '-' -
+)
+
 camera=$1
 
 while read -r import_item; do  
@@ -20,7 +26,7 @@ while read -r import_item; do
     source_file=$(basename "$source")
     source_dir=$(dirname "$source")
 
-    title=$(sed -r 's/'"$SED_PATTERN"'/\1/' <<<$source_file | tr _ -)
+    title=$(sed -r 's/'"$SED_PATTERN"'/\1/' <<<$source_file | tr _ - | uppercase_first_chars)
     day=$(sed -r 's/'"$SED_PATTERN"'/\2/' <<<$source_file)
     time=$(sed -r 's/'"$SED_PATTERN"'/\3/' <<<$source_file)
     number=$(sed -r 's/'"$SED_PATTERN"'/\4/' <<<$source_file)
