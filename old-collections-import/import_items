@@ -15,8 +15,10 @@ while read -r import_item; do
         mkdir --parents "$target_dir"
     fi
 
-    cp --update --preserve=all "$source" "$target_path"
+    cp --update --preserve=all "$source" "$target_path" 
+    echo -n "#" >&2
     
     echo "$target_path"
 
 done < /dev/stdin
+echo " [DONE]" >&2

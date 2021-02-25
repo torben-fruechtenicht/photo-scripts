@@ -17,7 +17,7 @@ tmpdir=$(mktemp -d)
 cd "$(dirname "$0")/.."
 
 # artilleriewerk_schonenbourg_20081005_1507-000030
-imported_files=$(./find_files "$source_dir" "$photofile_extension" | \
+./find_files "$source_dir" "$photofile_extension" | \
     ./items-builder/new_item_from_source "$target_rootdir" | \
     ./items-builder/add_yeardir | \
     ./items-builder/add_albumdir "$album" | \
@@ -27,8 +27,7 @@ imported_files=$(./find_files "$source_dir" "$photofile_extension" | \
     ./import_items "$target_rootdir" | \
     ./post-processors/fix_photofile_timestamps | \
     ./post-processors/write_converted_jpg_iptc  -c "$creator" -k "$keywords" | \
-    ./post-processors/chmod_files)
-
-echo "[INFO] Imported $(wc -l <<<"$imported_files") files in $SECONDS seconds" >&2    
+    ./post-processors/chmod_files | \
+    ./post-processors/finish
 
 rm -rf "$tmpdir"    

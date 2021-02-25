@@ -56,6 +56,9 @@ while read -r file; do
     if [[ $file =~ .+/converted/.+\.jpg ]]; then
         write_jpeg_iptc "$file"
 
+        # if any of the operations in write_jpeg_iptc fails, exiv2 will leave
+        # its tmp files around. Delete any which match the pattern for these
+        # tmp files.
         if glob_matches "$file?*"; then
             rm $file?*
         fi
