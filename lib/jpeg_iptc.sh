@@ -10,7 +10,7 @@ jpeg_set_iptc() {
     local -r value=$3
 	
 	if [[ $key == "Keywords" ]]; then
-		echo "[ERROR] Keywords must be added with jpeg_set_iptc_keywords" >&2
+		echo "[ERROR] Keywords must be added with jpeg_add_iptc_keywords" >&2
 		return 1
 	fi
 
@@ -24,7 +24,7 @@ jpeg_get_iptc() {
 	exiv2 -PIt -K "Iptc.Application2.$key" "$jpg_file" 2> /dev/null
 }
 
-jpeg_set_iptc_keywords() {
+jpeg_add_iptc_keywords() {
 	local -r jpg_file=$1
     local -r keywords=$2
 
