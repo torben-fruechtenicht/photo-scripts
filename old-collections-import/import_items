@@ -5,6 +5,9 @@ source "$(dirname "$0")/items-builder/builder_lib.sh"
 
 target_rootdir=$(readlink -e "$1")
 
+# TBD if we ever reach a point where any postprocessing action requires all files from a photo to be present, we must
+# change this action so it only prints the complete list of files once all have been copied
+
 while read -r import_item; do
 
     target_path="${target_rootdir}/$(target_from_import_item "$import_item")"    

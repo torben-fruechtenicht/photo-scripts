@@ -46,6 +46,7 @@ process_rawtherapee_sidecar() {
 		local -r restore_write_protection=
 	fi
 
+	# TBD this can probably be removed: sidecar_add_iptc_keywords adds the section header, too if missing
 	if ! grep -q "^\[IPTC\]$" "$sidecar"; then
 		echo -e "\n[IPTC]\nKeywords=;\n" >> $sidecar			
 	fi
