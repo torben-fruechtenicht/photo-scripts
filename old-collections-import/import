@@ -1,0 +1,161 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/../.."
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/lib/strings.sh"
+source "$BASE_DIR/lib/jpeg_iptc.sh"
+source "$BASE_DIR/lib/exif.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
+source "$BASE_DIR/lib/iptc.sh"
+
+PATH="$BASE_DIR/lib:$BASE_DIR/rawtherapee/profile-builder:$PATH"
+
+declare -r SIDECAR_TEMPLATES_DIR="$HOME/Bilder/rawtherapee-profiles/templates"
+
+while getopts "o" opt; do
+    case $opt in
+        o ) 
+			declare -r OVERWRITE=;;   
+	esac
+done
+shift $(expr $OPTIND - 1)
+
+function collect_import_items() {
+    local camera=$1
+    local album=$2
+    
+    while read -r file; do
+        echo $(to_import_item "$file" "$camera" "$album")
+        echo -n "i" >&2
+    done < /dev/stdin     
+}
+
+function copy_import_items_to_target() {
+    local target_root=$1
+    local import_item
+    while read -r import_item; do
+        target_path="${target_root}/$(cut -d'|' -f2 <<<"$import_item")"    
+        target_dir=$(dirname "$target_path")
+        if ! [[ -e $target_dir ]]; then
+            mkdir --parents "$target_dir"
+        fi
+
+        if [[ -v OVERWRITE ]]; then
+            cp --force --preserve=all "$(cut -d'|' -f1 <<<"$import_item")" "$target_path" 
+            echo "$target_path"
+            echo -n "c" >&2
+        elif ! [[ -e $target_path ]]; then
+            cp --preserve=all "$(cut -d'|' -f1 <<<"$import_item")" "$target_path" 
+            echo "$target_path"
+            echo -n "c" >&2
+        fi
+        
+    done < /dev/stdin
+}
+
+function create_missing_files() {
+    local -r creator=$1
+    local imported_file
+    while read -r imported_file; do
+        echo "$imported_file"
+
+        if is_original_photofile  "$imported_file"; then
+            local sidecar="$imported_file.pp3"
+            if ! [[ -e "$sidecar" ]]; then
+                create_sidecar ${creator:+-c "$creator"} "$SIDECAR_TEMPLATES_DIR" "$imported_file"
+                echo -n "m" >&2
+            fi            
+        fi
+    done < /dev/stdin   
+}
+
+function normalize_metadata()  {
+    local creator=$1
+    local album=$2
+    local imported_file
+    while read -r imported_file; do
+
+        if is_original_photofile "$imported_file"; then
+            exiv2 -T "$imported_file"
+            chmod 444 "$imported_file"
+            echo -n "n" >&2
+        elif is_output_photofile "$imported_file"; then  
+
+            jpeg_set_iptc "$imported_file" "Byline" "$creator" 
+
+            year_from_exif=$(lookup_year_from_exif "$imported_file")
+            jpeg_set_iptc "$imported_file" "Copyright" "Copyright (c) $creator $year_from_exif"
+
+            jpeg_set_iptc "$imported_file" "Headline" "$(iptc_headline_from_photofile "$imported_file" )"
+            jpeg_set_iptc "$imported_file" "Caption" "$(iptc_caption_from "$(photoid "$imported_file")" "")"
+
+            jpeg_add_iptc_keywords "$imported_file" "$album"
+
+            original_photofile=$(find_original_photofile "$imported_file")
+            if [[ -e $original_photofile ]]; then
+                camera_from_exif=$(lookup_camera_from_exif $original_photofile)
+                lens_from_exif=$(lookup_lens_from_exif "$original_photofile")
+                manufacturer_from_exif=$(lookup_manufacturer_from_exif "$original_photofile")
+                jpeg_add_iptc_keywords "$imported_file" "${camera_from_exif:+$camera_from_exif;}${lens_from_exif:+$lens_from_exif;}$manufacturer_from_exif"
+            fi
+            
+            chmod 644 "$imported_file"
+
+            echo -n "n" >&2
+
+        elif is_rawtherapee_sidecar "$imported_file"; then
+            sidecar_add_iptc_keywords "$imported_file" "$album"
+            chmod 644 "$imported_file"
+            echo -n "n" >&2
+        fi
+
+        # FIXME we must not print files if we're not in OVERWRITE mode and the file exists
+        echo "$imported_file"
+    done < /dev/stdin    
+}
+
+function print_duration() {
+    local total_secs=$1
+    local mins secs
+    ((mins=${total_secs}/60))
+    ((secs=${total_secs}%60))
+    if [[ $mins != 0 ]]; then
+        echo "$mins minutes $secs seconds"
+    else 
+        echo "$secs seconds"
+    fi
+}
+
+function print_finish_info() {
+    local start_ts_secs=$1
+    local files=$(</dev/stdin)
+    
+    # add a leading newline to end the progress markers line
+    echo -e "\n$files"
+
+    secs_elapsed=$(( $(date +%s) - $start_ts_secs ))
+
+    if [[ -n $files ]]; then
+        echo "[INFO] Imported $(wc -l <<<"$files") files in $(print_duration "$secs_elapsed")" >&2    
+    fi
+}
+
+source_dir=$1
+target_rootdir=$2
+camera=$3
+album=$4
+creator=$5
+to_import_item_source=$6
+
+source "$6"
+
+start_ts=$(date +%s)
+
+find "$source_dir" -regextype posix-extended -type f  \
+    \( -iregex ".+/.+\.(orf|raw|cr2|crw|pp[23])" -or -iregex ".+/converted/.+\.(jpg|xcf)" \) |\
+collect_import_items "$camera" "$album" |\
+copy_import_items_to_target "$target_rootdir" | sponge |\
+create_missing_files "$creator" | normalize_metadata "$creator" "$album" |\
+print_finish_info "$start_ts"
