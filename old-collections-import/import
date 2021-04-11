@@ -111,7 +111,6 @@ function normalize_metadata()  {
             echo -n "n" >&2
         fi
 
-        # FIXME we must not print files if we're not in OVERWRITE mode and the file exists
         echo "$imported_file"
     done < /dev/stdin    
 }
@@ -137,8 +136,12 @@ function print_finish_info() {
 
     secs_elapsed=$(( $(date +%s) - $start_ts_secs ))
 
+    # FIXME wrong file count in OVERWRITE mode!
+
     if [[ -n $files ]]; then
         echo "[INFO] Imported $(wc -l <<<"$files") files in $(print_duration "$secs_elapsed")" >&2    
+    else 
+        echo "[WARN] No files have been imported" >&2
     fi
 }
 
@@ -149,13 +152,17 @@ album=$4
 creator=$5
 to_import_item_source=$6
 
-source "$6"
+if ! [[ -e $to_import_item_source ]]; then
+    echo "[ERROR] to_import_item source file $to_import_item_source does not exist" >&2
+    exit 1
+fi
+source "$to_import_item_source"
 
 start_ts=$(date +%s)
 
 find "$source_dir" -regextype posix-extended -type f  \
     \( -iregex ".+/.+\.(orf|raw|cr2|crw|pp[23])" -or -iregex ".+/converted/.+\.(jpg|xcf)" \) |\
-collect_import_items "$camera" "$album" |\
-copy_import_items_to_target "$target_rootdir" | sponge |\
-create_missing_files "$creator" | normalize_metadata "$creator" "$album" |\
-print_finish_info "$start_ts"
+collect_import_items "$camera" "$album" #|\
+# copy_import_items_to_target "$target_rootdir" | sponge |\
+# create_missing_files "$creator" | normalize_metadata "$creator" "$album" |\
+# print_finish_info "$start_ts"

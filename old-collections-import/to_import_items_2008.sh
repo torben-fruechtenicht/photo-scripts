@@ -20,11 +20,10 @@ function to_import_item() {
     fi
 
     local title=$(sed -r 's/'"$source_filename_pattern"'/\1/' <<<$source_filename | tr _ -)
-    local day=$(sed -r 's/'"$source_filename_pattern"'/\2/' <<<$source_filename)
     local time=$(sed -r 's/'"$source_filename_pattern"'/\3/' <<<$source_filename)
     local number=$(sed -r 's/'"$source_filename_pattern"'/\4/' <<<$source_filename)
     local extension=$(sed -r 's/'"$source_filename_pattern"'/\6/' <<<$source_filename)
-    target+="/${title}_${day}_${time}_${camera}_${number}.${extension}"
+    target+="/${title}_${fulldaydate}_${time}_${camera}_${number}.${extension}"
 
     echo "$source_file|$target"
 }
