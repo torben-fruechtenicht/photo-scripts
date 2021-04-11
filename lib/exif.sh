@@ -50,3 +50,8 @@ lookup_image_height_from_exif() {
 	local -r photofile=$1
 	exiv2 "$photofile" | grep "Image size" | sed -r 's/Image size\s+:\s+([0-9]+)\sx\s([0-9]+)/\2/'
 }
+
+lookup_year_from_exif() {
+	local -r photofile=$1
+	exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$photofile" 2> /dev/null | cut -d':' -f 1
+}

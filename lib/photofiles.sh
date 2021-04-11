@@ -18,9 +18,18 @@ declare -r PHOTO_FILENAME_PATTERN="${PHOTO_FULLNAME_PATTERN}${FILE_EXT_PATTERN}"
 
 declare -r OUTPUT_DIR_PATTERN="${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN}/${DAY_DIR_PATTERN}/converted"
 
-photoid() {
+function photoid() {
     local -r filename=$(basename "$1")
-    echo ${filename%%.*}
+    echo "${filename%%.*}"
+}
+
+function original_photoid() {
+    local -r photoid=$(photoid "$1")
+    if is_variant "$photoid"; then
+        echo "${photoid%-*}"
+    else
+        echo "$photoid"
+    fi
 }
 
 is_original_photofile() ( 
@@ -32,7 +41,7 @@ is_original_photofile() (
     [[ -f $file ]] && \
         # TODO use PHOTO_FULLNAME_PATTERN
         [[ $file =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]] && \
-        ! [[ $file =~ .+/converted/^/+$ ]]
+        ! [[ $file =~ .+/converted/[^/]+$ ]]
 )
 
 is_output_file() {
@@ -47,8 +56,7 @@ is_output_photofile() {
 
 is_variant() {
     local -r file=$1
-    [[ $file =~ \
-        (.+/)?${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${VARIANT_NUMBER_PATTERN} ]]
+    [[ $file =~ (.+/)?${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${VARIANT_NUMBER_PATTERN} ]]
 }
 
 is_jpeg() {
@@ -83,4 +91,8 @@ path_relative_to_album_from_file() {
     local -r file=$1
     local -r pattern="${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN}/(${DAY_DIR_PATTERN}/(converted/)?${PHOTO_FILENAME_PATTERN})"
     sed -r 's|'"$pattern"'|\1|' <<<"$file"
+}
+
+function cameraid_from_photoid() {
+    [[ $1 =~ $PHOTOID_PATTERN ]] && echo "${BASH_REMATCH[4]}"
 }

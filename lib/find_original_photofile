@@ -1,0 +1,45 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/photofiles.sh"
+
+function raw_extension_from_cameraid() {
+    case $1 in
+        e-m10 )
+            echo "ORF";;
+        g9 )
+            echo "CR2";;
+        s70 )
+            echo "CRW";;
+        fz50 )
+            echo "RAW";;
+    esac
+}
+
+# TODO add option to specify the extension, wil skip any fallback from raw to jpg
+# any external effects
+
+output_file=$1
+
+if is_output_file "$output_file"; then
+    original_dir=$(dirname "$(dirname "$output_file")")
+else
+    original_dir=$(dirname "$output_file")
+fi
+
+photoid=$(original_photoid "$output_file")
+
+cameraid=$(cameraid_from_photoid "$photoid")
+raw_extension=$(raw_extension_from_cameraid "$cameraid")
+
+original_photofile="$original_dir/$photoid.$raw_extension"
+# fallback: try lowercase extension
+if ! [[ -e $original_photofile ]]; then
+    original_photofile="$original_dir/$photoid.${raw_extension,,}"
+fi
+
+# TODO fallback: try jpg (upper and lowercase)
+
+echo "$original_photofile"
