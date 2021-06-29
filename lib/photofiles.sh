@@ -96,3 +96,14 @@ path_relative_to_album_from_file() {
 function cameraid_from_photoid() {
     [[ $1 =~ $PHOTOID_PATTERN ]] && echo "${BASH_REMATCH[4]}"
 }
+
+function title_from_photoid() {
+    local -r photoid=$(basename "$1")
+    [[ $photoid =~ $PHOTOID_PATTERN ]] && echo ${BASH_REMATCH[1]}
+}
+
+# fullnumber is including any variant info
+function fullnumber_from_photoid() {
+    local -r photoid=$(basename "$1")
+    [[ $photoid =~ $PHOTOID_PATTERN ]] && echo ${BASH_REMATCH[5]}
+}
