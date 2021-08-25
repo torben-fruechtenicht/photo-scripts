@@ -1,59 +1,24 @@
 #! /usr/bin/env bash
 
-set -u
+set -eu
 
-declare -r APP_DIR=$(readlink -m "$HOME/.local/share/photo-scripts/")
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/lib/exif.sh"
 
-export PATH="$APP_DIR:$BASE_DIR/rawtherapee:$BASE_DIR/lib:$PATH"
+export PATH="$BASE_DIR/rawtherapee:$BASE_DIR/lib:$PATH"
 
 # prepare the scaling profile holder
 declare -r SCALING_PROFILE_FILE=$(mktemp)
 
-delete_tmpfiles() {
+function delete_tmpfiles() {
 	test -e "$SCALING_PROFILE_FILE" && rm -f "$SCALING_PROFILE_FILE"
 }
 trap delete_tmpfiles EXIT
 
-while getopts "c:q:h" opt; do
-    case $opt in
-        c )
-            # 1-100
-            declare -r JPEG_COMPRESSION=$OPTARG;;
-        q )
-            # 1-3 (Best compression/Balanced/Best quality)
-            declare -r JPEG_QUALITY=$OPTARG;;
-        h ) 
-            declare -r SCALE_BY_HEIGHT=;;
-	esac
-done
-shift $(expr $OPTIND - 1 )
 
-if (( $# < 3 )); then
-    echo "[ERROR] Missing parameter, given parameters are: $@" >&2
-    exit 1
-fi
-
-# FIXME check if valid number   
-declare -r SCALE_TO=$1
-shift 1
-
-all_params=( $@ )
-params_count=${#all_params[@]}
-
-declare -r SOURCE_FILES=${all_params[@]:0:$params_count-1}
-
-declare -r TARGETDIR=$(readlink -e "${all_params[$params_count-1]}")
-if ! [[ -d $TARGETDIR ]]; then
-    echo "[ERROR] Target directory $TARGETDIR is no directory or does not exist" >&2
-    exit 1
-fi
-
-
-compute_scale() {
+function compute_scale() {
     local -r photofile=$1
     local -r target_value=$2
 
@@ -66,7 +31,7 @@ compute_scale() {
     bc <<<"scale=4; $target_value/$original_value" | awk '{printf "%f", $0}'
 }
 
-prepare_scaling_profile() {
+function prepare_scaling_profile() {
     local -r scale=$1
     echo "[Resize]
         Enabled=true
@@ -92,101 +57,49 @@ prepare_scaling_profile() {
         DeconvIterations=100"
 }
 
-scale_photo() {
-    local -r photofile=$1
-    local -r source_profile=$2
-    local -r targetfile=$3
-
-    local -r scale=$(compute_scale "$photofile" "$SCALE_TO")
-    echo "[INFO] Using scale of $scale for $photofile" >&2
-    prepare_scaling_profile "$scale" > "$SCALING_PROFILE_FILE"
-
-    # TODO check if target width or height are larger than actual height or width of the source. don't
-    # apply any scaling in that case, only copy the image file unchanged
-
-    rt_process -p "$source_profile" -p "$SCALING_PROFILE_FILE" \
-        ${JPEG_COMPRESSION+-c $JPEG_COMPRESSION} ${JPEG_QUALITY+-q $JPEG_QUALITY} \
-        "$photofile" "$targetfile"
-    local -r rc=$?
-    if [[ $rc != 0 ]]; then
-        echo "[ERROR] Failed to run rt_process, return code was $rc" >&2
-        exit 1
-    fi
-}
-
-find_photofile() {
-    # find original by taking the photoid of the converted file (jpeg) without variant and extensions
-    # and look for a file in parent folder which matches that name (and is the original, hopefully)
-
-    local -r converted_file=$1
-    local -r photo_filename=$(basename "$1")
-    local -r photoid=$(sed -r 's/(.+_[0-9a-zA-Z]+)-[0-9]+$/\1/' <<<${photo_filename%%.*})
-
-    local -r originals_dir="$(dirname "$converted_file")/.."
-    local -r photofile_matches=$(find "$originals_dir" -regextype posix-extended -maxdepth 1 -type f \
-        -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)" -name "${photoid}*")
-    if [[ $(wc -l <<<"$photofile_matches") != 1 ]]; then
-        # TBD if we have original photofiles as both raw and jpg, we will find these two. And now how do we
-        # find out if the converted file was created from raw or jpg? neither filenames or exif give any clue
-        # -> for now, let's just assume there will never be converted versions of both the raw and the jpg original
-        # -> if needed, we can introduce a parameter which allows to enforce either raw of jpeg
-        echo -e "[ERROR] Found more than one file matching $photoid:\n$photofile_matches" >&2
-    elif ! is_original_photofile "$photofile_matches"; then
-        echo -e "[ERROR] Found no original photofile matching $photoid, other matches are:\n$photofile_matches" >&2
-    else
-        echo "$photofile_matches"
-    fi
-}
-
-# when saving from GUI Rawtherapee, output sidecars are named "photo.jpg.out.pp3" but are lacking the "out" extension
-# if the cli version was used. find_output_sidecar first tries the "out" version, then without
-find_output_sidecar() {
-    local -r output_file=$1
-    local output_sidecar=$(readlink -e "$output_file.out.pp3")
-    if [[ -n $output_sidecar ]]; then
-        echo "$output_sidecar"
-    else
-        echo $(readlink -e "$output_file.pp3")
-    fi
-}
-
-
-for sourcefile in $SOURCE_FILES; do
-    sourcefile=$(readlink -m "$sourcefile")
-    if ! [[ -f $sourcefile ]]; then
-        echo "[ERROR] Source file $sourcefile does not exist" >&2
-        continue
-    fi
-
-    if ! is_output_photofile "$sourcefile"; then
-        echo "[ERROR] Source file $sourcefile is not an output photofile" >&2
-        continue
-    fi 
-
-    photofile=$(find_photofile "$sourcefile")
-    if [[ -z $photofile ]]; then
-        echo "[ERROR] No photofile found for source file$sourcefile" >&2
-        continue
-    fi
-
-    source_profile=$(find_output_sidecar "$sourcefile")
-    if [[ -z $source_profile ]]; then
-        echo "[ERROR] Source profile $source_profile not found" >&2
-        continue
-    fi
-
-    targetfile="$TARGETDIR/$(basename "$sourcefile")"
-    
-    scale_photo "$photofile" "$source_profile" "$targetfile"
-    if ! [[ -e $targetfile ]]; then
-        echo "[ERROR] Scaled version $targetfile was not created" >&2
-        exit 1
-    fi
-
-    # set iptc properties for headline and caption to preserve correct name when the 
-    # photo is a variant
-    if is_variant "$sourcefile"; then
-        set_title_in_iptc "$targetfile" "$(photoid "$targetfile")"
-    fi
-
+while getopts "c:q:hp:" opt; do
+    case $opt in
+        c )
+            # 1-100
+            declare -r JPEG_COMPRESSION=$OPTARG;;
+        q )
+            # 1-3 (Best compression/Balanced/Best quality)
+            declare -r JPEG_QUALITY=$OPTARG;;
+        h ) 
+            declare -r SCALE_BY_HEIGHT=;;
+        p )
+            declare -r PROFILE=$OPTARG;;
+	esac
 done
+shift $(expr $OPTIND - 1 )
+
+if (( $# < 3 )); then
+    echo "[ERROR] Missing parameter, given parameters are: $@" >&2
+    exit 1
+fi
+
+# FIXME check if valid number   
+declare -r SCALE_TO=$1
+
+original=$(readlink -e "$2")
+if [[ -z $original ]]; then
+    echo "[ERROR] original missing" >&2
+    exit 1
+fi
+
+target=$3
+if [[ -z $target ]]; then
+    echo "[ERROR] Target missing" >&2
+    exit 1
+fi
+
+scale=$(compute_scale "$original" "$SCALE_TO")
+# echo "[INFO] Using scale of $scale for $photofile" >&2
+prepare_scaling_profile "$scale" > "$SCALING_PROFILE_FILE"
+
+# TODO check if target width or height are larger than actual height or width of the source. don't
+# apply any scaling in that case, only copy the image file unchanged
+
+rt_process ${PROFILE+-p "$PROFILE"} -p "$SCALING_PROFILE_FILE" \
+    ${JPEG_COMPRESSION+-c $JPEG_COMPRESSION} ${JPEG_QUALITY+-q $JPEG_QUALITY} \
+    "$original" "$target"

@@ -2,9 +2,15 @@
 
 set -eu
 
-declare -r APP_DIR=$(readlink -m "$HOME/.local/share/photo-scripts/")
+declare -r APPDIR=$(readlink -m "$HOME/.local/share/photo-scripts/")
+declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/.."
 
-export PATH="$APP_DIR:$PATH"
+# TODO TBD we are only adding APPDIR to PATH because we want to run rawtherapee via the symlink installed
+# in APPDIR. 
+# => actually, it should be the calling script (the root one) which manipulates the path for that purpose
+export PATH="$BASEDIR/lib:$APPDIR:$PATH"
+
+source "$BASEDIR/lib/photofiles.sh"
 
 while getopts "p:c:q:s" opt; do
     case $opt in
@@ -17,23 +23,29 @@ while getopts "p:c:q:s" opt; do
         p ) 
             PROFILES="${PROFILES-}${PROFILES+ }-p $OPTARG";;
         s )
-            SAVE_SIDECAR=;;    
+            SAVE_SIDECAR=;; 
+        o ) 
+            OVERRIDE=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
 
 declare -r SOURCE=$(readlink -m "$1")
 if ! [[ -e $SOURCE ]] && ! [[ -f $SOURCE ]]; then
-    echo "[ERROR] Source file $SOURCE does not exist"
+    echo "[ERROR] Source file $SOURCE does not exist" >&2
     exit 1
 fi
 
 if [[ $# = 2 ]]; then
     declare -r TARGET=$(readlink -m "$2")
+    if [[ -z $TARGET ]]; then
+        echo "[ERROR] Given target does not exist" >&2
+        exit 1
+    fi
 fi
 
 
-next_variant() {
+function next_variant() {
     local -r source_photoid=$1
     local -r targetdir=$2
 
@@ -56,7 +68,7 @@ next_variant() {
     fi
 }
 
-compute_targetfile() {
+function compute_targetfile() {
     local -r source_filename=$(basename "$1")
     local -r targetdir=$2
     local -r photoid=${source_filename%%.*} 
@@ -69,45 +81,59 @@ compute_targetfile() {
     fi    
 }
 
-target_is_directory() {
+function target_is_directory() {
     local -r target=$1
     ! [[ $target =~ .+\..+ ]]
 }
 
-print_duration() {
-    local mins secs
-    ((mins=${SECONDS}/60))
-    ((secs=${SECONDS}%60))
-    if [[ $mins != 0 ]]; then
-        echo "$mins minutes $secs seconds"
-    else 
-        echo "$secs seconds"
-    fi
+# no TARGET: output is set to converted dir relative to SOURCE
+# TARGET is a file: output = -o is set to that file
+
+function targetfile_in_std_converted_dir() {
+    local -r sourcefile=$1
+    local -r sourcedir=$(dirname "$sourcefile")
+    local -r targetdir="$sourcedir/converted"
+
+    test -e "$targetdir" || mkdir "$targetdir"
+
+    compute_targetfile "$sourcefile" "$targetdir"
+}
+
+function targetfile_in_dir_from_params() {
+    local -r sourcefile=$1
+    local -r targetdir=$2
+
+    test -e "$targetdir" || mkdir "$targetdir"
+
+    compute_targetfile "$sourcefile" "$targetdir"
 }
 
 
 if ! [[ -v TARGET ]]; then
-    sourcedir=$(dirname "$SOURCE")
-    targetdir="$sourcedir/converted"
-    test -e "$targetdir" || mkdir "$targetdir"
-    declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$targetdir")
+    declare -r TARGETFILE=$(targetfile_in_std_converted_dir "$SOURCE")
 elif target_is_directory "$TARGET"; then
-    test -e "$TARGET" || mkdir "$TARGET"
-    declare -r TARGETFILE=$(compute_targetfile "$SOURCE" "$TARGET")
+    declare -r TARGETFILE=$(targetfile_in_dir_from_params "$SOURCE" "$TARGET")
 else 
+    # if TARGET is a file, we assume that either it does not exist or that OVERRIDE has been set.
+    # if not, bad luck
     declare -r TARGETFILE="$TARGET"
 fi
 
-
-if [[ -e $TARGETFILE ]]; then
-    echo "[ERROR] Target file $TARGETFILE exists already" >&2
-    exit 1
-fi
+# "-Y" will make rawtherapee overwrite any existing files
+# FIXME this will not work if TARGET is only a directory because compute_targetfile will already 
+# decide that a variant will be created
 # "-c" is not a real option but rather a marker, "only input files/dirs after this" - that's why all other options must go
 # before that marker
 rawtherapee --cli \
     ${JPEG_COMPRESSION+-j$JPEG_COMPRESSION} ${JPEG_QUALITY+-js$JPEG_QUALITY} \
     ${PROFILES--s} ${PROFILES+$PROFILES} \
-    ${SAVE_SIDECAR+-O}${SAVE_SIDECAR--o} "$TARGETFILE" \
-    -c "$SOURCE" &> /dev/null && echo "$TARGETFILE"
-echo "[INFO] Processing took $(print_duration)" >&2
+    ${OVERRIDE+-Y} ${SAVE_SIDECAR+-O}${SAVE_SIDECAR--o} "$TARGETFILE" \
+    -c "$SOURCE" &> /dev/null
+
+# if the photo is a variant, set iptc properties for headline and caption to preserve correct name
+if is_variant "$TARGETFILE"; then
+    set_title_in_iptc "$TARGETFILE" "$(photoid "$TARGETFILE")"
+fi
+echo "$TARGETFILE"
+
+
