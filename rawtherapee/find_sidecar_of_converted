@@ -1,0 +1,25 @@
+#! /usr/bin/env bash
+
+set -eu
+
+# Tries to find the sidecar to a converted file. 
+# RawTherapee used to save sidecars as <FILENAME>.jpg.pp3 but then switched to using <FILENAME>.jpg.out.pp3
+
+function echo_if_exists_and_exit() {
+    local -r possible_sidecar_file=$1
+    if [[ -e $possible_sidecar_file ]]; then
+        echo "$possible_sidecar_file"
+        exit
+    fi    
+}
+
+converted_file=$1
+converted_filename=$(basename "$converted_file")
+converted_dir=$(dirname "$converted_file")
+
+echo_if_exists_and_exit "$converted_dir/$converted_filename.out.pp3"
+echo_if_exists_and_exit "$converted_dir/$converted_filename.pp3"
+echo_if_exists_and_exit "$converted_dir/$converted_filename.pp2"
+
+echo "No sidecar found for $converted_file" >&2
+exit 1

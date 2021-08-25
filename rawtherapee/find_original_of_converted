@@ -1,0 +1,38 @@
+#! /usr/bin/env bash
+
+# find original by taking the photoid of a converted file (jpeg) without variant and extensions
+# and look for a file in parent folder which matches that name (and is the original, hopefully)
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+
+source "$BASE_DIR/lib/photofiles.sh"
+
+converted_file=$1
+if ! [[ -e $converted_file ]]; then
+    echo "[ERROR] given file $converted_file does not exist" >&2
+    exit 1
+fi
+
+if ! is_output_photofile "$converted_file"; then
+    echo "[ERROR] given file $converted_file is no output photofile" >&2
+    exit 1
+fi
+
+photoid=$(original_photoid "$converted_file")
+originals_dir="$(dirname "$converted_file")/.."
+
+original_matches=$(find "$originals_dir" -regextype posix-extended -maxdepth 1 -type f \
+    -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)" -name "${photoid}*")
+matches_count=$(wc -l <<<"$original_matches")    
+if [[ $matches_count = 1 ]]; then
+    echo $(readlink -e "$original_matches")
+elif [[ $matches_count = 2 ]]; then
+    # TBD if we have original photofiles as both raw and jpg, we will find these two. And now how do we
+    # find out if the converted file was created from raw or jpg? neither filenames or exif give any clue
+    # -> for now, let's just assume there will never be converted versions of both the raw and the jpg original
+    # -> if needed, we can introduce a parameter which allows to enforce either raw of jpeg
+    echo -e "[ERROR] Found more than one file matching $photoid:\n$original_matches" >&2
+    exit 1
+fi
