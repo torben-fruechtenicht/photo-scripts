@@ -4,6 +4,7 @@ set -eu
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/lib/jpeg_iptc.sh"
 
 search_dir=$1
 if ! [[ -e $search_dir ]]; then
@@ -21,10 +22,8 @@ find "$search_dir" -regextype posix-extended -type f -cnewer "$timestamp_file" \
     -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN\.jpg" |\
 while read -r file; do 
 
-    # FIXME TBD how to handle string with spaces? 
-
-    title="$(title_from_photoid "$file") $(fullnumber_from_photoid "$file")"
+    title="$(jpeg_get_iptc "$file" "Headline")"
     album=$(albumname_from_file "$file")
 
-    echo "$file $title $album"
+    echo "$file|$title|$album"
 done
