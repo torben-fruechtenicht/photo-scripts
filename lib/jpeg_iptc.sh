@@ -19,7 +19,7 @@ function __safe_exiv2_call() (
 
 	local exiv2_out exiv2_rc
 
-	exiv2_out=$(exiv2 "$@" "$file" 2>&1)
+	exiv2_out=$(exiv2 -q "$@" "$file" 2>&1)
 	exiv2_rc=$?
 
 	if [[ $exiv2_rc != 0 ]]; then
@@ -35,7 +35,7 @@ function __safe_exiv2_call() (
 		# even if the call was successful, there might have been errors. since there is no easy
 		# way to already have stdout and stderr handled separately, we must work around this here
 		# by greping
-		# extra "|| true" added so we don't have a bad return code if there were no error string to filter out
+		# extra "|| true" added so we don't have a bad return code if there were no error strings to hide
 		echo "$exiv2_out" | grep -v "Error:" || true
 	fi
 
