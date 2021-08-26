@@ -86,9 +86,6 @@ function target_is_directory() {
     ! [[ $target =~ .+\..+ ]]
 }
 
-# no TARGET: output is set to converted dir relative to SOURCE
-# TARGET is a file: output = -o is set to that file
-
 function targetfile_in_std_converted_dir() {
     local -r sourcefile=$1
     local -r sourcedir=$(dirname "$sourcefile")
