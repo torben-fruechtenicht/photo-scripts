@@ -31,7 +31,7 @@ function __safe_exiv2_call() (
 		if glob_matches "$file?*"; then
 			rm $file?*
 		fi
-	else 
+	elif [[ -n $exiv2_out ]]; then
 		# even if the call was successful, there might have been errors. since there is no easy
 		# way to already have stdout and stderr handled separately, we must work around this here
 		# by greping
