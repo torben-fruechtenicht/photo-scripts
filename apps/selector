@@ -17,7 +17,7 @@ source "$BASE_DIR/apps/lib/notification.sh"
 
 function get_search_directory() {
     local -r search_dir_name=$1
-    grep "$search_dir_name" "$SEARCH_DIRECTORIES_FILE" | cut -d"=" -f2
+    grep "$search_dir_name=" "$SEARCH_DIRECTORIES_FILE" | cut -d"=" -f2
 }
 
 declare -r SEARCH_DIRECTORIES_FILE=$HOME/.local/share/photo-scripts/selector_directories
@@ -119,7 +119,8 @@ day_dir_glob=$(date_path_glob "$YEAR" "$month_value" "$DAY_OF_MONTH")
 title_sanitized=$(tr ' ' '-' <<<"$TITLE")
 filename_glob=$(filename_glob "$title_sanitized" "$YEAR" "$month_value" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$NUMBER_TAIL")
 
-find "$SEARCH_DIR" -regextype posix-extended -type f \
+# "-H" added for cases whhere $SEARCH_DIR is a symlink (-H will follow symlinks on command line but in the actual search)
+find -H "$SEARCH_DIR" -regextype posix-extended -type f \
         -ipath "*/$year_dir_glob/$album_dir_glob/$day_dir_glob/$filename_glob.???" \
         -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)" ! -path "*/converted/*" | \
 # run all found files through range checks but skip all checks if no ranges are in use
