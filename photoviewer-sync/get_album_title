@@ -1,0 +1,22 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/lib/jpeg_iptc.sh"
+
+function print_file_album_photoid() {
+    local -r file=$1
+
+    local -r title="$(jpeg_get_iptc "$file" "Headline")"
+    local -r album=$(albumname_from_file "$file")
+
+    echo "$file|$title|$album"
+}
+
+if [[ $1 == "-" ]]; then
+    while read -r file; do print_file_album_photoid "$file"; done < /dev/stdin
+else
+    for file in $*; do print_file_album_photoid "$file"; done
+fi
