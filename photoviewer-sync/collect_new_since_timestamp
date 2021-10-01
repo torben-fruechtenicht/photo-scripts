@@ -6,14 +6,14 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
 
-search_dir=$1
-if ! [[ -e $search_dir ]]; then
+search_dir=$(readlink -e "$1")
+if [[ -z $search_dir ]]; then
     echo "[ERROR] search dir $search_dir does not exist" >&2
     exit 1
 fi
 
-timestamp_file=$2
-if ! [[ -e $timestamp_file ]]; then
+timestamp_file=$(readlink -e "$2")
+if [[ -z $timestamp_file ]]; then
     echo "[ERROR] timestamp file $timestamp_file does not exist" >&2
     exit 1
 fi
