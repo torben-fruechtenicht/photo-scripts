@@ -1,3 +1,5 @@
+# N.B. regex type used below is posix-extended
+
 declare -r ROOTDIR_PATTERN="/.+"
 declare -r YEAR_DIR_PATTERN="[0-9]{4}"
 declare -r ALBUM_DIR_PATTERN="[^/]+"
@@ -7,14 +9,18 @@ declare -r TITLE_PATTERN="([^_]+)" # \1
 declare -r DATE_PATTERN="([0-9]{8})" # \2
 declare -r TIME_PATTERN="([0-9]{4})" # \3
 declare -r CAMERA_PATTERN="([a-zA-Z0-9-]+)" # \4
+# NUMBER_PATTERN includes an optional pattern for variants
 declare -r NUMBER_PATTERN="([0-9A-Z]+(-[a-zA-Z0-9-]+)?)" # \5
+# Unlike for NUMBER_PATTERN, here the variant is required
 declare -r VARIANT_NUMBER_PATTERN="([0-9A-Z]+(-[a-zA-Z0-9-]+))" # \5
+# Simple extensions, not multiple ones (like "FILE.jpg.out.pp3")
 declare -r FILE_EXT_PATTERN="(\.[a-ZA-Z0-9]{3})+" # \6
 
+# deprecated
 declare -r PHOTO_FULLNAME_PATTERN="${TITLE_PATTERN}_${DATE_PATTERN}_${TIME_PATTERN}_${CAMERA_PATTERN}_${NUMBER_PATTERN}"
 declare -r PHOTOID_PATTERN=$PHOTO_FULLNAME_PATTERN
 
-declare -r PHOTO_FILENAME_PATTERN="${PHOTO_FULLNAME_PATTERN}${FILE_EXT_PATTERN}"
+declare -r PHOTO_FILENAME_PATTERN="${PHOTOID_PATTERN}${FILE_EXT_PATTERN}"
 
 declare -r OUTPUT_DIR_PATTERN="${ROOTDIR_PATTERN}/${YEAR_DIR_PATTERN}/${ALBUM_DIR_PATTERN}/${DAY_DIR_PATTERN}/converted"
 

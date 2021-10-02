@@ -2,9 +2,13 @@
 
 set -eu
 
-source_dir=$1
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/photofiles.sh"
 
-# TODO use patterns from photofiles.sh
-# FIXME get album from iptc
-find  "$source_dir"  -type f -iregex ".+/converted/[^/]+\.jpg" -printf '%p\n' |\
-    sed -r 's|.*/[0-9]{4}/([^/]+)/[0-9]{4}-[0-9]{2}-[0-9]{2}/converted/(.+)|\1 \2|' | sort -u
+source_dir=$(readlink -e "$1")
+
+find "$source_dir" -type f \
+    -regextype posix-extended -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN.jpg" \
+    -printf '%p\n' |\
+while read -r file; do echo "$(albumname_from_file "$file") $(photoid "$file")"; done |\
+sort -u
