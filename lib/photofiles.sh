@@ -13,7 +13,7 @@ declare -r CAMERA_PATTERN="([a-zA-Z0-9-]+)" # \4
 declare -r NUMBER_PATTERN="([0-9A-Z]+(-[a-zA-Z0-9-]+)?)" # \5
 # Unlike for NUMBER_PATTERN, here the variant is required
 declare -r VARIANT_NUMBER_PATTERN="([0-9A-Z]+(-[a-zA-Z0-9-]+))" # \5
-# Simple extensions, not multiple ones (like "FILE.jpg.out.pp3")
+# Covers simple and multiple (e.g. "FILE.jpg.out.pp3") extensions
 declare -r FILE_EXT_PATTERN="(\.[a-ZA-Z0-9]{3})+" # \6
 
 # deprecated

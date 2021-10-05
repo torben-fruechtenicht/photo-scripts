@@ -10,5 +10,8 @@ source_dir=$(readlink -e "$1")
 find "$source_dir" -type f \
     -regextype posix-extended -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN.jpg" \
     -printf '%p\n' |\
-while read -r file; do echo "$(albumname_from_file "$file") $(photoid "$file")"; done |\
-sort -u
+while read -r file; do 
+    album=$(albumname_from_file "$file")
+    photoid=$(basename "$file")
+    echo "$album $photoid"
+done | sort -u
