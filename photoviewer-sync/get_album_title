@@ -9,7 +9,10 @@ source "$BASE_DIR/lib/jpeg_iptc.sh"
 function print_file_album_photoid() {
     local -r file=$1
 
-    local -r title="$(jpeg_get_iptc "$file" "Headline")"
+    local title="$(jpeg_get_iptc "$file" "Headline")"
+    if [[ -z $title ]]; then
+        title="$(title_from_photoid "$file") $(fullnumber_from_photoid "$file")"
+    fi
     local -r album=$(albumname_from_file "$file")
 
     echo "$file|$title|$album"
