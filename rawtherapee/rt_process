@@ -25,6 +25,7 @@ while getopts "p:c:q:s" opt; do
         s )
             SAVE_SIDECAR=;; 
         o ) 
+            # TODO rename to OVERWRITE or FORCE
             OVERRIDE=;;
 	esac
 done

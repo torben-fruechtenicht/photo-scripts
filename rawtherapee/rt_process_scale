@@ -57,6 +57,8 @@ function prepare_scaling_profile() {
         DeconvIterations=100"
 }
 
+# FIXME add OVERWRITE OPTION or allow pass-through params
+
 while getopts "c:q:hp:" opt; do
     case $opt in
         c )
