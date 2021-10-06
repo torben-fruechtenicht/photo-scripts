@@ -10,5 +10,7 @@ source_dir=$(readlink -e "$1")
 find  "$source_dir"  -type f \
     -regextype posix-extended -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN.jpg" \
     -printf '%p\n' |\
-sed -r 's|.*/[0-9]{4}/[^/]+/[0-9]{4}-[0-9]{2}-[0-9]{2}/converted/(.+)|\1|' |\
+while read -r file; do
+    echo "$(basename "$file")"
+done |\
 sort -u
