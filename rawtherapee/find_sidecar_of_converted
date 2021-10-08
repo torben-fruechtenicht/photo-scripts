@@ -22,4 +22,3 @@ echo_if_exists_and_exit "$converted_dir/$converted_filename.pp3"
 echo_if_exists_and_exit "$converted_dir/$converted_filename.pp2"
 
 echo "No sidecar found for $converted_file" >&2
-exit 1
