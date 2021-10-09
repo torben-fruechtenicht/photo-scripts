@@ -12,7 +12,7 @@ export PATH="$BASEDIR/lib:$APPDIR:$PATH"
 
 source "$BASEDIR/lib/photofiles.sh"
 
-while getopts "p:c:q:s" opt; do
+while getopts "p:c:q:so" opt; do
     case $opt in
         c )
             # 1-100
@@ -25,8 +25,7 @@ while getopts "p:c:q:s" opt; do
         s )
             SAVE_SIDECAR=;; 
         o ) 
-            # TODO rename to OVERWRITE or FORCE
-            OVERRIDE=;;
+            OVERWRITE=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -112,7 +111,7 @@ if ! [[ -v TARGET ]]; then
 elif target_is_directory "$TARGET"; then
     declare -r TARGETFILE=$(targetfile_in_dir_from_params "$SOURCE" "$TARGET")
 else 
-    # if TARGET is a file, we assume that either it does not exist or that OVERRIDE has been set.
+    # if TARGET is a file, we assume that either it does not exist or that OVERWRITE has been set.
     # if not, bad luck
     declare -r TARGETFILE="$TARGET"
 fi
@@ -125,7 +124,7 @@ fi
 rawtherapee --cli \
     ${JPEG_COMPRESSION+-j$JPEG_COMPRESSION} ${JPEG_QUALITY+-js$JPEG_QUALITY} \
     ${PROFILES--s} ${PROFILES+$PROFILES} \
-    ${OVERRIDE+-Y} ${SAVE_SIDECAR+-O}${SAVE_SIDECAR--o} "$TARGETFILE" \
+    ${OVERWRITE+-Y} ${SAVE_SIDECAR+-O}${SAVE_SIDECAR--o} "$TARGETFILE" \
     -c "$SOURCE" &> /dev/null
 
 # if the photo is a variant, set iptc properties for headline and caption to preserve correct name

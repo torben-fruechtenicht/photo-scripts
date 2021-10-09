@@ -57,9 +57,7 @@ function prepare_scaling_profile() {
         DeconvIterations=100"
 }
 
-# FIXME add OVERWRITE OPTION or allow pass-through params
-
-while getopts "c:q:hp:" opt; do
+while getopts "c:q:hp:o" opt; do
     case $opt in
         c )
             # 1-100
@@ -71,6 +69,8 @@ while getopts "c:q:hp:" opt; do
             declare -r SCALE_BY_HEIGHT=;;
         p )
             declare -r PROFILE=$OPTARG;;
+        o ) 
+            declare -r OVERWRITE=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -102,6 +102,6 @@ prepare_scaling_profile "$scale" > "$SCALING_PROFILE_FILE"
 # TODO check if target width or height are larger than actual height or width of the source. don't
 # apply any scaling in that case, only copy the image file unchanged
 
-rt_process ${PROFILE+-p "$PROFILE"} -p "$SCALING_PROFILE_FILE" \
+rt_process ${OVERWRITE+-o} ${PROFILE+-p "$PROFILE"} -p "$SCALING_PROFILE_FILE" \
     ${JPEG_COMPRESSION+-c $JPEG_COMPRESSION} ${JPEG_QUALITY+-q $JPEG_QUALITY} \
     "$original" "$target"
