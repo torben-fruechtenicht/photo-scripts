@@ -6,6 +6,8 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
 
+PATH="$(dirname "$(readlink -e "$0")"):$PATH"
+
 search_dir=$(readlink -e "$1")
 if [[ -z $search_dir ]]; then
     echo "[ERROR] search dir $search_dir does not exist" >&2
@@ -19,11 +21,4 @@ if [[ -z $timestamp_file ]]; then
 fi
 
 find "$search_dir" -regextype posix-extended -type f -cnewer "$timestamp_file" \
-    -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN\.jpg" |\
-while read -r file; do 
-
-    title="$(jpeg_get_iptc "$file" "Headline")"
-    album=$(albumname_from_file "$file")
-
-    echo "$file|$title|$album"
-done
+    -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN\.jpg" | xargs --no-run-if-empty get_album_title
