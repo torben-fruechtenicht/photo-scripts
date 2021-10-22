@@ -1,0 +1,47 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR=$(readlink -e "$(dirname "$0")/..")
+source "$BASE_DIR/lib/jpeg_iptc.sh"
+
+declare -r AUDIENCES_MAPPINGS="$HOME/.local/share/photo-scripts/audiences_iptc_keywords.map"
+
+function keywords_csv_to_egrep_pattern() {
+    local -r csv_list=$1
+    OLD_IFS=$IFS
+    IFS=";"
+    for keyword in $csv_list; do 
+        echo "$keyword"
+    done | paste -s -d '|' -
+    IFS=$OLD_IFS
+}
+
+function has_keywords_matching_audience() {
+    local file=$1
+    local audience=$2
+    local keywords=$(grep "$audience" "$AUDIENCES_MAPPINGS" | cut -d"=" -f2)
+    if [[ -z $keywords ]]; then
+        return 1
+    fi
+    local pattern=$(keywords_csv_to_egrep_pattern "$keywords")
+    # FIXME handle the case that there are no iptc keywords
+    jpeg_get_iptc "$file" "Keywords" | grep -E -q "$pattern"
+}
+
+# TBD just an idea: for custom audiences, add lines like audience-CUSTOM to mappings file
+# scan for lines matching "audience-*=*", iterate these audiences before all others
+
+photofile=$1
+
+OLD_IFS=$IFS
+IFS= 
+for audience_key in private family friends; do
+    if has_keywords_matching_audience "$photofile" "$audience_key"; then
+        echo "$audience_key"
+        exit
+    fi
+done
+IFS=$OLD_IFS
+# if no restricted audience matched, consider it to be public
+echo "public"
