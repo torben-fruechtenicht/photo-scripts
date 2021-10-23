@@ -8,17 +8,7 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
 
-function get_audience() {
-    local photofile=$1
-    local private_keywords=$2
-    if [[ -z $private_keywords ]] || is_private "$photofile" "$private_keywords"; then
-        echo "private"
-    else 
-        echo "public"
-    fi
-}
-
-function print_file_album_photoid() {
+function print_metadata() {
     local -r file=$(readlink -m "$1")
 
     local title="$(jpeg_get_iptc "$file" "Headline")"
@@ -26,18 +16,13 @@ function print_file_album_photoid() {
         title="$(title_from_photoid "$file") $(fullnumber_from_photoid "$file")"
     fi
     local album=$(albumname_from_file "$file")
-    local audience=$(get_audience "$file" "$private_keywords")
+    local audience=$(get_audience_from_iptc_keywords "$file")
 
     echo "$file|$title|$album|$audience"
 }
 
-
-private_keywords=$1
-
-shift 1
-
 if [[ $1 == "-" ]]; then
-    while read -r file; do print_file_album_photoid "$file"; done < /dev/stdin
+    while read -r file; do print_metadata "$file"; done < /dev/stdin
 else
-    for file in $*; do print_file_album_photoid "$file"; done
+    for file in $*; do print_metadata "$file"; done
 fi
