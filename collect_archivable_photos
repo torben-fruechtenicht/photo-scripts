@@ -52,4 +52,4 @@ done | sort -u | \
 while read -r fullname; do
     find "$SEARCH_DIR" -regextype posix-extended -type f \
         -iregex ".+/$fullname\.(ORF|RAW|JPG|CRW|CR2)$" ! -path '*/converted/*'
-done
+done | sort -u
