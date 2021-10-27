@@ -14,7 +14,7 @@ while getopts "fc" opt; do
         f ) 
 			declare -r FORCE_OVERWRITE=;;
         c ) 
-            shopt -u nocasematch
+            shopt -u nocasematch;;
 	esac
 done
 shift $(expr $OPTIND - 1 )

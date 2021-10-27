@@ -23,9 +23,6 @@ while getopts "c" opt; do
 done
 shift $(expr $OPTIND - 1 )
 
-declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
-
-
 augment_user_keywords() {
     local keywords=$1
 
@@ -46,7 +43,7 @@ equals_TRUE() {
 }
 
 
-declare -r PHOTOS=$(selector "$SEARCH_DIR")
+declare -r PHOTOS=$(selector)
 selector_rc=$? 
 if [[ $selector_rc == 101 ]]; then
     exit

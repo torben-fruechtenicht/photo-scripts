@@ -1,5 +1,10 @@
 #! /usr/bin/env bash
 
+if ! [[ -v BASE_DIR ]]; then
+    echo "[ERROR] BASE_DIR has not been set" >&2
+    exit 1
+fi
+
 run_yad() {
     local -r title=$1
     # "\r" adds a linebreak (text in yad is rendered with pango) - but only if we use "echo -e
@@ -11,11 +16,17 @@ run_yad() {
 }
 
 run_yad_selector_result_action_dialog() {
+    # caller must have source photofiles.sh
+    if ! declare -F sourceroot_from_file >/dev/null; then
+        echo "[ERROR] Required function sourceroot_from_file does not exist" >&2
+        exit 1
+    fi
+
     local -r title=$1
     local -r selected_photos=$2
-    local -r search_dir=$3
-    local -r action_text=$4
-    shift 4
+    local -r search_dir=$(__get_searchdir_from_selector_result "$selected_photos")
+    local -r action_text=$3
+    shift 3
 
     local -r selected_photos_count=$(echo "$selected_photos" | wc -l)
     local -r selected_photos_list=$(__render_selected_photos_list \
@@ -25,6 +36,11 @@ run_yad_selector_result_action_dialog() {
         \r\r$selected_photos_list\r${action_text:+\r$action_text}")"
 
     run_yad "$title" "$text" "$@"
+}
+
+__get_searchdir_from_selector_result() {
+    local selector_results=$1
+    sourceroot_from_file "$(head -n 1 <<<"$selector_results")"
 }
 
 __remove_searchdir_from_photos_list() {

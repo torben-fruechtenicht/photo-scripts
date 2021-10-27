@@ -10,14 +10,11 @@ source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
+source "$BASE_DIR/lib/photofiles.sh"
 
 PATH="$BASE_DIR:$BASE_DIR/apps:$PATH"
 
-declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
-shift 1
-
-
-photos=$(selector "$SEARCH_DIR")
+photos=$(selector)
 selector_rc=$? 
 if [[ $selector_rc == 101 ]]; then
     exit
@@ -27,9 +24,10 @@ elif [[ -z $photos ]]; then
 fi   
 
 title_field_values=$(remember_list "title" "gnl")
-rename_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
+rename_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "" \
     --form \
-    --field="Change photo title(s) to:CBE" "$title_field_values")
+    --field="Change photo title(s) to:CBE" "$title_field_values" \
+    --field="Allow case change only:CHK" "FALSE")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
@@ -42,7 +40,11 @@ if [[ -z $NEW_TITLE ]]; then
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$NEW_TITLE" 25
 
-set_title "$NEW_TITLE" $photos
+if is_option_selected "$rename_params" 2; then
+    allow_case_change="-c"
+fi
+
+set_title ${allow_case_change-} "$NEW_TITLE" $photos
 set_title_rc=$?
 if [[ $set_title_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" done"

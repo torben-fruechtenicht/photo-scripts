@@ -20,6 +20,7 @@ function get_search_directory() {
     grep "$search_dir_name=" "$SEARCH_DIRECTORIES_FILE" | cut -d"=" -f2
 }
 
+# TODO add option to pass the search directory from the command line
 declare -r SEARCH_DIRECTORIES_FILE=$HOME/.local/share/photo-scripts/selector_directories
 search_directories_value=$(cat "$SEARCH_DIRECTORIES_FILE" | cut -d"=" -f1 | paste -s -d '!' -)
 
