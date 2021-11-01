@@ -16,7 +16,7 @@ run_yad() {
 }
 
 run_yad_selector_result_action_dialog() {
-    # caller must have source photofiles.sh
+    # caller must have sourced photofiles.sh
     if ! declare -F sourceroot_from_file >/dev/null; then
         echo "[ERROR] Required function sourceroot_from_file does not exist" >&2
         exit 1

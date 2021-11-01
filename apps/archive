@@ -11,23 +11,24 @@ source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
+source "$BASE_DIR/apps/lib/search_dirs.sh"
 
 PATH="$BASE_DIR:$PATH"
 
-
-declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
-if [[ -z $SEARCH_DIR ]]; then
-    notify_error "$APP_TITLE" "No search directory given or not-existent"
+declare -r ARCHIVE_DIR=$(readlink -e "${1+$1}")
+if [[ -z $ARCHIVE_DIR ]]; then
+    notify_error "$APP_TITLE" "No archive directory given or does not exist"
     exit 1
 fi
 
-declare -r ARCHIVE_DIR=$(readlink -e "${2+$2}")
-if [[ -z $ARCHIVE_DIR ]]; then
-    notify_error "$APP_TITLE" "No archive directory given or not-existent"
+declare -r SEARCH_DIRECTORIES_FILE=$HOME/.local/share/photo-scripts/archivable_directories
+if ! [[ -e $SEARCH_DIRECTORIES_FILE ]]; then
+    notify_error "$APP_TITLE" "Search directories file $SEARCH_DIRECTORIES_FILE does not exist"
     exit 1
 fi
 
 dialog_text="Select which photos to archive:"
+search_directories_value=$(get_search_directories_as_yad_option_keys "$SEARCH_DIRECTORIES_FILE")
 album_values=$(remember_list "album" "b")
 current_year=$(date +%Y)
 year_values=$(remember_list "year" "gn" "$current_year")
@@ -35,6 +36,7 @@ month_values=$(prepare_list "$MONTHS" "gb" "$(remember_value "month")")
 
 options_string=$(run_yad "$APP_TITLE" "$dialog_text" \
     --form \
+    --field="search directory:CB" "$search_directories_value" \
     --field="Album:CBE" "$album_values" \
     --field="Year:CBE" "$year_values" \
     --field="Month:CB" "$month_values" )
@@ -43,16 +45,20 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r ALBUM=$(get_option_at_index "$options_string" 1)
-declare -r YEAR=$(get_option_at_index "$options_string" 2)
-declare -r MONTH=$(get_option_at_index "$options_string" 3)
+search_dir_key=$(get_option_at_index "$options_string" 1)
+search_dir=$(lookup_search_directory_from_option_key "$SEARCH_DIRECTORIES_FILE" "$search_dir_key")
+album=$(get_option_at_index "$options_string" 2)
+year=$(get_option_at_index "$options_string" 3)
+month=$(get_option_at_index "$options_string" 4)
 
-memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 5
-memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$YEAR" 5
-memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$MONTH"
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$album" 5
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "year" "$year" 5
+memorize_form_value "$MEMORIZED_FORM_VALUES_FILE" "month" "$month"
 
 archivable_photos=$(collect_archivable_photos \
-    ${ALBUM:+-a "$ALBUM"} ${YEAR:+-y "$YEAR"} ${MONTH:+-m "$(month_value_from_name "$MONTH")"} "$SEARCH_DIR")
+    ${album:+-a "$album"} ${year:+-y "$year"} \
+    ${month:+-m "$(month_value_from_name "$month")"} \
+    "$search_dir")
 
 if [[ -z $archivable_photos ]]; then
     notify_warning "$APP_TITLE" "No archivable photos found that match the filter"
@@ -60,7 +66,7 @@ if [[ -z $archivable_photos ]]; then
 fi
 
 run_yad_selector_result_action_dialog "$APP_TITLE" \
-    "$archivable_photos" "$SEARCH_DIR" "Archive the selected photos?"
+    "$archivable_photos" "Archive the selected photos?"
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit

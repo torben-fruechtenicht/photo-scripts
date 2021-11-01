@@ -37,11 +37,6 @@ augment_user_keywords() {
     echo "$keywords"
 }
 
-equals_TRUE() {
-    local -r string=$1
-    test -n "$string" && test "TRUE" = "$string"
-}
-
 
 declare -r PHOTOS=$(selector)
 selector_rc=$? 
@@ -60,7 +55,7 @@ keywords_field_value=$(remember_list "keywords" "gb")
 
  
 user_edit_params=$(
-    run_yad_selector_result_action_dialog "$APP_TITLE" "$PHOTOS" "$SEARCH_DIR" "$dialog_text" \
+    run_yad_selector_result_action_dialog "$APP_TITLE" "$PHOTOS" "$dialog_text" \
         --form \
         --field="Album:CBE" "$album_field_value" \
         --field="Add album name as a keyword:CHK" "TRUE" \
