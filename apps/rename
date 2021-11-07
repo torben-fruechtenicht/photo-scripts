@@ -27,29 +27,55 @@ title_field_values=$(remember_list "title" "gnl")
 rename_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "" \
     --form \
     --field="Change photo title(s) to:CBE" "$title_field_values" \
-    --field="Allow case change only:CHK" "FALSE")
+    --field="Allow case change only:CHK" "FALSE" \
+    --field="Add title as a keyword:CHK" "TRUE" \
+    --field="Remove old title keyword:CHK" "FALSE")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r NEW_TITLE=$(trim_whitespace "$(get_option_at_index "$rename_params" 1)")
-if [[ -z $NEW_TITLE ]]; then    
+declare -r new_title=$(trim_whitespace "$(get_option_at_index "$rename_params" 1)")
+if [[ -z $new_title ]]; then    
     notify_warning "$APP_TITLE" "New photo title is required"  
     exit 1
 fi
-memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$NEW_TITLE" 25
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$new_title" 25
+is_option_selected "$rename_params" 2 && declare allow_case_change="-c"
+is_option_selected "$rename_params" 3 && declare add_title_as_keyword=
+is_option_selected "$rename_params" 4 && declare remove_old_title_keyword=
 
-if is_option_selected "$rename_params" 2; then
-    allow_case_change="-c"
+
+if [[ -v remove_old_title_keyword ]]; then
+    # unfortunately, we have to process the photos one by one to remove the
+    # old title because we need the old title from each individual photo...
+    while read -r photo; do
+        remove_keywords "$(title_from_photoid "$photo")" "$photo"
+    done <<<"$photos"
+    rc=$?
+    if [[ $rc != 0 ]]; then
+        notify_error "$APP_TITLE" \
+            "Failed adding title as keyword with return code $rc"
+        exit 1
+    fi
 fi
 
-set_title ${allow_case_change-} "$NEW_TITLE" $photos
-set_title_rc=$?
-if [[ $set_title_rc = 0 ]]; then
-    notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" done"
-else
+if [[ -v add_title_as_keyword ]]; then
+    add_keywords "$new_title" $photos
+    rc=$?
+    if [[ $rc != 0 ]]; then
+        notify_error "$APP_TITLE" \
+            "Failed adding title as keyword with return code $rc"
+        exit 1
+    fi
+fi
+
+set_title ${allow_case_change-} "$new_title" $photos 
+rc=$?
+if [[ $rc != 0 ]]; then
     notify_error "$APP_TITLE" \
-        "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$NEW_TITLE\" failed with return code $set_title_rc"
+        "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$new_title\" failed with return code $set_title_rc"
     exit 1
 fi
+
+notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$new_title\" done"

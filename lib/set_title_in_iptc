@@ -23,7 +23,7 @@ fi
 
 is_photoid_only_caption() {
     local -r caption=$1
-    [[ "$caption" =~ ^\[$PHOTOID_PATTERN\]$ ]]
+    [[ "$caption" =~ ^\[$PHOTOID_PATTERN\]\;?$ ]]
 }
 
 if is_rawtherapee_sidecar "$FILE"; then
@@ -46,13 +46,20 @@ elif is_jpeg "$FILE"; then
     headline=$(iptc_headline_from_photofile "$PHOTOID")
     jpeg_set_iptc "$FILE" "Headline" "$headline"
 
+    # change the title in the caption while taking care of existing description texts:
+    # get old_caption and check if it contains more than just the photoid. if yes, get
+    # the old description text from old_caption. then pass any old old_description
+    # (or none) as extra text to iptc_caption_from
     old_caption=$(jpeg_get_iptc "$FILE" "Caption")
     if is_photoid_only_caption "$old_caption"; then
         old_description=""
     else 
-        # so the problem is that the caption from jpeg exif includes the real linebreaks. 
+        # so the problem is that the caption from jpeg iptc includes the real linebreaks. 
         # therefore, let's use some head/sed/paste magic to get the old description
-        # in the sidecar format (because everything else is based on that)
+        # in the sidecar format (because everything else is based on that):
+        # first take everything but the first two lines of old_caption (because that is the 
+        # photoid and the preceding blank line) and then join all lines with linebreak literals
+        # FIXME what does "$ !" do in the sed pattern?
         old_description=$(head -n -2 <<<"$old_caption" | sed -r '$ ! s/^(.*)$/\1\\n/' |\
             paste -s -d '')
     fi    
@@ -60,5 +67,5 @@ elif is_jpeg "$FILE"; then
     jpeg_set_iptc "$FILE" "Caption" "$caption"
 
 else
-    echo "[INFO] $FILE does not support IPTC metadata" >&2
+    echo "[INFO] $FILE does not support IPTC metadata (or read-only)" >&2
 fi
