@@ -9,15 +9,12 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
+source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/lib/strings.sh"
 
 PATH="$BASE_DIR:$BASE_DIR/apps:$PATH"
 
-
-declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
-
-
-photos=$(selector "$SEARCH_DIR") 
+photos=$(selector) 
 selector_rc=$? 
 if [[ $selector_rc == 101 ]]; then
     exit
@@ -35,7 +32,7 @@ keywords_value=$(remember_list "keywords" "gn")
 mode_label="Mode, add or remove keywords"
 mode_values="$ADD_MODE!$REMOVE_MODE"
 edit_keywords_params=$(run_yad_selector_result_action_dialog \
-    "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
+    "$APP_TITLE" "$photos" "" \
     --form \
     --field="$keywords_label:CBE" "$keywords_value" \
     --field="$mode_label:CB" "$mode_values")
