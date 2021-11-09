@@ -66,6 +66,4 @@ elif is_jpeg "$FILE"; then
     caption=$(iptc_caption_from "$PHOTOID" "$old_description")
     jpeg_set_iptc "$FILE" "Caption" "$caption"
 
-else
-    echo "[INFO] $FILE does not support IPTC metadata (or read-only)" >&2
 fi
