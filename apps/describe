@@ -23,10 +23,10 @@ elif [[ -z $photos ]]; then
     exit 1
 fi
 
-dialog_text="Set description"
+dialog_text="Set description (old description will be overwritten)"
 description_label="Description"
 description=$(run_yad_selector_result_action_dialog \
-    "$APP_TITLE" "$photos" "" \
+    "$APP_TITLE" "$photos" "$dialog_text" \
     --form \
     --field="$description_label:TXT")
 yad_rc=$?
