@@ -74,7 +74,7 @@ set_title ${allow_case_change-} "$new_title" $photos
 rc=$?
 if [[ $rc != 0 ]]; then
     notify_error "$APP_TITLE" \
-        "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$new_title\" failed with return code $set_title_rc"
+        "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$new_title\" failed with return code $rc"
     exit 1
 fi
 
