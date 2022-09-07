@@ -12,10 +12,9 @@ source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
+source "$BASE_DIR/lib/photofiles.sh"
 
-declare -r SEARCH_DIR=$(readlink -e "${1+$1}")
-
-photos=$(selector "$SEARCH_DIR") 
+photos=$(selector) 
 selector_rc=$? 
 if [[ $selector_rc == 101 ]]; then
     exit
@@ -25,44 +24,66 @@ elif [[ -z $photos ]]; then
 fi
 
 album_field_value=$(remember_list "album" "gnl")
-move_to_album_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "$SEARCH_DIR" "" \
+move_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "" \
     --form \
     --field="Move to album:CBE" "$album_field_value" \
+    --field="Album name is added as keyword:CHK" "TRUE" \
+    --field="Remove old album name from keywords:CHK" "FALSE" \
     --field="Photo titles are changed to album title:CHK" "FALSE")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r TARGET_ALBUM_NAME=$(trim_whitespace "$(get_option_at_index "$move_to_album_params" 1)")
-if [[ -z $TARGET_ALBUM_NAME ]]; then    
+declare -r target_album_name=$(trim_whitespace "$(get_option_at_index "$move_params" 1)")
+if [[ -z $target_album_name ]]; then    
     notify_warning "$APP_TITLE" "New album name is required"  
     exit 1
 fi
-memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$TARGET_ALBUM_NAME" 25
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$target_album_name" 25
 
-files=$photos
+is_option_selected "$move_params" 2 && declare set_target_album_name_keyword=
+is_option_selected "$move_params" 3 && declare remove_old_album_name_keyword=
+is_option_selected "$move_params" 4 && declare change_photo_titles_to_album_name=
 
-if is_option_selected "$move_to_album_params" 2; then
-    files=$(set_title "$TARGET_ALBUM_NAME" "$files")
-    rename_rc=$?
-    if [[ $rename_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Changing title of $(wc -l <<<"$photos") photo(s) to \"$TARGET_ALBUM_NAME\" done"
-    else
+if [[ -v set_target_album_name_keyword ]]; then
+    add_keywords "$target_album_name" $photos
+    rc=$?
+    if [[ $rc != 0 ]]; then
         notify_error "$APP_TITLE" \
-            "Changing title of $(wc -l <<<"$photos") photo(s) to \"$TARGET_ALBUM_NAME\" failed with return code $rename_rc"
+            "Failed adding target album name as keyword with return code $rc"
         exit 1
     fi
 fi
 
-# if we changed photo titles, $files will now contain all associated files. But we can safely pass
-# $files to change_album because it will just throw away all irrelevant files
-change_album "$TARGET_ALBUM_NAME" "$files"
-change_album_rc=$?
-if [[ $change_album_rc = 0 ]]; then
-    notify_info "$APP_TITLE" "Moving $(wc -l <<<"$photos") photos to \"$TARGET_ALBUM_NAME\" done"
-else
-    notify_error -e "$APP_TITLE" \
-        "Renaming $(wc -l "$photos") photos to \"$TARGET_ALBUM_NAME\" failed with return code $change_album_rc"
+if [[ -v remove_old_album_name_keyword ]]; then
+    # FIXME actually, we cannot assume that all photos come from the same album!
+    old_album_name=$(albumname_from_file "$(head -n 1 <<<$photos)")
+    remove_keywords "$old_album_name" $photos
+    rc=$?
+    if [[ $rc != 0 ]]; then
+        notify_error "$APP_TITLE" \
+            "Failed removing old album name as keyword with return code $rc"
+        exit 1
+    fi
+fi
+
+photos_in_target_album=$(change_album "$target_album_name" "$photos")
+rc=$?
+if [[ $rc != 0 ]]; then
+    notify_error "$APP_TITLE" \
+        "Failed moving $(wc -l "$photos") photos to \"$target_album_name\" failed with return code $change_album_rc"
     exit 1
 fi
+
+if [[ -v change_photo_titles_to_album_name ]]; then
+    set_title "$target_album_name" "$photos_in_target_album"
+    rc=$?
+    if [[ $rc != 0 ]]; then
+        notify_error "$APP_TITLE" \
+            "Changing title of $(wc -l <<<"$photos") photo(s) to \"$target_album_name\" failed with return code $rename_rc"
+        exit 1
+    fi
+fi
+
+notify_info "$APP_TITLE" "Moving $(wc -l <<<"$photos") photos to \"$target_album_name\" done"
