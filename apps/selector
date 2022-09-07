@@ -77,7 +77,7 @@ unpad_number() {
 }
 
 # if number_tail looks like a range (e.g. "2-17"), use an empty NUMBER_TAIL for find and set 
-# NUMBER_TAIL_MIN/MAX and NUMBER_TAIL_SIZE. otherwise NUMBER_TAIL is set to number_tail
+# NUMBER_TAIL_MIN/MAX and NUMBER_TAIL_SIZE. otherwise NUMBER_TAIL is set to number_tail 
 number_tail=$(get_option_at_index "$options_string" 8)
 if [[ $number_tail =~ [0-9]+-[0-9]+ ]]; then
     declare -r NUMBER_TAIL=""
@@ -132,7 +132,7 @@ find -H "$SEARCH_DIR" -regextype posix-extended -type f \
         -iregex ".+\.(ORF|RAW|JPG|CRW|CR2)" ! -path "*/converted/*" | \
 # run all found files through range checks but skip all checks if no ranges are in use
 while read -r matched_file; do
-    if [[ -z $NUMBER_TAIL ]]; then 
+    if [[ -v NUMBER_TAIL_MIN ]]; then 
         number_tail=$(get_number_tail "$matched_file" "$NUMBER_TAIL_SIZE")
         (( $NUMBER_TAIL_MIN <= $number_tail )) && (( $number_tail <= $NUMBER_TAIL_MAX )) && \
             echo "$matched_file"
