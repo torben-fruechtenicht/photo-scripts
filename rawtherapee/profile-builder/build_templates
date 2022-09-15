@@ -15,7 +15,12 @@ while getopts "ov" opt; do
 done
 shift $(($OPTIND - 1))
 
-
+# DOC the script will merge this input profile with the given baselines,
+# see doc for baselines parameters below. Depending on the cases described
+# below, INPUT_PROFILE is either an empty sidecar (only containing section
+# headers) - this is the initial invocation case - or INPUT_PROFILE is a 
+# sidecar file which has just been created from merging another sidecar with
+# a baseline file.
 declare -r INPUT_PROFILE=$(readlink -e "$1")
 if [[ -z "$INPUT_PROFILE" ]]; then
     echo "[ERROR] Missing input profile" >&2
@@ -31,6 +36,13 @@ fi
 test -v VERBOSE && echo "[TARGET DIRECTORY] $TARGET_DIR" >&2
 
 
+# DOC this script is invoked in two  variants, regarding the baselines:
+#   - 
+#   - the initial invocation is from the executing shell. in that case, a directory is given which is treated
+#   as a directory that contains per camera subdirectories. Each of these again holds baseline files which are
+#   saved in BASELINES
+#   - while processing these baselines, the script calls itself again using the template it just created as
+#   INPUT_PROFILE and any existing baselines from subdirectories
 if [[ $# = 3 ]] && [[ -d $3 ]]; then
     root_baselines_dir=$(readlink -e "$3")
     # TBD use xargs to have a proper string? do we need it?
@@ -42,24 +54,27 @@ fi
 # echo "[BASELINES] $BASELINES" >&2
 
 
-phototype_from_baseline() {
+baseline_format() {
     local -r baseline=$1
-    local -r photo_type=$(echo "$baseline" | sed -rn 's/.+\.([a-z]{3}).pp3/\1/p')
-    if ! [[ $photo_type == "pp3" ]]; then 
-        echo "$photo_type"
+    local -r format=$(echo "$baseline" | sed -rn 's/.+\.([a-z]{3}).pp3/\1/p')
+    # DOC print nothing to say that the baseline is can be used for any format
+    if ! [[ $format == "pp3" ]]; then 
+        echo "$format"
     fi
 }
 
-has_sibling_of_type() {
+format_sibling_exists() {
     local -r baseline=$1
-    local -r photo_type=$2
-    test -e ${baseline/\.pp3/.${photo_type}.pp3}
+    local -r format=$2
+    # DOC this will only work with non-specific baselines!
+    test -e ${baseline/\.pp3/.${format}.pp3}
 }
 
 
 for baseline in "$BASELINES"; do
     baseline_filename=$(basename "$baseline")
     test -v VERBOSE && echo "[BASELINE] $baseline" >&2
+    # DOC we replace "baseline" with "template" because it makes handling the extension easy (nothing to be done here for them)
     target_profile=$TARGET_DIR/${baseline_filename/baseline/template}
     test -v VERBOSE && echo "[TARGET] $target_profile" >&2
 
@@ -69,15 +84,22 @@ for baseline in "$BASELINES"; do
         test -v VERBOSE || echo $target_profile
     else 
         echo "[WARN] Target profile $target_profile exists" >&2
+        # DOC don't exit here because we still want the script to descend to possible new child baselines
     fi
 
-    photo_type=$(phototype_from_baseline "$baseline")
+    # DOC a format is either a image format extension (e.g. "orf" or "jpg") or an empty string for baselines
+    # which can be applied to any image format
+    current_format=$(baseline_format "$baseline")
     find "$(dirname "$baseline")" -mindepth 2 -maxdepth 2 -type f -regex '.*baseline\(..*\)?.pp3' |\
         while read -r child_baseline; do
-            child_type=$(phototype_from_baseline "$child_baseline")
-            if ([[ -z $photo_type ]] && [[ -z $child_type ]]) || \
-                ([[ -z $photo_type ]] && [[ -n $child_type ]] && ! has_sibling_of_type "$baseline" "$child_type") || \
-                ([[ -n $photo_type ]] && [[ -n $child_type ]] && [[ $photo_type == $child_type ]]); then
+            child_format=$(baseline_format "$child_baseline")
+            # DOC continue with the child baseline if
+            # - both current and child are not format-specific
+            # - current is independent but has no sibling of the format-specific child type. FIXME explain what this case covers!
+            # - both are format-specific and it is the same format
+            if ([[ -z $current_format ]] && [[ -z $child_format ]]) || \
+                ([[ -z $current_format ]] && [[ -n $child_format ]] && ! format_sibling_exists "$baseline" "$child_format") || \
+                ([[ -n $current_format ]] && [[ -n $child_format ]] && [[ $current_format == $child_format ]]); then
                 next_working_dir=$(dirname "$child_baseline")
                 next_target_directory="$TARGET_DIR/${next_working_dir##*/}"
                 $SELF ${OVERWRITE+-o} ${VERBOSE+-v} "$target_profile" "$next_target_directory" "$child_baseline"
