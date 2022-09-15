@@ -37,7 +37,6 @@ test -v VERBOSE && echo "[TARGET DIRECTORY] $TARGET_DIR" >&2
 
 
 # DOC this script is invoked in two  variants, regarding the baselines:
-#   - 
 #   - the initial invocation is from the executing shell. in that case, a directory is given which is treated
 #   as a directory that contains per camera subdirectories. Each of these again holds baseline files which are
 #   saved in BASELINES
@@ -52,6 +51,14 @@ else
     declare -r BASELINES=$@
 fi
 # echo "[BASELINES] $BASELINES" >&2
+
+# DOC this script expects baseline files in a directory structure as follows
+# - on 1st level, baseline files define basic defaults. 
+# - on 2nd level, baselines are in directories per camera. Directory names must match Exif camera names
+# - on 3rd level, baselines are in directories per lens (as attached to the camera from the parent directory)
+# The directory structure of template sidecar files is created in the same manner as the baseline directories.
+# Later, when creating sidecars from templates, create_sidecar will look up the correct template based
+# on camera and lens from Exif.
 
 
 baseline_format() {
