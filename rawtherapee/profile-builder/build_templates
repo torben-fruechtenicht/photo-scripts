@@ -1,9 +1,21 @@
 #! /usr/bin/env bash
 
+# DOC a script to create RawTherapee sidecar templates from a hierarchical structure of sidecar snippets (referred to as
+# "baselines"). 
+# This script expects baseline files in a directory structure as follows
+# - on 1st level, baseline files define basic defaults. 
+# - on 2nd level, baselines are in directories per camera. Directory names must match Exif camera names
+# - on 3rd level, baselines are in directories per lens (as attached to the camera from the parent directory)
+# The directory structure of template sidecar files is created in the same manner as the baseline directories.
+# Later, when creating sidecars from templates, create_sidecar will look up the correct template based
+# on camera and lens from Exif.
+
 set -ue
 
 declare -r SELF=$(readlink -e "$0")
 declare -r MELD_BASELINE=$(dirname "$SELF")/meld_baseline.sh
+
+declare -r ROOT_BASELINE_FILE="root_baseline.pp3"
 
 while getopts "ov" opt; do
     case $opt in
@@ -15,51 +27,33 @@ while getopts "ov" opt; do
 done
 shift $(($OPTIND - 1))
 
-# DOC the script will merge this input profile with the given baselines,
-# see doc for baselines parameters below. Depending on the cases described
-# below, INPUT_PROFILE is either an empty sidecar (only containing section
-# headers) - this is the initial invocation case - or INPUT_PROFILE is a 
-# sidecar file which has just been created from merging another sidecar with
-# a baseline file.
-declare -r INPUT_PROFILE=$(readlink -e "$1")
-if [[ -z "$INPUT_PROFILE" ]]; then
-    echo "[ERROR] Missing input profile" >&2
+# first branch is the initial invocation from executing shell: first parameter is not an input profile. second branch is
+# the self-invocation case when descending to child baselines, previously created profile is passed as 1st parameter
+if ! [[ -f $1 ]] && ! [[ $1 =~ ".+\.pp3" ]]; then
+    declare -r TARGET_DIR=$(readlink -f "$1")
+    declare -r BASELINES_DIR=$(readlink -e "$2")
+    declare -r INPUT_PROFILE="$BASELINES_DIR/$ROOT_BASELINE_FILE"
+    declare -r BASELINES=$(find "$BASELINES_DIR" -mindepth 1 -maxdepth 1 -type f -regex '.*baseline\(..*\)?.pp3' \
+        -not -name "$ROOT_BASELINE_FILE")
+else
+    declare -r INPUT_PROFILE=$(readlink -e "$1")
+    declare -r TARGET_DIR=$(readlink -f "$2")
+    declare -r BASELINES=$(readlink -e "$3")
+fi
+
+if ! [[ -e "$INPUT_PROFILE" ]]; then
+    echo "[ERROR] Input profile does not exist" >&2
     exit 1
 fi
 test -v VERBOSE && echo "[INPUT PROFILE] $INPUT_PROFILE" >&2
 
-declare -r TARGET_DIR=$(readlink -f "$2")
 if ! [[ -e $TARGET_DIR ]]; then
     test -v VERBOSE && echo "[INFO] Creating missing target directory $2" >&2
-    mkdir "$TARGET_DIR"
+    mkdir -p "$TARGET_DIR"
 fi
 test -v VERBOSE && echo "[TARGET DIRECTORY] $TARGET_DIR" >&2
 
-
-# DOC this script is invoked in two  variants, regarding the baselines:
-#   - the initial invocation is from the executing shell. in that case, a directory is given which is treated
-#   as a directory that contains per camera subdirectories. Each of these again holds baseline files which are
-#   saved in BASELINES
-#   - while processing these baselines, the script calls itself again using the template it just created as
-#   INPUT_PROFILE and any existing baselines from subdirectories
-if [[ $# = 3 ]] && [[ -d $3 ]]; then
-    root_baselines_dir=$(readlink -e "$3")
-    # TBD use xargs to have a proper string? do we need it?
-    declare -r BASELINES=$(find "$root_baselines_dir" -mindepth 1 -maxdepth 1 -type f -regex '.*baseline\(..*\)?.pp3')
-else
-    shift 2
-    declare -r BASELINES=$@
-fi
-# echo "[BASELINES] $BASELINES" >&2
-
-# DOC this script expects baseline files in a directory structure as follows
-# - on 1st level, baseline files define basic defaults. 
-# - on 2nd level, baselines are in directories per camera. Directory names must match Exif camera names
-# - on 3rd level, baselines are in directories per lens (as attached to the camera from the parent directory)
-# The directory structure of template sidecar files is created in the same manner as the baseline directories.
-# Later, when creating sidecars from templates, create_sidecar will look up the correct template based
-# on camera and lens from Exif.
-
+echo "[BASELINES] $BASELINES" >&2
 
 baseline_format() {
     local -r baseline=$1
@@ -79,6 +73,8 @@ format_sibling_exists() {
 
 
 for baseline in "$BASELINES"; do
+
+    # DOC step 1: meld the current baseline with INPUT_PROFILE
     baseline_filename=$(basename "$baseline")
     test -v VERBOSE && echo "[BASELINE] $baseline" >&2
     # DOC we replace "baseline" with "template" because it makes handling the extension easy (nothing to be done here for them)
@@ -93,6 +89,9 @@ for baseline in "$BASELINES"; do
         echo "[WARN] Target profile $target_profile exists" >&2
         # DOC don't exit here because we still want the script to descend to possible new child baselines
     fi
+
+    # DOC step 2: find all childbase lines which are compatible with the current baseline. recurse to merge each with the
+    #   profile we just created 
 
     # DOC a format is either a image format extension (e.g. "orf" or "jpg") or an empty string for baselines
     # which can be applied to any image format
