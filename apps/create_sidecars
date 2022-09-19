@@ -1,0 +1,42 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+PATH="$BASE_DIR/rawtherapee/profile-builder:$PATH"
+
+source "$BASE_DIR/apps/lib/yad.sh"
+source "$BASE_DIR/apps/lib/yad_form_values.sh"
+source "$BASE_DIR/apps/lib/notification.sh"
+source "$BASE_DIR/lib/strings.sh"
+
+declare -r -x APP_TITLE="Create sidecars"
+
+sidecar_template_dir=$1
+photographer=$2
+
+dialog_title="Create RawTherapee sidecars"
+dialog_text="Select directory with photo files for which to create sidecars"
+
+options_string=$(run_yad "$dialog_title" "$dialog_text" \
+    --form \
+    --field="Photo files directory:DIR" "$HOME" \
+    --field="Keyword(s)\nSeparated by \";\". No quoting required:CBE" "$(remember_list "keywords" "gn")")
+yad_rc=$?
+if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
+    exit
+fi
+
+photo_files_dir=$(get_option_at_index "$options_string" 1)
+photo_files=$(find "$photo_files_dir" -type f -iregex ".*/.+\.\(cr2\|jpg\|raw\|orf\|crw\)")
+
+keywords=$(get_option_at_index "$options_string" 2)
+if [[ -z $keywords ]]; then    
+    notify_warning "$APP_TITLE" "At least one keyword is required"  
+    exit 1
+fi
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$keywords" 25
+
+create_sidecar -o -c "$photographer" -k "$keywords" "$sidecar_template_dir" $photo_files
+
+notify_info "Creating RawTherapee sidecars" "Done"
