@@ -23,7 +23,7 @@ while getopts "c:k:d:t:ov" opt; do
 		d )
 			declare -r DESCRIPTION=$OPTARG;;
 		o ) 
-			# old keywords will be kept
+			# all old sidecar contents will be overwritten but old keywords will be kept
 			declare -r OVERWRITE_EXISTING=;;
 		v )
 			declare -r VERBOSE=;;
@@ -130,9 +130,7 @@ for photofile in $PHOTO_FILES; do
 	# an old creator, just call without -c option.
 	if [[ -v old_creator ]] && [[ -n $old_creator ]]; then
 		set_iptc_creator_copyright "$sidecar_file" "$old_creator" "$photofile"
-	fi
-
-	if [[ -v CREATOR ]]; then
+	elif [[ -v CREATOR ]]; then
 		# TODO add new iptc copyright fields: https://developers.google.com/search/docs/data-types/image-license-metadata
 		set_iptc_creator_copyright "$sidecar_file" "$CREATOR" "$photofile"
 	fi
@@ -152,11 +150,11 @@ for photofile in $PHOTO_FILES; do
 		"$(iptc_caption_from "$(photoid "$photofile")" "${DESCRIPTION+$DESCRIPTION}")"
 	
 	if [[ -n "$lens_from_exif" ]]; then
-		iptc_lens="$lens_from_exif;"
+		iptc_lens="$lens_from_exif"
 	else 
 		iptc_lens=""
 	fi
-	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$iptc_lens${KEYWORDS-}"
+	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$iptc_lens${KEYWORDS+;$KEYWORDS}"
 	sidecar_add_iptc_keywords "$sidecar_file" "$iptc_keywords"
 
 	echo "$sidecar_file"
