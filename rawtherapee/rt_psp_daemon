@@ -1,0 +1,53 @@
+#! /usr/bin/env bash
+
+set -eu
+
+
+basedir="$(dirname "$(readlink -e "$0")")/../"
+source "$basedir/lib/photofiles.sh"
+export PATH="$basedir/lib:$PATH"
+
+
+events_file=$(mktemp)
+
+
+cleanup() {
+    pkill -f "inotifywait --daemon --outfile $events_file.*"
+    rm -f "$events_file"
+}
+trap cleanup EXIT
+
+
+watched_dirs_parent="$HOME/.local/share/photo-scripts/rt_psp_watchdirs/"
+if ! [[ -e "$watched_dirs_parent" ]];  then
+    echo "[ERROR] Watched dirs parent $watched_dirs_parent does not exist, exiting" >&2
+    exit 1
+fi
+
+watched_dirs=$(find -L  "$watched_dirs_parent" -mindepth 1 -maxdepth 1 -type d)
+
+# TODO already run the find output through readlink. that way we can already exit early if none
+# of the directories exists (otherwise tail would be running without hope of events)
+
+for dir in $watched_dirs; do
+    watched=$(readlink -e "$dir")
+    if [[ -z $watched ]]; then
+        echo "[ERROR] cannot watch $watched, does not exist" >&2
+        continue
+    fi
+    
+    inotifywait --daemon --outfile "$events_file" --recursive --quiet --event create --format %w%f "$watched" &
+    echo "[INFO] watching $watched" >&2
+done
+
+
+tail -F "$events_file" | while read -r new_file; do 
+    if is_output_file "$new_file" && is_variant "$new_file"; then
+        # wait a bit so that the file has been fully written
+        sleep 5
+        echo "[INFO] Adjusting title of variant in IPTC: $new_file" >&2
+        # TODO can be simplied to not rely on the actual title: just get the 
+        # caption and description and update the variant number directly there
+        set_title_in_iptc "$new_file" "$(photoid "$new_file")"
+    fi      
+done 
