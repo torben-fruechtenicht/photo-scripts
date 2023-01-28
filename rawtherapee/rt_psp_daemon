@@ -2,7 +2,14 @@
 
 set -eu
 
-if pgrep -f rt_psp_daemon >& /dev/null; then
+if [[ ${1-} == "-terminate" ]]; then
+    # NB this will of course also terminate our own process :-)
+    echo "[INFO] terminating any running instances" >&2
+    pkill -f rt_psp_daemon
+fi
+
+# NB pgrep will also count our own process so check if there is more than
+if [[ $(pgrep -c -f rt_psp_daemon) > 1 ]]; then
     echo "[WARNING] already running, exiting" >&2
     exit 1
 fi
