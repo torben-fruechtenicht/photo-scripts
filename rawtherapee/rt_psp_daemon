@@ -2,6 +2,11 @@
 
 set -eu
 
+if pgrep -f rt_psp_daemon >& /dev/null; then
+    echo "[WARNING] already running, exiting" >&2
+    exit 1
+fi
+
 
 basedir="$(dirname "$(readlink -e "$0")")/../"
 source "$basedir/lib/photofiles.sh"
