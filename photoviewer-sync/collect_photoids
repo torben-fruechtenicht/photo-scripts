@@ -5,12 +5,25 @@ set -eu
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
 
+while getopts "s" opt; do
+    case $opt in
+        s )
+            STRIP_SUFFIX=;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
 source_dir=$(readlink -e "$1")
 
 find  "$source_dir"  -type f \
     -regextype posix-extended -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN.jpg" \
     -printf '%p\n' |\
 while read -r file; do
-    echo "$(basename "$file")"
+    basename=$(basename "$file")
+    if [[ -v STRIP_SUFFIX ]]; then
+        echo ${basename%%.*}
+    else 
+        echo "$basename"
+    fi
 done |\
 sort -u
