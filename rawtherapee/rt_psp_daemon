@@ -17,7 +17,7 @@ fi
 
 basedir="$(dirname "$(readlink -e "$0")")/../"
 source "$basedir/lib/photofiles.sh"
-export PATH="$basedir/lib:$PATH"
+export PATH="$basedir/lib:$basedir/geolocation:$PATH"
 
 
 events_file=$(mktemp)
@@ -54,12 +54,31 @@ done
 
 
 tail -F "$events_file" | while read -r new_file; do 
-    if is_output_file "$new_file" && is_variant "$new_file"; then
-        # wait a bit so that the file has been fully written
+
+    if is_output_file "$new_file"; then
+        
+        # wait a bit so that the file has been fully written (and maybe deleted if it was a tmp file)
         sleep 5
-        echo "[INFO] Adjusting title of variant in IPTC: $new_file" >&2
-        # TODO can be simplied to not rely on the actual title: just get the 
-        # caption and description and update the variant number directly there
-        set_title_in_iptc "$new_file" "$(photoid "$new_file")"
+
+        # skip any tmp files which sometimes are reported but are deleted before we can 
+        # process them
+        if ! [[ -e "$new_file" ]]; then
+            continue
+        fi
+
+        if is_variant "$new_file"; then
+            echo "[INFO] Adjusting title of variant in IPTC: $new_file" >&2
+            # TODO can be simplied to not rely on the actual title: just get the 
+            # caption and description and update the variant number directly there
+            set_title_in_iptc "$new_file" "$(photoid "$new_file")"
+        fi
+
+        if is_output_photofile "$new_file"; then
+            echo "[INFO] Adding geolocation from gpx file (if exists): $new_file" >&2
+            set_jpg_geolocation_from_gpx "$new_file"
+        fi
+
+        
     fi      
+    
 done 

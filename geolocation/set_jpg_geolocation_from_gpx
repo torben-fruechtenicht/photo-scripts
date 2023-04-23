@@ -1,0 +1,24 @@
+#! /usr/bin/env bash
+
+set -eux
+
+jpg_file=$1
+
+function get_geotag_options_string() {
+    declare -r geotag_files_searchdir="$(dirname "$jpg_file")/.."
+    local geotag_options_string=""
+    local -r geotag_files=$(find "$geotag_files_searchdir" -type f -iname "*.gpx")
+    while read -r geotag_file; do
+        if [[ -n $geotag_file ]]; then
+            echo -n " -geotag $geotag_file"
+        fi
+    done <<<"$geotag_files"
+}
+
+geotag_options=$(get_geotag_options_string)
+if [[ -z $geotag_options ]]; then
+    echo "[WARN] No gpx geotag file(s) found for $jpg_file" >&2
+    exit
+fi
+
+exiftool $geotag_options "$jpg_file" 
