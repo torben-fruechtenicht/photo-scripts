@@ -20,5 +20,8 @@ if [[ -z $timestamp_file ]]; then
     exit 1
 fi
 
+# We're already sorting as oldest-first here so that they will be imported with correct
+# publication order (publication order should follow the order in which the photos were
+# post-processed)
 find "$search_dir" -regextype posix-extended -type f -cnewer "$timestamp_file" \
-    -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN\.jpg" 
+    -iregex "$OUTPUT_DIR_PATTERN/$PHOTOID_PATTERN\.jpg" -printf "%T@ %p\n" | sort | cut -d' ' -f2
