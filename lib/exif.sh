@@ -55,3 +55,16 @@ lookup_year_from_exif() {
 	local -r photofile=$1
 	exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$photofile" 2> /dev/null | cut -d':' -f 1
 }
+
+lookup_exif_datetimeorig_or_lastmod() {
+	local photofile=$1
+
+	exif_date=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$photofile" 2> /dev/null)
+	if [[ -n $exif_date ]]; then
+		echo "$exif_date"
+	else 
+		# actually, we should use "%w" as the format string for stat but that 
+		# must not be available in all cases
+		date '+%Y:%m:%d %H:%M:%S' -d "$(stat --format %y "$photofile")"
+	fi
+}

@@ -22,7 +22,7 @@ declare -r FILETYPES_RAW_ONLY="raw"
 declare -r FILETYPES_JPG_ONLY="jpeg"
 declare -r FILETYPES_RAW_AND_JPG="raw+jpeg"
 
-while getopts "t:a:y:" opt; do
+while getopts "t:a:y:c:n" opt; do
     case $opt in
         a )
             declare -r ALBUM=$(tr ' ' '-' <<<"$OPTARG");;
@@ -35,6 +35,10 @@ while getopts "t:a:y:" opt; do
             else 
                 declare -r FILETYPES=$OPTARG
             fi;;
+        c ) 
+            declare -r CAMERA=$OPTARG;;
+        n )
+            declare -r CREATE_PHOTONUMBERS=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -48,13 +52,20 @@ if ! [[ -v FILETYPES ]]; then
     declare -r FILETYPES=$FILETYPES_RAW_AND_JPG
 fi
 
-declare -r DCIM_DIR=$(readlink -e "$1")
+if [[ $# == 2 ]]; then
+    declare -r DCIM_DIR=$(readlink -e "$1")
+    declare -r TARGET_DIR=$(readlink -e "$2")
+else 
+    declare -r DCIM_DIR=$(readlink -e "$1")
+    declare -r SELECTION_PATTERN=$2
+    declare -r TARGET_DIR=$(readlink -e "$3")
+fi
+
 if [[ -z $DCIM_DIR ]]; then
     echo "[ERROR] None given or nonexistent DCIM directory" >&2
     exit $NO_DCIM_DIR_RC
 fi
 
-declare -r TARGET_DIR=$(readlink -e "$2")
 if [[ -z $TARGET_DIR ]]; then
     echo "[ERROR] None given or nonexistent target directory" >&2
     exit $NO_TARGET_DIR_RC
@@ -102,7 +113,7 @@ camera_id() {
     echo "$manufacturer $camera" | tr ' ' '_'
 }
 
-build_photonumber() {
+build_photonumber_from_exif_camera() {
     local -r photofile=$1
     case "$(camera_id "$photofile")" in 
         Panasonic_DMC-FZ50 )
@@ -112,6 +123,22 @@ build_photonumber() {
         OLYMPUS_IMAGING_CORP._E-M10 )
             build_photonumber_olympus_filename "$photofile";;
     esac
+}
+
+create_photonumber() {
+    local -r zeropad_to_n=8
+
+    local -r targetdir=$1
+    local -r title=$2
+
+    highest_number=$(find "$targetdir" -type f -name "$title*" -printf "%f\n" | cut -d'.' -f1 | cut -d'_' -f5 | sort -u | tail -n 1)
+    if [[ -n $highest_number ]]; then
+        number_of_digits=${#highest_number}
+        next_number=$(echo "$highest_number + 1" | bc)
+        printf "%0${zeropad_to_n}d" "$next_number"
+    else
+        printf "%0${zeropad_to_n}d" 1
+    fi
 }
 
 camera_name() { 
@@ -131,7 +158,7 @@ camera_name() {
 build_targetpath() {
     local -r photofile=$1
 
-    local -r datetimeoriginal=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$photofile" 2> /dev/null)
+    local -r datetimeoriginal=$(lookup_exif_datetimeorig_or_lastmod "$photofile")
 	
     local -r year=$(cut -d':' -f 1 <<<"$datetimeoriginal")
 	local -r date=$(cut -d' ' -f 1 <<<"$datetimeoriginal" | tr ':' '-')
@@ -140,8 +167,18 @@ build_targetpath() {
 
     local -r target_dir="$TARGET_DIR/$year/$ALBUM/$date"
 
-    local -r camera=$(camera_name "$photofile")
-    local -r photonumber=$(build_photonumber "$photofile")
+    if [[ -v CAMERA ]]; then
+        local -r camera=$CAMERA
+    else 
+        local -r camera=$(camera_name "$photofile")
+    fi
+    
+    if [[ -v CREATE_PHOTONUMBERS ]]; then
+        local -r photonumber=$(create_photonumber "$target_dir" "$TITLE")
+    else
+        local -r photonumber=$(build_photonumber_from_exif_camera "$photofile")
+    fi
+
     local -r extension=${photofile##*.}
     local -r filename="${TITLE}_${date_numerical}_${timeofday}_${camera}_${photonumber}.${extension}"
 
@@ -167,7 +204,7 @@ esac
 # Using find checks will not work, they only check if newer as a given date
 # DOC when using find with both -exec (for copying) and -printf (for the filename), copying must happen first. Otherwise
 # the name will already have been printed to stdout before the file was copied
-find "$DCIM_DIR" -regextype posix-extended -type f -iregex $EXTENSIONS \
+find "$DCIM_DIR" -regextype posix-extended -type f -iregex $EXTENSIONS ${SELECTION_PATTERN+-iname "$SELECTION_PATTERN"} \
     -exec cp --preserve=timestamps {} "$TMP_DIR" \; -printf "$TMP_DIR"'/%f\n' | while read -r photofile; do
 
     target_filename=$(build_targetpath "$photofile")
