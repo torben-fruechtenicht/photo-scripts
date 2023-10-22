@@ -110,10 +110,8 @@ for photofile in $PHOTO_FILES; do
 	fi
 
 	lens_from_exif=$(lookup_lens_from_exif "$photofile")
-	manufacturer_from_exif=$(lookup_manufacturer_from_exif "$photofile")
 
 	test -v VERBOSE && echo "[CAMERA] $camera_from_exif" >&2
-	test -v VERBOSE && echo "[MANUFACTURER] $manufacturer_from_exif" >&2
 	test -v VERBOSE && test -n "$lens_from_exif" && echo "[LENS] $lens_from_exif" >&2
 
 	file_type=$(echo ${photofile##*.} | tr '[:upper:]' '[:lower:]')
@@ -148,14 +146,10 @@ for photofile in $PHOTO_FILES; do
 	sidecar_set_property "$sidecar_file" "IPTC" "Headline" "$(iptc_headline_from_photofile "$photofile" )"
 	sidecar_set_property "$sidecar_file" "IPTC" "Caption" \
 		"$(iptc_caption_from "$(photoid "$photofile")" "${DESCRIPTION+$DESCRIPTION}")"
-	
-	if [[ -n "$lens_from_exif" ]]; then
-		iptc_lens="$lens_from_exif"
-	else 
-		iptc_lens=""
+
+	if [[ -v KEYWORDS ]]; then
+		sidecar_add_iptc_keywords "$sidecar_file" "$KEYWORDS"
 	fi
-	iptc_keywords="RawTherapee;$camera_from_exif;$manufacturer_from_exif;$iptc_lens${KEYWORDS+;$KEYWORDS}"
-	sidecar_add_iptc_keywords "$sidecar_file" "$iptc_keywords"
 
 	echo "$sidecar_file"
 done

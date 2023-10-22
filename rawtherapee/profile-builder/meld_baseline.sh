@@ -47,9 +47,13 @@ cat "$BASELINE" | while read -r line; do
         continue
     fi
 
-    # TODO handle comments 
+    # TODO handle comment lines
 
     property=$(echo $line | cut -d'=' -f1)
     value=$(echo $line | cut -d'=' -f2)
+
+    # TODO we should add an exception here for properties which are multivalued and where it makes sense
+    # to inherit existing values from parent baselines
+
     sidecar_set_property "$PROFILE" "$section" "$property" "$value"
 done
