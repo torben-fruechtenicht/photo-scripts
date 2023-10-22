@@ -19,9 +19,9 @@ lookup_lens_from_exif() {
 		raw|crw|cr2 )
 			;; # do nothing, the only cameras we have with these types are compact cameras
 		orf)
-			exiv2 -Pt -g "Exif.OlympusEq.LensModel" "$photofile" 2> /dev/null;;
+			exiv2 -Pt -g "Exif.OlympusEq.LensModel" "$photofile" 2> /dev/null || true;;
 		jpg )
-			exiv2 -Pt -g  "Exif.Photo.LensModel" "$photofile" 2> /dev/null;;
+			exiv2 -Pt -g  "Exif.Photo.LensModel" "$photofile" 2> /dev/null || true;;
 		*) 
 			echo "[WARN] Unknown filetype $file_type of $photofile, cannot lookup lens info" >&2;;
 	esac
