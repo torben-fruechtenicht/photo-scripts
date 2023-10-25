@@ -1,0 +1,42 @@
+#! /usr/bin/env bash
+
+# For photofiles which 
+#   - have a name unsuitable for parsing/fixing
+#   - have valid Exif metadata
+#   - are all from the same day
+#   - edits are done with Gimp. For each edited photo there is a xcf and a jpg file which have a variant number, e.g. "-01" inserted
+#       before the extension
+
+set -eux
+
+PATH="$(dirname "$0")/..:$PATH"
+
+while getopts "p:" opt; do
+    case $opt in
+        p ) declare -r pattern=$OPTARG
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+sourcedir=$1
+albumtitle=$2
+phototitle=$3
+targetrootdir=$4
+
+edit_files_tmpdir=$(mktemp -d)
+
+# move away all editing files
+find "$sourcedir" -type f -name "${pattern+*$pattern*}*.xcf" -exec mv {} "$edit_files_tmpdir" \;
+find "$sourcedir" -type f -name "${pattern+*$pattern*}*-0?.jpg" -exec mv {} "$edit_files_tmpdir" \;
+
+# import photofiles, extracting the exact target directory from the output
+# FIXME actually, we could get the targetdir by just looking at the last photofile
+targetdir=$(import_photos -a "$albumtitle" "${phototitle+-t $phototitle}" -y jpeg \
+    "$sourcedir" "${pattern+*$pattern*}" "$targetrootdir" | rev | cut -d '/' -f 2- | rev | sort -u | head -n 1)
+
+# last step move all edit files to a sub directory "edit" of targetdir
+editsdir="$targetdir/edit"
+test -e "$editsdir" || mkdir "$editsdir"
+find "$edit_files_tmpdir" -type f -exec mv {} "$editsdir" \;
+mv "$edit_files_tmpdir/*" "$editsdir"
+#rm -rf "$edit_files_tmpdir"
