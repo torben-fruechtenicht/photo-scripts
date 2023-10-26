@@ -1,0 +1,63 @@
+#! /usr/bin/env bash
+
+set -eux
+
+while getopts "c:" opt; do
+    case $opt in
+        c ) camera=$OPTARG
+	esac
+done
+if ! [[ -v camera ]]; then
+    echo "[ERROR] No camera" >&2
+    exit 1
+fi
+shift $(expr $OPTIND - 1 )
+
+find $1 -type f | while read -r file; do
+
+    extension=${file##*.}
+    
+    if ! [[ $extension == "jpg" ]]; then
+        continue
+    fi
+
+    case $camera in
+        s70 ) exifFilenumberKey="Exif.Canon.FileNumber";;
+    esac
+    
+    filenumber=$(exiv2 -Pt -K "$exifFilenumberKey" "$file")
+    if [[ -z $filenumber ]]; then
+        echo "[WARN] No filenumber in $file" >&2
+        continue
+    fi
+
+    # build photonumber from filenumber
+    case $camera in
+        s70 ) photonumber=${filenumber//-};;
+    esac
+
+    # search in parent dir for matches (if more than one continue)
+    maybe_matches=$(find "$(dirname "$(dirname "$file")")" -type f -iname "*$photonumber.jpg")
+    if [[ -z $maybe_matches ]]; then
+        echo "[WARN] No matches found for photonumber $photonumber from $file" >&2
+        continue
+    elif (( $(wc -l <<<$maybe_matches) > 1 )); then
+        echo "[WARN] Found more than one match for photonumber $photonumber from $file: $maybe_matches" >&2
+        continue
+    fi
+
+    match_filebasename=$(basename -s ".JPG" "$maybe_matches")
+
+    editdir=$(dirname "$file")
+
+    # TODO move to converted!
+    echo "mv $file $editdir/$match_filebasename.$extension" >&2
+
+    # if xcf exists as sibling of jpg file, rename that, too
+    xcffile="$editdir/$(basename -s ".jpg" "$file").xcf"
+    if [[ -e $xcffile ]]; then
+        # TODO move to converted!
+        echo "mv $xcffile $editdir/$match_filebasename.xcf" >&2
+    fi
+
+done
