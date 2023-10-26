@@ -4,10 +4,14 @@
 #   - have a name unsuitable for parsing/fixing
 #   - have valid Exif metadata
 #   - are all from the same day
-#   - edits are done with Gimp. For each edited photo there is a xcf and a jpg file which have a variant number, e.g. "-01" inserted
-#       before the extension
+#   - edits have been done with Gimp. For each edited photo there is a xcf and a jpg file which have a variant number, 
+#       e.g. "-01" inserted before the extension
+#   - are in a directoy that has *no* subdirectories with more photos. (This script uses import_photos which would
+#       import all of the photos)
+# use "-p" to restrict the selection of photosfiles (leading and trailing wildcard are automatically applied to the pattern)
 
-set -eux
+set -eu
+set -o pipefail
 
 PATH="$(dirname "$0")/..:$PATH"
 
@@ -25,18 +29,25 @@ targetrootdir=$4
 
 edit_files_tmpdir=$(mktemp -d)
 
-# move away all editing files
+# move away all editing files - we only know after importing the photos where we have to create the edits
+# directory. and importing the photos is easier if the edit files don't make stuff more complicated
 find "$sourcedir" -type f -name "${pattern+*$pattern*}*.xcf" -exec mv {} "$edit_files_tmpdir" \;
+# N.B. assumes that we only max. 9 edited photos (01-09)
+# FIXME integrate with previous find call, use "-or"
 find "$sourcedir" -type f -name "${pattern+*$pattern*}*-0?.jpg" -exec mv {} "$edit_files_tmpdir" \;
 
 # import photofiles, extracting the exact target directory from the output
-# FIXME actually, we could get the targetdir by just looking at the last photofile
-targetdir=$(import_photos -a "$albumtitle" "${phototitle+-t $phototitle}" -y jpeg \
-    "$sourcedir" "${pattern+*$pattern*}" "$targetrootdir" | rev | cut -d '/' -f 2- | rev | sort -u | head -n 1)
+# FIXME actually, we could get the targetdir by just looking at just one photofile (i.e. either first or last)
+targetdir=$(import_photos -a "$albumtitle" ${phototitle+-t "$phototitle"} -y jpeg \
+    "$sourcedir" ${pattern+"*$pattern*"} "$targetrootdir" | rev | cut -d '/' -f 2- | rev | sort -u | head -n 1)
+# TODO pipe output from import_photos to "xargs rm" to delete all files right away?
+if [[ -z $targetdir ]]; then
+    echo "[ERROR] No photos were imported. Edit files are in $edit_files_tmpdir" >&2
+    exit 1
+fi
 
-# last step move all edit files to a sub directory "edit" of targetdir
+# last step: move all edit files to a sub directory "edit" of targetdir
 editsdir="$targetdir/edit"
 test -e "$editsdir" || mkdir "$editsdir"
 find "$edit_files_tmpdir" -type f -exec mv {} "$editsdir" \;
-mv "$edit_files_tmpdir/*" "$editsdir"
-#rm -rf "$edit_files_tmpdir"
+rm -rf "$edit_files_tmpdir"
