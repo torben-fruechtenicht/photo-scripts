@@ -51,12 +51,14 @@ find $1 -type f | while read -r file; do
     editdir=$(dirname "$file")
 
     # TODO move to converted!
+    # FIXME this will drop the variant info
     echo "mv $file $editdir/$match_filebasename.$extension" >&2
 
     # if xcf exists as sibling of jpg file, rename that, too
     xcffile="$editdir/$(basename -s ".jpg" "$file").xcf"
     if [[ -e $xcffile ]]; then
         # TODO move to converted!
+        # FIXME this will drop the variant info
         echo "mv $xcffile $editdir/$match_filebasename.xcf" >&2
     fi
 
