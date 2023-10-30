@@ -2,18 +2,24 @@
 
 set -eux
 
-while getopts "c:" opt; do
+while getopts "c:t:" opt; do
     case $opt in
-        c ) camera=$OPTARG
+        c ) camera=$OPTARG;;
+        # N.B. Always relative to the directory of a photo found in $search_dir
+        t ) target_dir=$OPTARG;;
 	esac
 done
 if ! [[ -v camera ]]; then
     echo "[ERROR] No camera" >&2
     exit 1
 fi
+if ! [[ -v target_dir ]]; then
+    target_dir=""
+fi
 shift $(expr $OPTIND - 1 )
 
 search_dir=$1
+
 
 function find_photofile_with_matching_photonumber() {
     local -r searchdir=$1
@@ -63,17 +69,17 @@ find "$search_dir" -type f | while read -r file; do
 
     file_basename=${file%*.$extension}
     variant=${file_basename##*-}
+    file_dir=${file%/*}
 
-    editdir=$(dirname "$file")
+    renamed_target_dir=$file_dir${target_dir+/$target_dir}
+    test -e "$renamed_target_dir" || mkdir --parents "$renamed_target_dir"
 
-    # TODO move to converted!
-    echo "mv $file $editdir/$matched_file_basename-$variant.$extension" >&2
+    echo "mv $file $renamed_target_dir/$matched_file_basename-$variant.$extension" >&2
 
     # if xcf exists as sibling of jpg file, rename that, too
-    xcffile="$editdir/$(basename -s ".jpg" "$file").xcf"
+    xcffile="$file_basename.xcf"
     if [[ -e $xcffile ]]; then
-        # TODO move to converted!
-        echo "mv $xcffile $editdir/$matched_file_basename-$variant.xcf" >&2
+        echo "mv $xcffile $renamed_target_dir/$matched_file_basename-$variant.xcf" >&2
     fi
 
 done
