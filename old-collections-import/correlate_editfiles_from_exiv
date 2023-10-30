@@ -39,6 +39,7 @@ function find_photofile_with_matching_photonumber() {
 
 find "$search_dir" -type f | while read -r file; do
 
+    file=$(readlink -e "$file")
     extension=${file##*.}
     
     if ! [[ $extension == "jpg" ]]; then
@@ -60,16 +61,16 @@ find "$search_dir" -type f | while read -r file; do
         s70 ) photonumber=${filenumber//-};;
     esac
 
-    search_for_match_in=$(dirname "$(dirname "$file")")
+    file_dir=${file%/*}
+    file_basename=${file%*.$extension}
+    variant=${file_basename##*-}
+
+    search_for_match_in=${file_dir%/*}
     matched_file=$(find_photofile_with_matching_photonumber "$search_for_match_in" "$photonumber")
     test -z "$matched_file" && continue
 
     matched_file_extension=${matched_file##*.}
     matched_file_basename=${matched_file%.$matched_file_extension}
-
-    file_basename=${file%*.$extension}
-    variant=${file_basename##*-}
-    file_dir=${file%/*}
 
     renamed_target_dir=$file_dir${target_dir+/$target_dir}
     test -e "$renamed_target_dir" || mkdir --parents "$renamed_target_dir"
