@@ -13,7 +13,9 @@ if ! [[ -v camera ]]; then
 fi
 shift $(expr $OPTIND - 1 )
 
-find $1 -type f | while read -r file; do
+search_dir=$1
+
+find "$search_dir" -type f | while read -r file; do
 
     extension=${file##*.}
     
@@ -24,7 +26,7 @@ find $1 -type f | while read -r file; do
     case $camera in
         s70 ) exifFilenumberKey="Exif.Canon.FileNumber";;
     esac
-    
+
     filenumber=$(exiv2 -Pt -K "$exifFilenumberKey" "$file")
     if [[ -z $filenumber ]]; then
         echo "[WARN] No filenumber in $file" >&2
@@ -37,7 +39,7 @@ find $1 -type f | while read -r file; do
     esac
 
     # search in parent dir for matches (if more than one continue)
-    maybe_matches=$(find "$(dirname "$(dirname "$file")")" -type f -iname "*$photonumber.jpg")
+    maybe_matches=$(find "$(dirname "$(dirname "$file")")" -type f -iname "*$photonumber.jpg" -printf "%f\n")
     if [[ -z $maybe_matches ]]; then
         echo "[WARN] No matches found for photonumber $photonumber from $file" >&2
         continue
@@ -46,20 +48,24 @@ find $1 -type f | while read -r file; do
         continue
     fi
 
-    match_filebasename=$(basename -s ".JPG" "$maybe_matches")
+    matched_file_extension=${maybe_matches##*.}
+    matched_file_basename=${maybe_matches%.$matched_file_extension}
+
+    file_basename=${file%*.$extension}
+    variant=${file_basename##*-}
 
     editdir=$(dirname "$file")
 
     # TODO move to converted!
     # FIXME this will drop the variant info
-    echo "mv $file $editdir/$match_filebasename.$extension" >&2
+    echo "mv $file $editdir/$matched_file_basename-$variant.$extension" >&2
 
     # if xcf exists as sibling of jpg file, rename that, too
     xcffile="$editdir/$(basename -s ".jpg" "$file").xcf"
     if [[ -e $xcffile ]]; then
         # TODO move to converted!
         # FIXME this will drop the variant info
-        echo "mv $xcffile $editdir/$match_filebasename.xcf" >&2
+        echo "mv $xcffile $editdir/$match_filebasename-$variant.xcf" >&2
     fi
 
 done
