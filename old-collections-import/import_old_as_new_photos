@@ -2,9 +2,10 @@
 
 # For photofiles which 
 #   - have a name unsuitable for parsing/fixing
+#   - but still have the SOOC uppercase extensions (JPG and not jpg)
 #   - have valid Exif metadata
 #   - are all from the same day
-#   - edits have been done with Gimp. For each edited photo there is a xcf and a jpg file which have a variant number, 
+#   - edits have been done with Gimp. For each edited photo there is a xcf and a jpg file which can have a variant number, 
 #       e.g. "-01" inserted before the extension
 #   - are in a directoy that has *no* subdirectories with more photos. (This script uses import_photos which would
 #       import all of the photos)
@@ -31,10 +32,9 @@ edit_files_tmpdir=$(mktemp -d)
 
 # move away all editing files - we only know after importing the photos where we have to create the edits
 # directory. and importing the photos is easier if the edit files don't make stuff more complicated
-find "$sourcedir" -type f -name "${pattern+*$pattern*}*.xcf" -exec mv {} "$edit_files_tmpdir" \;
-# N.B. assumes that we only max. 9 edited photos (01-09)
-# FIXME integrate with previous find call, use "-or"
-find "$sourcedir" -type f -name "${pattern+*$pattern*}*-0?.jpg" -exec mv {} "$edit_files_tmpdir" \;
+find "$sourcedir" -type f \
+    \( -name "${pattern+*$pattern*}*.jpg" -o -name "${pattern+*$pattern*}*.xcf"  \) \
+     -exec mv {} "$edit_files_tmpdir" \;
 
 # import photofiles, extracting the exact target directory from the output
 # FIXME actually, we could get the targetdir by just looking at just one photofile (i.e. either first or last)
@@ -46,7 +46,7 @@ if [[ -z $targetdir ]]; then
     exit 1
 fi
 
-# last step: move all edit files to a sub directory "edit" of targetdir
+# move all edit files to a sub directory "edit" of targetdir
 editsdir="$targetdir/edit"
 test -e "$editsdir" || mkdir "$editsdir"
 find "$edit_files_tmpdir" -type f -exec mv {} "$editsdir" \;
