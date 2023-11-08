@@ -1,12 +1,13 @@
 #! /usr/bin/env bash
 
-set -eux
+set -eu
 
-while getopts "c:t:" opt; do
+while getopts "c:t:d" opt; do
     case $opt in
         c ) camera=$OPTARG;;
         # N.B. Always relative to the directory of a photo found in $search_dir
         t ) target_dir=$OPTARG;;
+        d ) dry_run=;;
 	esac
 done
 if ! [[ -v camera ]]; then
@@ -25,8 +26,10 @@ function find_photofile_with_matching_photonumber() {
     local -r searchdir=$1
     local -r photonumber=$2
 
-    local -r maybe_matches=$(find "$searchdir" -type f -iname "*$photonumber.jpg" -printf "%f\n")
-    
+    # N.B. we use "-name" and not "-iname" because we only want to match original photofiles (whihc
+    #   have uppercase extensions). and for the number part case is irrelevant. 
+    #   Of course, we could also limit the depth
+    local -r maybe_matches=$(find "$searchdir" -type f -name "*$photonumber.JPG" -printf "%f\n")
     if [[ -z $maybe_matches ]]; then
         echo "[WARN] No matches found for photonumber $photonumber from $file" >&2
     elif (( $(wc -l <<<$maybe_matches) > 1 )); then
@@ -36,8 +39,9 @@ function find_photofile_with_matching_photonumber() {
     fi
 }
 
-
-find "$search_dir" -type f | while read -r file; do
+# add a reverse sort step to ensure that we will process "jpg" files last. so we don't encounter "xcf" files 
+# which have already been renamed
+find "$search_dir" -type f | sort -r | while read -r file; do
 
     file=$(readlink -e "$file")
     extension=${file##*.}
@@ -61,26 +65,43 @@ find "$search_dir" -type f | while read -r file; do
         s70 ) photonumber=${filenumber//-};;
     esac
 
+    echo "Testing $file and photonumber $photonumber" >&2
+
     file_dir=${file%/*}
     file_basename=${file%*.$extension}
     variant=${file_basename##*-}
 
     search_for_match_in=${file_dir%/*}
     matched_file=$(find_photofile_with_matching_photonumber "$search_for_match_in" "$photonumber")
-    test -z "$matched_file" && continue
+    test -n "$matched_file" || continue
 
     matched_file_extension=${matched_file##*.}
     matched_file_basename=${matched_file%.$matched_file_extension}
 
     renamed_target_dir=$file_dir${target_dir+/$target_dir}
-    test -e "$renamed_target_dir" || mkdir --parents "$renamed_target_dir"
+    if ! [[ -e "$renamed_target_dir" ]]; then
+        if [[ -v dry_run ]]; then
+            echo "mkdir --parents $renamed_target_dir"
+        else 
+            mkdir --parents "$renamed_target_dir"
+        fi
+    fi
 
-    echo "mv $file $renamed_target_dir/$matched_file_basename-$variant.$extension" >&2
+    if [[ -v dry_run ]]; then
+        echo "mv $file $renamed_target_dir/$matched_file_basename-$variant.$extension" >&2
+    else 
+        mv "$file" "$renamed_target_dir/$matched_file_basename-$variant.$extension"
+    fi
+    
 
     # if xcf exists as sibling of jpg file, rename that, too
     xcffile="$file_basename.xcf"
     if [[ -e $xcffile ]]; then
-        echo "mv $xcffile $renamed_target_dir/$matched_file_basename-$variant.xcf" >&2
+        if [[ -v dry_run ]]; then
+            echo "mv $xcffile $renamed_target_dir/$matched_file_basename-$variant.xcf" >&2
+        else 
+            mv "$xcffile" "$renamed_target_dir/$matched_file_basename-$variant.xcf"
+        fi
     fi
 
 done
