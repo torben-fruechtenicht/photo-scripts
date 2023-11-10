@@ -1,0 +1,45 @@
+#! /usr/bin/env bash
+
+set -eu
+
+basedir="${0%/*}/.."
+source "$basedir/metadata/metadata_writers.sh"
+source "$basedir/lib/jpeg_iptc.sh"
+source "$basedir/lib/photofiles.sh"
+source "$basedir/lib/strings.sh"
+
+searchdir=$1
+photographer=$2
+
+# FIXME
+# exit with error if $searchdir is not a converted directory
+
+function is_metadata_writable_file() {
+    local file=$1
+    local dir=${file%/*}
+    local parentdir=${dir##*/}
+    local extension=${file##*.}
+    
+    if [[ $parentdir == "converted" ]]; then
+        [[ $extension == "jpg" ]] || [[ $extension == "pp3" ]]
+    else  
+        [[ $extension == "pp3" ]]
+    fi
+}
+
+find "$searchdir" -type f | sort -r | tail -n 200 | while read -r file; do
+    if ! is_metadata_writable_file "$file"; then
+        echo "[WARN] Cannot write metadata in $file" >&2
+        continue
+    fi
+
+    set_iptc_headline_from_filename "$file"
+    set_iptc_caption_from_filename "$file"
+    set_iptc_byline "$file" "$photographer"
+    set_iptc_copyright_notice "$file" "$photographer" 
+    set_album_iptc_keyword_from_path "$file" 
+    set_title_iptc_keyword_from_filenane "$file"
+
+    echo "$file"
+done
+
