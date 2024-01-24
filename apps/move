@@ -14,13 +14,17 @@ source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 source "$BASE_DIR/lib/photofiles.sh"
 
-photos=$(selector) 
-selector_rc=$? 
-if [[ $selector_rc == 101 ]]; then
-    exit
-elif [[ -z $photos ]]; then
-    notify_warning "$APP_TITLE" "No matching photos found"  
-    exit
+if [[ $# > 0 ]]; then
+    photos=$(tr " " "\n" <<<$*)
+else
+    photos=$(selector) 
+    selector_rc=$? 
+    if [[ $selector_rc == 101 ]]; then
+        exit
+    elif [[ -z $photos ]]; then
+        notify_warning "$APP_TITLE" "No matching photos found"  
+        exit
+    fi
 fi
 
 album_field_value=$(remember_list "album" "gnl")

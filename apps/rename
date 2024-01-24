@@ -14,14 +14,19 @@ source "$BASE_DIR/lib/photofiles.sh"
 
 PATH="$BASE_DIR:$BASE_DIR/apps:$PATH"
 
-photos=$(selector)
-selector_rc=$? 
-if [[ $selector_rc == 101 ]]; then
-    exit
-elif [[ -z $photos ]]; then
-    notify_warning "$APP_TITLE" "No matching photos found"
-    exit 1
-fi   
+if [[ $# > 0 ]]; then
+    photos=$(tr " " "\n" <<<$*)
+else
+    photos=$(selector)
+    selector_rc=$? 
+    if [[ $selector_rc == 101 ]]; then
+        exit
+    elif [[ -z $photos ]]; then
+        notify_warning "$APP_TITLE" "No matching photos found"
+        exit 1
+    fi
+fi
+
 
 title_field_values=$(remember_list "title" "gnl")
 rename_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "" \
