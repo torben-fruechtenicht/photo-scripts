@@ -15,4 +15,5 @@ for ((i = 0; i < $#; i++)); do
   photofile=${files[$i]}
   echo "$photofile: $photo_datetime" >&2
   exiftool -overwrite_original "-AllDates=$photo_datetime" "$photofile"
+  touch -d "$photo_datetime" "$photofile"
 done
