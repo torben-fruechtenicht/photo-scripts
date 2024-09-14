@@ -1,0 +1,18 @@
+#! /usr/bin/env bash
+
+set -eu
+
+starttime_secs=$(date -d "$1" +%s)
+interval_secs=$(($2 * 60))
+
+shift 2
+
+files=( $(printf '%s\n' $@ | sort) )
+for ((i = 0; i < $#; i++)); do
+  offset_secs=$(($interval_secs * $i))
+  photo_timestamp_secs=$(($starttime_secs + $offset_secs))
+  photo_datetime=$(date -d @$photo_timestamp_secs +"%F %T")
+  photofile=${files[$i]}
+  echo "$photofile: $photo_datetime" >&2
+  exiftool -overwrite_original "-AllDates=$photo_datetime" "$photofile"
+done
