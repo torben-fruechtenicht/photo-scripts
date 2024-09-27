@@ -72,13 +72,6 @@ if [[ -z $TARGET_DIR ]]; then
 fi
 
 
-build_photonumber_filename_with_leading_p() {
-    local -r file_basename=$(basename "$1")
-    # remove the leading "P"
-    local -r p_removed=${file_basename:1}
-    echo ${p_removed%%.*}
-}
-
 build_photonumber_canon_exif_filenumber() {
     # e.g. "100-2071"
      exiv2 -Pt -g 'Exif.Canon.FileNumber' "$1" 2> /dev/null | tr --delete '-' 
@@ -105,6 +98,13 @@ build_photonumber_olympus_filename() {
     fi
 }
 
+build_photonumber_from_prefixed_filename() {
+    local -r file_basename=$(basename "$1")
+    local -r prefix=$2
+    local -r prefix_removed=${file_basename#$prefix}
+    echo ${prefix_removed%%.*}    
+}
+
 camera_id() {
     local -r photofile=$1
     local -r manufacturer=$(lookup_manufacturer_from_exif "$photofile")
@@ -117,11 +117,16 @@ build_photonumber_from_exif_camera() {
     local -r photofile=$1
     case "$(camera_id "$photofile")" in 
         Panasonic_DMC-FZ50 )
-            build_photonumber_filename_with_leading_p "$photofile";;
+             build_photonumber_from_prefixed_filename "$photofile" "P";; 
         Canon_CanonPowerShotG9|Canon_CanonPowerShotS70 )
             build_photonumber_canon_exif_filenumber "$photofile";;
         OLYMPUS_IMAGING_CORP._E-M10 )
             build_photonumber_olympus_filename "$photofile";;
+        SONY_DSC-RX100M3 )
+            build_photonumber_from_prefixed_filename "$photofile" "DSC";;    
+        * )
+            echo "Unknown camera $(camera_id "$photofile")" >&2
+            exit 1;;
     esac
 }
 
@@ -152,6 +157,11 @@ camera_name() {
             echo "s70";;
         OLYMPUS_IMAGING_CORP._E-M10 )
             echo "e-m10";;
+        SONY_DSC-RX100M3 )
+            echo "rx100m3";;
+        * )
+            echo "Unknown camera $(camera_id "$photofile")" >&2
+            exit 1;;
     esac
 }
 
@@ -192,11 +202,11 @@ fi
 
 case $FILETYPES in 
     $FILETYPES_RAW_ONLY )
-        declare -r EXTENSIONS=".+\.(ORF|CRW|CR2|RAW)";;
+        declare -r EXTENSIONS=".+\.(ORF|CRW|CR2|RAW|ARW)";;
     $FILETYPES_JPG_ONLY )
         declare -r EXTENSIONS=".+\.(JPG)";;
     $FILETYPES_RAW_AND_JPG|* )
-        declare -r EXTENSIONS=".+\.(ORF|CRW|CR2|RAW|JPG)";;
+        declare -r EXTENSIONS=".+\.(ORF|CRW|CR2|RAW|JPG|ARW)";;
 esac
 
 # TODO to use DATE_TAKEN, add another step to pipeline: get date from photofile and compare with DATE, print photofile to stdout
