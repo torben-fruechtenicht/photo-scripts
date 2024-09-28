@@ -125,6 +125,7 @@ declare -r DESCRIPTION=$(get_option_at_index "$options_string" 7)
 declare -r FILETYPES=$(get_option_at_index "$options_string" 8)
 
 
+set -x
 imported_photos=$(import_photos ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} ${FILETYPES+-y "$FILETYPES"} "$DCIM_DIR" "$TARGET_DIR")
 import_photos_rc=$?
 if [[ $import_photos_rc = 0 ]]; then
@@ -136,7 +137,7 @@ else
 fi
 
 
-write_metadata ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} ${DESCRIPTION:+-d "$DESCRIPTION"} $(echo $imported_photos)
+write_metadata -o ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} ${DESCRIPTION:+-d "$DESCRIPTION"} "$imported_photos"
 write_metadata_rc=$?
 if [[ $write_metadata_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Wrote initial metadata"

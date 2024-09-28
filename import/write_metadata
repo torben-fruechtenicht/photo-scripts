@@ -9,7 +9,7 @@ source "$BASEDIR/lib/exif.sh"
 source "$BASEDIR/lib/strings.sh"
 source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 
-while getopts "c:k:d:" opt; do
+while getopts "c:k:d:o" opt; do
     case $opt in
         c ) 
 			creator=$OPTARG;;   
@@ -18,6 +18,8 @@ while getopts "c:k:d:" opt; do
 			keywords=$OPTARG;;
 		d )
 			description=$OPTARG;;
+        o ) 
+            overwrite=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -30,7 +32,7 @@ for photofile in $photofiles; do
 
     # Prepare Rawtherapee sidecar. Exits with error if one exists already
     rawtherapee_sidecar="$photofile.pp3"
-    if [[ -e $rawtherapee_sidecar ]]; then
+    if ! [[ -v overwrite ]] && [[ -e $rawtherapee_sidecar ]]; then
         echo "Sidecar $rawtherapee_sidecar exists already, exiting" >&2
         exit 1
     fi
@@ -58,5 +60,7 @@ for photofile in $photofiles; do
     sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Headline" "$iptc_headline"
 
     # iptc keywords
-    sidecar_add_iptc_keywords "$rawtherapee_sidecar" "$keywords"
+    if [[ -v keywords ]]; then 
+        sidecar_add_iptc_keywords "$rawtherapee_sidecar" "$keywords"
+    fi
 done
