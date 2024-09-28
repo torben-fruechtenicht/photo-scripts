@@ -1,0 +1,62 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASEDIR/lib/photofiles.sh"
+source "$BASEDIR/lib/iptc.sh"
+source "$BASEDIR/lib/exif.sh"
+source "$BASEDIR/lib/strings.sh"
+source "$BASEDIR/rawtherapee/lib/sidecar.sh"
+
+while getopts "c:k:d:" opt; do
+    case $opt in
+        c ) 
+			creator=$OPTARG;;   
+		k ) 
+			# CSV string, using ";". no quoting needed for keywords with blanks
+			keywords=$OPTARG;;
+		d )
+			description=$OPTARG;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+photofiles=$*
+
+
+for photofile in $photofiles; do
+    photofile_filename=$(basename "$photofile")
+
+    # Prepare Rawtherapee sidecar. Exits with error if one exists already
+    rawtherapee_sidecar="$photofile.pp3"
+    if [[ -e $rawtherapee_sidecar ]]; then
+        echo "Sidecar $rawtherapee_sidecar exists already, exiting" >&2
+        exit 1
+    fi
+    echo -e "[IPTC]\n" > "$rawtherapee_sidecar"
+
+    # creator
+    sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Creator" "$creator" 
+
+    # copyright
+    year_from_exif=$(exiftool -s3 -DateTimeOriginal "$photofile" | cut -d':' -f 1)
+    if [[ -v creator ]]; then
+        copyright="Copyright (c) $creator $year_from_exif"
+    else
+        copyright="Copyright (c) $year_from_exif"
+    fi
+    sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Copyright" "$copyright"
+
+    # iptc caption
+    photofile_basename=${photofile_filename%.*}
+    iptc_caption="$(iptc_caption_from "$photofile_basename" "${description+$description}")"
+    sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Caption" "$iptc_caption"
+
+    # iptc headline
+    iptc_headline=$(iptc_headline_from_photofile "$photofile")
+    sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Headline" "$iptc_headline"
+
+    # iptc keywords
+    sidecar_add_iptc_keywords "$rawtherapee_sidecar" "$keywords"
+done

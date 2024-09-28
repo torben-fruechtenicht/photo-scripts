@@ -11,7 +11,42 @@ source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
-PATH="$BASE_DIR:$BASE_DIR/rawtherapee/profile-builder:$PATH"
+PATH="$BASE_DIR:$BASE_DIR/rawtherapee/profile-builder:$BASE_DIR/import:$PATH"
+
+
+print_duration() {
+    local m s
+    ((m=${SECONDS}/60))
+    ((s=${SECONDS}%60))
+    if [[ $m != 0 ]]; then
+        echo "$m minutes $s seconds"
+    else 
+        echo "$s seconds"
+    fi
+}
+
+count_lines() {
+    if [[ -z $1 ]]; then
+        echo 0
+    else
+        wc -l <<<"$1"
+    fi
+}
+
+augment_user_keywords() {
+    local keywords=$1
+
+    if [[ -v ALBUM_AS_KEYWORD ]] && ! [[ $ALBUM = $DEFAULT_ALBUM_VALUE ]]; then
+        keywords="${keywords:+$keywords;}$ALBUM"
+    fi
+
+    if [[ -v TITLE_AS_KEYWORD ]] && [[ -n $TITLE ]] && [[ $ALBUM != $TITLE ]]; then
+        keywords="${keywords:+$keywords;}$TITLE"
+    fi
+
+    echo "$keywords"
+}
+
 
 
 while getopts "c:" opt; do
@@ -25,7 +60,6 @@ shift $(expr $OPTIND - 1 )
 
 declare -r DCIM_DIR=${1+$1}
 declare -r TARGET_DIR=${2+$2}
-declare -r SIDECAR_TEMPLATES_DIR=${3+$3}
 
 declare -r DEFAULT_ALBUM_VALUE="New photos"
 declare -r DEFAULT_TITLE_VALUE=""
@@ -80,42 +114,19 @@ if [[ -n $creator_string ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "creator" "$CREATOR" 10
 fi
 
-augment_user_keywords() {
-    local keywords=$1
-
-    if [[ -v ALBUM_AS_KEYWORD ]] && ! [[ $ALBUM = $DEFAULT_ALBUM_VALUE ]]; then
-        keywords="${keywords:+$keywords;}$ALBUM"
-    fi
-
-    if [[ -v TITLE_AS_KEYWORD ]] && [[ -n $TITLE ]] && [[ $ALBUM != $TITLE ]]; then
-        keywords="${keywords:+$keywords;}$TITLE"
-    fi
-
-    echo "$keywords"
-}
-
 keywords_string=$(trim_whitespace "$(get_option_at_index "$options_string" 6)")
 if [[ -n "$keywords_string" ]]; then
     declare -r USER_KEYWORDS=$keywords_string
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
 fi
+
 declare -r KEYWORDS=$(augment_user_keywords "${USER_KEYWORDS-}")
-
 declare -r DESCRIPTION=$(get_option_at_index "$options_string" 7)
-
 declare -r FILETYPES=$(get_option_at_index "$options_string" 8)
+
 
 imported_photos=$(import_photos ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} ${FILETYPES+-y "$FILETYPES"} "$DCIM_DIR" "$TARGET_DIR")
 import_photos_rc=$?
-
-count_lines() {
-    if [[ -z $1 ]]; then
-        echo 0
-    else
-        wc -l <<<"$1"
-    fi
-}
-
 if [[ $import_photos_rc = 0 ]]; then
     imported_photos_count=$(count_lines "$imported_photos")
     notify_info "$APP_TITLE" "Imported $imported_photos_count photo(s)"
@@ -124,26 +135,15 @@ else
     exit 1
 fi
 
-created_sidecars=$(create_sidecar ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} ${DESCRIPTION:+-d "$DESCRIPTION"} \
-    "$SIDECAR_TEMPLATES_DIR" $(echo $imported_photos))
-create_sidecar_rc=$?
-if [[ $create_sidecar_rc = 0 ]]; then
-    sidecars_count=$(count_lines "$created_sidecars")
-    notify_info "$APP_TITLE" "Created $sidecars_count sidecar(s)"
+
+write_metadata ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} ${DESCRIPTION:+-d "$DESCRIPTION"} $(echo $imported_photos)
+write_metadata_rc=$?
+if [[ $write_metadata_rc = 0 ]]; then
+    notify_info "$APP_TITLE" "Wrote initial metadata"
 else
-    notify_error "$APP_TITLE" "Creating sidecars failed with return code $create_sidecar_rc"
+    notify_error "$APP_TITLE" "Writing initial metadata failed with return code $write_metadata_rc"
     exit 1
 fi
 
-print_duration() {
-    local m s
-    ((m=${SECONDS}/60))
-    ((s=${SECONDS}%60))
-    if [[ $m != 0 ]]; then
-        echo "$m minutes $s seconds"
-    else 
-        echo "$s seconds"
-    fi
-}
 
 notify_info "$APP_TITLE" "Import done ($imported_photos_count photo(s), took $(print_duration)."
