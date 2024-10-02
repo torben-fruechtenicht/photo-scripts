@@ -27,6 +27,13 @@ sidecar_set_property() {
     fi
 }
 
+rt_sidecar_has_property_value() {
+	local sidecar=$1
+	local section=$2
+	local property_name=$3
+	sed -n '/\['"$section"'\]/,/^$/p' "$sidecar" | grep -q "$property_name=.*"
+}
+
 sidecar_get_property() {
 	local -r sidecar=$1
     local -r section=$2

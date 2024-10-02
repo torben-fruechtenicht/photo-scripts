@@ -46,7 +46,7 @@ is_original_photofile() (
 
     [[ -f $file ]] && \
         # TODO use PHOTO_FULLNAME_PATTERN
-        [[ $file =~ .+\.(ORF|RAW|JPG|CRW|CR2)$ ]] && \
+        [[ $file =~ .+\.(ORF|RAW|JPG|CRW|CR2|ARW)$ ]] && \
         ! [[ $file =~ .+/converted/[^/]+$ ]]
 )
 
@@ -73,6 +73,11 @@ is_jpeg() {
 is_rawtherapee_sidecar() {
 	local -r file=$1
 	[[ $file =~ .*\.pp[23]$ ]]
+}
+
+is_xmp_sidecar() {
+    local parentdir=${1%/*}
+    ! [[ ${parentdir##*/} == converted ]] && [[ $1 =~ .*\.xmp ]]
 }
 
 albumpath_from_file() {

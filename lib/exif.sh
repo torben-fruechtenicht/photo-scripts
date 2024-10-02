@@ -16,7 +16,7 @@ lookup_lens_from_exif() {
 	local -r file_type=$(tr '[:upper:]' '[:lower:]' <<<${photofile##*.})
 
 	case $file_type in 
-		raw|crw|cr2 )
+		raw|crw|cr2|arw )
 			;; # do nothing, the only cameras we have with these types are compact cameras
 		orf)
 			exiv2 -Pt -g "Exif.OlympusEq.LensModel" "$photofile" 2> /dev/null || true;;

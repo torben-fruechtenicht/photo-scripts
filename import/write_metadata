@@ -7,15 +7,15 @@ source "$BASEDIR/lib/photofiles.sh"
 source "$BASEDIR/lib/iptc.sh"
 source "$BASEDIR/lib/exif.sh"
 source "$BASEDIR/lib/strings.sh"
-source "$BASEDIR/rawtherapee/lib/sidecar.sh"
+source "$BASEDIR/lib/xmp.sh"
 
-while getopts "c:k:d:o" opt; do
+while getopts "c:k:d:or" opt; do
     case $opt in
         c ) 
 			creator=$OPTARG;;   
 		k ) 
 			# CSV string, using ";". no quoting needed for keywords with blanks
-			keywords=$OPTARG;;
+			user_keywords=$OPTARG;;
 		d )
 			description=$OPTARG;;
         o ) 
@@ -26,20 +26,20 @@ shift $(expr $OPTIND - 1 )
 
 photofiles=$*
 
-
 for photofile in $photofiles; do
     photofile_filename=$(basename "$photofile")
+    photofile_basename=${photofile_filename%.*}
 
-    # Prepare Rawtherapee sidecar. Exits with error if one exists already
-    rawtherapee_sidecar="$photofile.pp3"
-    if ! [[ -v overwrite ]] && [[ -e $rawtherapee_sidecar ]]; then
-        echo "Sidecar $rawtherapee_sidecar exists already, exiting" >&2
+    # Prepare xmp file
+    xmp_file=$(xmp_file_from_photofile "$photofile")
+    if ! [[ -v overwrite ]] && [[ -e $xmp_file ]]; then
+        echo "XMP file $xmp_file exists already, exiting" >&2
         exit 1
     fi
-    echo -e "[IPTC]\n" > "$rawtherapee_sidecar"
+    create_blank_xmp "$photofile"
 
-    # creator
-    sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Creator" "$creator" 
+    # creator 
+    write_xmp_creator "$photofile" "$creator"
 
     # copyright
     year_from_exif=$(exiftool -s3 -DateTimeOriginal "$photofile" | cut -d':' -f 1)
@@ -48,19 +48,29 @@ for photofile in $photofiles; do
     else
         copyright="Copyright (c) $year_from_exif"
     fi
-    sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Copyright" "$copyright"
+    write_xmp_copyright "$photofile" "$copyright"
 
     # iptc caption
     photofile_basename=${photofile_filename%.*}
-    iptc_caption="$(iptc_caption_from "$photofile_basename" "${description+$description}")"
-    sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Caption" "$iptc_caption"
+    iptc_caption="$(iptc_create_caption "$photofile_basename" "${description+$description}")"
+    write_xmp_description "$photofile" "$iptc_caption"
 
     # iptc headline
     iptc_headline=$(iptc_headline_from_photofile "$photofile")
-    sidecar_set_property "$rawtherapee_sidecar" "IPTC" "Headline" "$iptc_headline"
+    write_xmp_headline "$photofile" "$iptc_headline"
 
     # iptc keywords
-    if [[ -v keywords ]]; then 
-        sidecar_add_iptc_keywords "$rawtherapee_sidecar" "$keywords"
+    if [[ -v user_keywords ]]; then 
+        write_xmp_keywords_from_csv_string "$photofile" "$user_keywords"
     fi
+    camera_from_exif=$(lookup_camera_from_exif "$photofile")
+    add_xmp_keyword "$photofile" "$camera_from_exif"
+    lens_from_exif=$(lookup_lens_from_exif "$photofile")
+    if [[ -n $lens_from_exif ]]; then
+        add_xmp_keyword "$photofile" "$lens_from_exif" 
+    fi
+    manufacturer_from_exif=$(lookup_manufacturer_from_exif "$photofile")
+    add_xmp_keyword "$photofile" "$manufacturer_from_exif" 
+    add_xmp_keyword "$photofile" "RawTherapee" 
+
 done

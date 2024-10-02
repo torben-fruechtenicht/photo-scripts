@@ -1,10 +1,13 @@
 #! /usr/bin/env bash
 
-set -eu
+# FIXME move to metadata directory
+
+set -eux
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/lib/iptc.sh"
+source "$BASE_DIR/lib/xmp.sh"
 source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
 
@@ -20,26 +23,41 @@ if [[ -z $PHOTOID ]]; then
     exit 1
 fi
 
-
 is_photoid_only_caption() {
     local -r caption=$1
     [[ "$caption" =~ ^\[$PHOTOID_PATTERN\]\;?$ ]]
 }
 
-if is_rawtherapee_sidecar "$FILE"; then
+if is_xmp_sidecar "$FILE"; then
     
-    headline=$(iptc_headline_from_photofile "$PHOTOID")
-    sidecar_set_property "$FILE" "IPTC" "Headline" "$headline"
-
-    old_caption=$(sidecar_get_property "$FILE" "IPTC" "Caption")
-    if is_photoid_only_caption "$old_caption"; then
-        old_description=""
-    else 
-        old_description=$(sed -r 's/(.*)\\n\\n\['"$PHOTOID_PATTERN"'\]/\1/' <<<"$old_caption")
+    write_xmp_headline "$FILE" "$(iptc_headline_from_photofile "$PHOTOID")"
+    
+    old_description=$(xmp_get_description "$FILE")
+    if [[ -z $old_description ]]; then
+        write_xmp_description "$FILE" "$(iptc_create_caption "$PHOTOID")"
+    else
+        # TODO add check if old_description contains photoid - if not, add it, don't try to update it 
+        write_xmp_description "$FILE" "$(iptc_update_caption_photoid "$PHOTOID" "$old_description")"
     fi    
+
+elif is_rawtherapee_sidecar "$FILE"; then
     
-    caption=$(iptc_caption_from "$PHOTOID" "$old_description")
-    sidecar_set_property "$FILE" "IPTC" "Caption" "$caption"
+    if rt_sidecar_has_property_value "$FILE" "IPTC" "Headline"; then
+        headline=$(iptc_headline_from_photofile "$PHOTOID")
+        sidecar_set_property "$FILE" "IPTC" "Headline" "$headline"
+    fi
+
+    if rt_sidecar_has_property_value "$FILE" "IPTC" "Caption"; then
+        old_caption=$(sidecar_get_property "$FILE" "IPTC" "Caption")
+        if is_photoid_only_caption "$old_caption"; then
+            old_description=""
+        else 
+            old_description=$(sed -r 's/(.*)\\n\\n\['"$PHOTOID_PATTERN"'\]/\1/' <<<"$old_caption")
+        fi    
+        
+        caption=$(iptc_caption_from "$PHOTOID" "$old_description")
+        sidecar_set_property "$FILE" "IPTC" "Caption" "$caption"
+    fi
 
 elif is_jpeg "$FILE"; then
 

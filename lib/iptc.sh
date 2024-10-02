@@ -31,8 +31,23 @@ iptc_caption_from() {
     local -r description=$2
 
     # we need the linebreaks as literals here because that's the way we have to write them
-    # into sidecar files. in jpeg files, there are real linebreaks. which makes it more
-    # complex when we have to extract the description part out of the caption value: we need
-    # 2 functions for jpeg and sidecar files.
+    # into sidecar files. in jpeg files, there are real linebreaks. w
     echo "${description:+$description\n\n}[$photoid]"
+}
+
+iptc_create_caption() {
+    local photoid=$1
+
+    if [[ -n 2 ]]; then
+        local description=$2
+        echo -e "$description\n\n[$photoid]"
+    else
+        echo "[$photoid]"
+    fi
+}
+
+iptc_update_caption_photoid() {
+    local -r photoid=$1
+    local -r old_caption=$2
+    sed -r "s/\[$PHOTOID_PATTERN\]/[$photoid]/" <<<$old_caption
 }
