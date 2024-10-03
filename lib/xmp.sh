@@ -3,7 +3,7 @@ xmp_file_from_photofile() {
     echo "${photofile_filename%.*}.xmp"
 }
 
-create_blank_xmp() {
+xmp_create_skeleton() {
     local xmp_file=$(xmp_file_from_photofile "$1")
     cat <<-EOF > "$xmp_file"
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core 4.4.0-Exiv2">
@@ -19,7 +19,7 @@ EOF
 }
 
 
-__xml_starlet_insert_node() {
+__xml_insert_node() {
     local xpath=$1
     local node_name=$2
     local xmp_file=$3
@@ -29,7 +29,17 @@ __xml_starlet_insert_node() {
             -s "$xpath" -t elem -n "$node_name" "$xmp_file"    
 }
 
-__xml_starlet_insert_node_with_value() {
+__xml_delete_node() {
+    local xpath=$1
+    local xmp_file=$2
+    xmlstarlet ed --inplace -O \
+            -N dc="http://purl.org/dc/elements/1.1/" -N photoshop="http://ns.adobe.com/photoshop/1.0/" \
+            -N rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" \
+            -d "$xpath" "$xmp_file"    
+}
+
+# FIXME merge with insert node, use optional value p
+__xml_insert_node_with_value() {
     local xpath=$1
     local node_name=$2
     local node_value=$3
@@ -40,7 +50,10 @@ __xml_starlet_insert_node_with_value() {
             -s "$xpath" -t elem -n "$node_name" -v "$node_value" "$xmp_file"
 }
 
-__xml_starlet_add_attribute() {
+
+# FIXME introduce __xml_upsert_node_with_value
+
+__xml_add_attribute() {
     local xpath=$1
     local attr_name=$2
     local attr_value=$3
@@ -51,18 +64,7 @@ __xml_starlet_add_attribute() {
             -s "$xpath" -t attr -n "$attr_name" -v "$attr_value" "$xmp_file"
 }
 
-__xml_starlet_add_attribute() {
-    local xpath=$1
-    local attr_name=$2
-    local attr_value=$3
-    local xmp_file=$4
-    xmlstarlet ed --inplace -O \
-            -N dc="http://purl.org/dc/elements/1.1/" -N photoshop="http://ns.adobe.com/photoshop/1.0/" \
-            -N rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" \
-            -s "$xpath" -t attr -n "$attr_name" -v "$attr_value" "$xmp_file"
-}
-
-__xmlstartlet_get_value() {
+__xml_get_value() {
     local xpath=$1
     local xmp_file=$2
     xmlstarlet sel \
@@ -71,7 +73,7 @@ __xmlstartlet_get_value() {
             -t -v "$xpath" "$xmp_file" || true   
 }
 
-__xml_starlet_set_value() {
+__xml_set_value() {
     local xpath=$1
     local value=$2
     local xmp_file=$3
@@ -91,62 +93,62 @@ __xml_xpath_exists() {
 }
 
 
-write_xmp_headline() {
+xmp_set_headline() {
     local xmp_file=$(xmp_file_from_photofile "$1")    
     local headline=$2
     if $(__xml_xpath_exists "/x:xmpmeta/rdf:RDF/rdf:Description/@photoshop:Headline" "$xmp_file"); then
-        __xml_starlet_set_value "/x:xmpmeta/rdf:RDF/rdf:Description/@photoshop:Headline" "$headline" "$xmp_file"
+        __xml_set_value "/x:xmpmeta/rdf:RDF/rdf:Description/@photoshop:Headline" "$headline" "$xmp_file"
     else
-        __xml_starlet_add_attribute "x:xmpmeta/rdf:RDF/rdf:Description" "photoshop:Headline" "$headline" "$xmp_file"
+        __xml_add_attribute "x:xmpmeta/rdf:RDF/rdf:Description" "photoshop:Headline" "$headline" "$xmp_file"
     fi
 }
 
-write_xmp_creator() {
+xmp_set_creator() {
     local xmp_file=$(xmp_file_from_photofile "$1")    
     local creator=$2
 
     if $(__xml_xpath_exists "x:xmpmeta/rdf:RDF/rdf:Description/dc:creator/rdf:Seq/rdf:li" "$xmp_file"); then
-        __xml_starlet_set_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:creator/rdf:Seq/rdf:li" "$creator" "$xmp_file"
+        __xml_set_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:creator/rdf:Seq/rdf:li" "$creator" "$xmp_file"
     else
-        __xml_starlet_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:creator" "$xmp_file"
-        __xml_starlet_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:creator" "rdf:Seq" "$xmp_file"
-        __xml_starlet_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:creator/rdf:Seq" "rdf:li" "$creator" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:creator" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:creator" "rdf:Seq" "$xmp_file"
+        __xml_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:creator/rdf:Seq" "rdf:li" "$creator" "$xmp_file"
     fi
 }
 
-write_xmp_copyright() {
+xmp_set_copyright() {
     local xmp_file=$(xmp_file_from_photofile "$1")    
     local copyright_notice=$2
 
     if $(__xml_xpath_exists "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights/rdf:Alt/rdf:li" "$xmp_file"); then
-        __xml_starlet_set_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights/rdf:Alt/rdf:li" "$copyright_notice" "$xmp_file"
+        __xml_set_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights/rdf:Alt/rdf:li" "$copyright_notice" "$xmp_file"
     else
-        __xml_starlet_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:rights" "$xmp_file"
-        __xml_starlet_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights" "rdf:Alt" "$xmp_file"
-        __xml_starlet_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights/rdf:Alt" "rdf:li" "$copyright_notice" "$xmp_file"
-        __xml_starlet_add_attribute "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights/rdf:Alt/rdf:li" "xml:lang" "x-default" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:rights" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights" "rdf:Alt" "$xmp_file"
+        __xml_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights/rdf:Alt" "rdf:li" "$copyright_notice" "$xmp_file"
+        __xml_add_attribute "x:xmpmeta/rdf:RDF/rdf:Description/dc:rights/rdf:Alt/rdf:li" "xml:lang" "x-default" "$xmp_file"
     fi
 }
 
 xmp_get_description() {
-    __xmlstartlet_get_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt/rdf:li" "$1"
+    __xml_get_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt/rdf:li" "$1"
 }
 
-write_xmp_description() {
+xmp_set_description() {
     local xmp_file=$(xmp_file_from_photofile "$1")    
     local description=$2
 
     if $(__xml_xpath_exists "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt/rdf:li" "$xmp_file"); then
-        __xml_starlet_set_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt/rdf:li" "$description" "$xmp_file"
+        __xml_set_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt/rdf:li" "$description" "$xmp_file"
     else
-        __xml_starlet_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:description" "$xmp_file"
-        __xml_starlet_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:description" "rdf:Alt" "$xmp_file"
-        __xml_starlet_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt" "rdf:li" "$description" "$xmp_file"
-        __xml_starlet_add_attribute "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt/rdf:li" "xml:lang" "x-default" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:description" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:description" "rdf:Alt" "$xmp_file"
+        __xml_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt" "rdf:li" "$description" "$xmp_file"
+        __xml_add_attribute "x:xmpmeta/rdf:RDF/rdf:Description/dc:description/rdf:Alt/rdf:li" "xml:lang" "x-default" "$xmp_file"
     fi
 }
 
-write_xmp_keywords_from_csv_string() {
+xmp_write_csv_keywords() {
     local xmp_file=$(xmp_file_from_photofile "$1")    
     local keywords_csv=$2   
 
@@ -154,26 +156,54 @@ write_xmp_keywords_from_csv_string() {
         echo "Keywords entry exists in $xmp_file" >&2
         exit 1
     else
-        __xml_starlet_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:subject" "$xmp_file"
-        __xml_starlet_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject" "rdf:Bag" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:subject" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject" "rdf:Bag" "$xmp_file"
 
         OLD_IFS=$IFS
 	    IFS=";"
 	    for keyword in $keywords_csv; do
-            __xml_starlet_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag" "rdf:li" "$keyword" "$xmp_file"
+            __xml_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag" "rdf:li" "$keyword" "$xmp_file"
 	    done
 	    IFS=$OLD_IFS
     fi
 }
 
-add_xmp_keyword() {
+xmp_add_keyword() {
+    local xmp_file=$(xmp_file_from_photofile "$1")    
+    local keyword=$2   
+
+    if ! $(__xml_xpath_exists "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag/rdf:li[$keyword]" "$xmp_file"); then
+        __xml_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag" "rdf:li" "$keyword" "$xmp_file"
+    fi
+}
+
+xmp_add_keywords_csv() {
+    local xmp_file=$(xmp_file_from_photofile "$1")    
+    local keywords=$2   
+
+    OLD_IFS=$IFS
+    IFS=";"
+    for keyword in $keywords; do
+        xmp_add_keyword "$xmp_file" "$keyword"
+    done
+}
+
+xmp_remove_keyword() {
     local xmp_file=$(xmp_file_from_photofile "$1")    
     local keyword=$2   
 
     if $(__xml_xpath_exists "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag/rdf:li[$keyword]" "$xmp_file"); then
-        echo "Keyword $keyword exists in $xmp_file" >&2
-        exit 1
-    else
-        __xml_starlet_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag" "rdf:li" "$keyword" "$xmp_file"
+        __xml_delete_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag/rdf:li[$keyword]" "$xmp_file"
     fi
+}
+
+xmp_remove_keywords_csv() {
+    local xmp_file=$(xmp_file_from_photofile "$1")    
+    local keywords=$2   
+
+    OLD_IFS=$IFS
+    IFS=";"
+    for keyword in $keywords; do
+        xmp_remove_keyword "$xmp_file" "$keyword"
+    done
 }

@@ -2,7 +2,7 @@
 
 # FIXME move to metadata directory
 
-set -eux
+set -eu
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
@@ -30,14 +30,14 @@ is_photoid_only_caption() {
 
 if is_xmp_sidecar "$FILE"; then
     
-    write_xmp_headline "$FILE" "$(iptc_headline_from_photofile "$PHOTOID")"
+    xmp_set_headline "$FILE" "$(iptc_headline_from_photofile "$PHOTOID")"
     
     old_description=$(xmp_get_description "$FILE")
     if [[ -z $old_description ]]; then
-        write_xmp_description "$FILE" "$(iptc_create_caption "$PHOTOID")"
+        xmp_set_description "$FILE" "$(iptc_create_caption "$PHOTOID")"
     else
         # TODO add check if old_description contains photoid - if not, add it, don't try to update it 
-        write_xmp_description "$FILE" "$(iptc_update_caption_photoid "$PHOTOID" "$old_description")"
+        xmp_set_description "$FILE" "$(iptc_update_caption_photoid "$PHOTOID" "$old_description")"
     fi    
 
 elif is_rawtherapee_sidecar "$FILE"; then
