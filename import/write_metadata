@@ -53,7 +53,7 @@ for photofile in $photofiles; do
 
     # iptc caption
     photofile_basename=${photofile_filename%.*}
-    iptc_caption="$(iptc_create_caption "$photofile_basename" "${description+$description}")"
+    iptc_caption=$(iptc_create_caption "$photofile_basename" "${description+$description}")
     xmp_set_description "$photofile" "$iptc_caption"
 
     # iptc headline

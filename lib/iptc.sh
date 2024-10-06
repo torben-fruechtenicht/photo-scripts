@@ -38,7 +38,7 @@ iptc_caption_from() {
 iptc_create_caption() {
     local photoid=$1
 
-    if [[ -n 2 ]]; then
+    if [[ $# = 2 ]] && [[ -n $2 ]]; then
         local description=$2
         echo -e "$description\n\n[$photoid]"
     else
