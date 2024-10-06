@@ -1,6 +1,5 @@
 xmp_file_from_photofile() {
-    local photofile_filename=$(basename "$1")
-    echo "${photofile_filename%.*}.xmp"
+    echo "${1%.*}.xmp"
 }
 
 xmp_create_skeleton() {

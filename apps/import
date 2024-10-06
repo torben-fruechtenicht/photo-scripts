@@ -125,7 +125,6 @@ declare -r DESCRIPTION=$(get_option_at_index "$options_string" 7)
 declare -r FILETYPES=$(get_option_at_index "$options_string" 8)
 
 
-set -x
 imported_photos=$(import_photos ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} ${FILETYPES+-y "$FILETYPES"} "$DCIM_DIR" "$TARGET_DIR")
 import_photos_rc=$?
 if [[ $import_photos_rc = 0 ]]; then

@@ -4,7 +4,6 @@ unprotected_file_if_needed() {
     local file=$1
 
     if [[ -w $file ]]; then
-		echo "$file is not protected" >&2
         return
 	fi
 

@@ -24,20 +24,20 @@ __notify() {
 notify_info() {
     local -r title=${1-Info}
     local -r text=${2-Done}
-
+    echo "[INFO] $title - $text" >&2
     __notify "$title" "$text" "$NOTIFICATION_INFO_ICON" 30000
 }
 
 notify_warning() {
     local -r title=${1-Warning}
     local -r text=${2-Something happened but the program continued}
-
+    echo "[WARN] $title - $text" >&2
     __notify "$title" "$text" "$NOTIFICATION_WARN_ICON" 40000
 }
 
 notify_error() {
     local -r title=${1-Error}
     local -r text=${2-There was an error}
-
+    echo "[ERROR] $title - $text" >&2
     __notify "$title" "$text" "$NOTIFICATION_ERROR_ICON" 60000
 }
