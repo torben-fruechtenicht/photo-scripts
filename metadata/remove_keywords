@@ -1,0 +1,51 @@
+#! /usr/bin/env bash
+
+set -eux
+# TBD Why?
+# shopt -s nocasematch
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/strings.sh"
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
+source "$BASE_DIR/lib/jpeg_iptc.sh"
+source "$BASE_DIR/lib/xmp.sh"
+source "$BASE_DIR/util/unprotect.sh"
+
+PATH="$BASE_DIR:$PATH"
+
+# CSV string
+keywords=$1
+
+if [[ -z $keywords ]]; then
+	echo "[ERROR] No keywords" >&2
+	exit 1
+elif [[ -f $keywords || -d $keywords ]]; then
+    # FIXME change to checking number of params
+	echo "[ERROR] Keywords parameter seems to be a file or directory - actual keywords parameter is missing?" >&2
+	exit 1
+fi
+
+shift 1
+
+function process_file() {
+    if is_rawtherapee_sidecar "$file" && rt_sidecar_has_iptc_keywords "$file"; then
+		unprotected_file_if_needed "$file"
+        sidecar_remove_iptc_keywords "$file" "$keywords"
+        reprotect_check_file "$file"
+	elif is_output_photofile "$file"; then	
+		unprotected_file_if_needed "$file"
+        jpeg_remove_iptc_keywords "$file" "$keywords"
+        reprotect_check_file "$file"
+	elif is_xmp_sidecar "$file"; then
+        unprotected_file_if_needed "$file"
+        xmp_remove_keywords_csv "$file" "$keywords"
+        reprotect_check_file "$file"
+    fi
+}
+
+if [[ $# = 0 ]]; then
+    collect_associated_files < /dev/stdin | while read -r file; do process_file "$file"; done
+else 
+    collect_associated_files "$@" | while read -r file; do process_file "$file"; done
+fi

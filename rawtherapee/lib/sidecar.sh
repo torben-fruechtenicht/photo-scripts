@@ -97,3 +97,7 @@ sidecar_remove_iptc_keywords() {
 
 	sed -r -i -e "/\[IPTC\]/,/^$/ $sed_commands" "$sidecar_file"
 }
+
+rt_sidecar_has_iptc_keywords() {
+	rt_sidecar_has_property_value "IPTC" "Keywords" "$1"	
+}

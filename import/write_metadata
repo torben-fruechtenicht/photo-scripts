@@ -4,6 +4,7 @@ set -eu
 
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASEDIR/lib/photofiles.sh"
+source "$BASEDIR/lib/photoid.sh"
 source "$BASEDIR/lib/iptc.sh"
 source "$BASEDIR/lib/exif.sh"
 source "$BASEDIR/lib/strings.sh"
@@ -36,10 +37,10 @@ for photofile in $photofiles; do
         echo "XMP file $xmp_file exists already, exiting" >&2
         exit 1
     fi
-    create_blank_xmp "$photofile"
+    xmp_create_skeleton "$photofile"
 
     # creator 
-    write_xmp_creator "$photofile" "$creator"
+    xmp_set_creator "$photofile" "$creator"
 
     # copyright
     year_from_exif=$(exiftool -s3 -DateTimeOriginal "$photofile" | cut -d':' -f 1)
@@ -48,29 +49,31 @@ for photofile in $photofiles; do
     else
         copyright="Copyright (c) $year_from_exif"
     fi
-    write_xmp_copyright "$photofile" "$copyright"
+    xmp_set_copyright "$photofile" "$copyright"
 
     # iptc caption
     photofile_basename=${photofile_filename%.*}
     iptc_caption="$(iptc_create_caption "$photofile_basename" "${description+$description}")"
-    write_xmp_description "$photofile" "$iptc_caption"
+    xmp_set_description "$photofile" "$iptc_caption"
 
     # iptc headline
     iptc_headline=$(iptc_headline_from_photofile "$photofile")
-    write_xmp_headline "$photofile" "$iptc_headline"
+    xmp_set_headline "$photofile" "$iptc_headline"
 
+   
     # iptc keywords
     if [[ -v user_keywords ]]; then 
-        write_xmp_keywords_from_csv_string "$photofile" "$user_keywords"
+        xmp_write_csv_keywords "$photofile" "$user_keywords"
     fi
+    photoid=$(photoid_get_from_file "$photofile")
+    xmp_add_keyword "$photofile" "$(photoid_get_title "$photoid")"
     camera_from_exif=$(lookup_camera_from_exif "$photofile")
-    add_xmp_keyword "$photofile" "$camera_from_exif"
+    xmp_add_keyword "$photofile" "$camera_from_exif"
     lens_from_exif=$(lookup_lens_from_exif "$photofile")
     if [[ -n $lens_from_exif ]]; then
-        add_xmp_keyword "$photofile" "$lens_from_exif" 
+        xmp_add_keyword "$photofile" "$lens_from_exif" 
     fi
     manufacturer_from_exif=$(lookup_manufacturer_from_exif "$photofile")
-    add_xmp_keyword "$photofile" "$manufacturer_from_exif" 
-    add_xmp_keyword "$photofile" "RawTherapee" 
-
+    xmp_add_keyword "$photofile" "$manufacturer_from_exif" 
+    xmp_add_keyword "$photofile" "RawTherapee" 
 done
