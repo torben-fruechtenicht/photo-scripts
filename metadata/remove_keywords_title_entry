@@ -1,13 +1,12 @@
 #! /usr/bin/env bash
 
-set -eu
+set -eux
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photoid.sh"
 PATH="$BASE_DIR/metadata:$PATH"
 
-photos=$@
-for photo in "$photos"; do
+for photo in "$@"; do
     photoid=$(photoid_get_from_file "$photo")
     title=$(photoid_get_title "$photoid")
     remove_keywords "$title" "$photo"
