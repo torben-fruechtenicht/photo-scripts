@@ -66,7 +66,7 @@ process_converted_jpeg() {
 	fi
 
 	jpeg_remove_iptc_keywords "$jpgfile" "$KEYWORDS"
-
+	
 	if [[ -v restore_write_protection ]]; then
 		chmod u-w "$jpgfile"
 	fi
@@ -76,7 +76,7 @@ apply_remove_keywords() {
 	local -r file=$1
 	if is_rawtherapee_sidecar "$file"; then
 		process_rawtherapee_sidecar "$file" && echo "$file"
-	elif is_converted_jpeg "$file"; then		
+	elif is_converted_jpeg "$file"; then	
 		process_converted_jpeg "$file" && echo "$file"
 	fi
 }

@@ -6,13 +6,14 @@ declare -r -x APP_TITLE="Move photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-PATH="$BASE_DIR:$BASE_DIR/lib:$BASE_DIR/apps:$PATH"
+PATH="$BASE_DIR/metadata:$BASE_DIR:$BASE_DIR/lib:$BASE_DIR/apps:$PATH"
 
 source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/lib/directories.sh"
 
 if [[ $# > 0 ]]; then
     photos=$(tr " " "\n" <<<$*)
@@ -61,9 +62,8 @@ if [[ -v set_target_album_name_keyword ]]; then
 fi
 
 if [[ -v remove_old_album_name_keyword ]]; then
-    # FIXME actually, we cannot assume that all photos come from the same album!
-    old_album_name=$(albumname_from_file "$(head -n 1 <<<$photos)")
-    remove_keywords "$old_album_name" $photos
+    old_album_names=$(directories_collect_albums_from_files "$photos")
+    remove_keywords "$old_album_names" $photos
     rc=$?
     if [[ $rc != 0 ]]; then
         notify_error "$APP_TITLE" \
