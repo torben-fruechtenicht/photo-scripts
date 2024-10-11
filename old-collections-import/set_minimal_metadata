@@ -3,16 +3,29 @@
 set -eu
 
 basedir="${0%/*}/.."
-source "$basedir/metadata/metadata_writers.sh"
+source "$basedir/old-collections-import/metadata_writers.sh"
 source "$basedir/lib/jpeg_iptc.sh"
 source "$basedir/lib/photofiles.sh"
 source "$basedir/lib/strings.sh"
 
-searchdir=$1
+# searchdir must be absolute path. otherwise, obtaining data from the path will fail
+searchdir=$(readlink -e "$1")
 photographer=$2
 
 # FIXME
 # exit with error if $searchdir is not a converted directory
+
+# function find_original_photofile() {
+#     local -r file=$1
+
+#     local original
+#     local dir=${file%/*}
+#     if [[ ${dir##*/} == "converted" ]]; then
+#         photobaseid= # cut off variant
+#         original="$dir/../$photobaseid.*" # AND extension - JPG and all raw extensions
+#     fi
+
+# }
 
 function is_metadata_writable_file() {
     local file=$1
@@ -27,12 +40,13 @@ function is_metadata_writable_file() {
     fi
 }
 
-find "$searchdir" -type f | sort -r | tail -n 200 | while read -r file; do
+find "$searchdir" -type f | sort -r | while read -r file; do
     if ! is_metadata_writable_file "$file"; then
         echo "[WARN] Cannot write metadata in $file" >&2
         continue
     fi
 
+    # FIXME replace with new command/includes from metadata
     set_iptc_headline_from_filename "$file"
     set_iptc_caption_from_filename "$file"
     set_iptc_byline "$file" "$photographer"
