@@ -6,7 +6,7 @@ declare -r -x APP_TITLE="Edit photo metadata"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-PATH="$BASE_DIR:$BASE_DIR/lib:$BASE_DIR/apps:$PATH"
+PATH="$BASE_DIR/metadata:$BASE_DIR:$BASE_DIR/lib:$BASE_DIR/apps:$PATH"
 
 source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/lib/photofiles.sh"
@@ -37,14 +37,17 @@ augment_user_keywords() {
     echo "$keywords"
 }
 
-
-declare -r PHOTOS=$(selector)
-selector_rc=$? 
-if [[ $selector_rc == 101 ]]; then
-    exit
-elif [[ -z $PHOTOS ]]; then
-    notify_warning "$APP_TITLE" "No matching photos found"
-    exit 1
+if [[ $# > 0 ]]; then
+    PHOTOS=$(tr " " "\n" <<<$*)
+else
+    declare -r PHOTOS=$(selector)
+    selector_rc=$? 
+    if [[ $selector_rc == 101 ]]; then
+        exit
+    elif [[ -z $PHOTOS ]]; then
+        notify_warning "$APP_TITLE" "No matching photos found"
+        exit 1
+    fi
 fi
 
 
