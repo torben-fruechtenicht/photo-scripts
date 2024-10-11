@@ -2,7 +2,6 @@
 
 set -eu
 set -o pipefail
-shopt -s nocasematch
 
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")"
 
@@ -11,17 +10,6 @@ source "$BASEDIR/lib/photoid.sh"
 source "$BASEDIR/util/unprotect.sh"
 
 PATH="$BASEDIR/metadata:$BASEDIR:$BASEDIR/lib:$PATH"
-
-while getopts "fc" opt; do
-    case $opt in
-        f ) 
-			declare -r FORCE_OVERWRITE=;;
-        c ) 
-            shopt -u nocasematch;;
-	esac
-done
-shift $(expr $OPTIND - 1 )
-
 
 declare -r new_title=$(echo "${1:-}" | tr ' ' '-')
 if [[ -z $new_title ]]; then
@@ -40,19 +28,11 @@ function apply_set_title() {
     local old_photoid=$(photoid_get_from_file "$old_file")
     local old_title=$(photoid_get_title "$old_photoid")
 
-    if ! [[ -v FORCE_OVERWRITE ]] && [[ $old_title = $new_title ]]; then
-        # N.B. This check would fail when correcting upper/lower case only in a title if we hadn't
-        # enabled nocasematch in this script
-        echo "[WARN] Cannot change title of $file to \"$new_title\", same as old title" >&2
-        return
-    fi 
-
     local new_photoid=$(photoid_set_title "$old_photoid" "$new_title")
     local newfile="$(dirname "$old_file")/$new_photoid.${old_file#*.}"
 
-    # this is a real error case unlike the other check above (which stems from careless user input)
-    if [[ -e $newfile ]] && ! [[ -v FORCE_OVERWRITE ]]; then
-        echo "[ERROR] Cannot change title of $file to \"$new_title\", file $newfile exists already" >&2
+    if [[ -e $newfile ]]; then
+        echo "[ERROR] Cannot rename $file to \"$new_title\": $newfile exists" >&2
         exit 1
     fi
 

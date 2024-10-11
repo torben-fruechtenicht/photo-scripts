@@ -32,7 +32,6 @@ title_field_values=$(remember_list "title" "gnl")
 rename_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "" \
     --form \
     --field="Change photo title(s) to:CBE" "$title_field_values" \
-    --field="Allow case change only:CHK" "FALSE" \
     --field="Add title as a keyword:CHK" "TRUE" \
     --field="Remove old title keyword:CHK" "FALSE")
 yad_rc=$?
@@ -46,9 +45,8 @@ if [[ -z $new_title ]]; then
     exit 1
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$new_title" 25
-is_option_selected "$rename_params" 2 && declare allow_case_change="-c"
-is_option_selected "$rename_params" 3 && declare add_title_as_keyword=
-is_option_selected "$rename_params" 4 && declare remove_old_title_keyword=
+is_option_selected "$rename_params" 2 && declare add_title_as_keyword=
+is_option_selected "$rename_params" 3 && declare remove_old_title_keyword=
 
 
 if [[ -v remove_old_title_keyword ]]; then
@@ -71,7 +69,7 @@ if [[ -v add_title_as_keyword ]]; then
     fi
 fi
 
-rename ${allow_case_change-} "$new_title" $photos 
+rename "$new_title" $photos 
 rc=$?
 if [[ $rc != 0 ]]; then
     notify_error "$APP_TITLE" \
