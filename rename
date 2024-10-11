@@ -11,6 +11,16 @@ source "$BASEDIR/util/unprotect.sh"
 
 PATH="$BASEDIR/metadata:$BASEDIR:$BASEDIR/lib:$PATH"
 
+while getopts "kr" opt; do
+    case $opt in
+        k ) 
+            ADD_TITLE_KEYWORD=;;
+        r )
+            REMOVE_OLD_TITLE_KEYWORD=;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
 declare -r new_title=$(echo "${1:-}" | tr ' ' '-')
 if [[ -z $new_title ]]; then
     echo "[ERROR] Title parameter missing" >&2
@@ -38,6 +48,12 @@ function apply_set_title() {
 
     unprotected_file_if_needed "$old_file"
     set_photoid "$old_file" "$new_photoid"
+    if [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
+        remove_keywords "$old_title" "$old_file"
+    fi
+    if [[ -v ADD_TITLE_KEYWORD ]]; then
+        add_keywords "$new_title" "$old_file"
+    fi
     reprotect_check_file "$old_file"
     mv "$old_file" "$newfile"
 
