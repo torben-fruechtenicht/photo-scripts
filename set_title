@@ -57,7 +57,7 @@ function apply_set_title() {
     fi
 
     unprotected_file_if_needed "$old_file"
-    # FIXME rename to metadata_update_photoid!
+    # FIXME rename/move to metadata/set_photoid!
     set_title_in_iptc "$old_file" "$new_photoid"
     reprotect_check_file "$old_file"
     mv "$old_file" "$newfile"

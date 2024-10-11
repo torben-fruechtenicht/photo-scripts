@@ -8,53 +8,61 @@ source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/lib/iptc.sh"
 source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
+source "$BASE_DIR/lib/xmp.sh"
+source "$BASE_DIR/lib/photoid.sh"
+source "$BASE_DIR/util/unprotect.sh"
 
 PATH="$BASE_DIR:$PATH"
 
 declare -r DESCRIPTION=${1:-}
-if [[ -z $DESCRIPTION ]]; then
+if [[ -z $DESCRIPTION ]] || [[ -f $DESCRIPTION ]]; then
     echo "[ERROR] Description parameter missing" >&2
     exit 1
 fi
 
-shift 1
-
-if [[ $# = 0 ]]; then
-    declare -r READ_PHOTOS_FROM_STDIN=
-else 
-    declare -r PHOTOS=$@
-fi
-
-apply_set_description() {
-    local -r file=$1
-    local -r description=$2
-
-    if ! [[ -w $file ]]; then
-        chmod u+w "$file"
-        local -r restore_write_protection=
-    fi
-
-    # TODO TBD check if description exists already - what to do then?
-
-    if is_rawtherapee_sidecar "$file"; then
-        sidecar_set_property "$file" "IPTC" "Caption" "$(iptc_caption_from "$(photoid "$file")" "$description")"
-    elif is_output_photofile "$file"; then
-        jpeg_set_iptc "$file" "Caption" "$(iptc_caption_from "$(photoid "$file")" "$description")"
-    fi
-
-
-    if [[ -v restore_write_protection ]]; then
-        chmod u-w "$file"
+function set_if_xmp() {
+    if is_xmp_sidecar "$1"; then
+        unprotected_file_if_needed "$1"
+        local photoid=$(photoid_get_from_file "$1")
+        local caption=$(iptc_create_caption "$photoid" "$2")
+        xmp_set_description "$1" "$caption"
+        reprotect_check_file "$1"
     fi
 }
 
+function set_if_rt_sidecar_with_iptc() {
+    if is_rawtherapee_sidecar "$1" && rt_sidecar_has_iptc_keywords "$1"; then
+        unprotected_file_if_needed "$1"
+        local photoid=$(photoid_get_from_file "$1")
+        local caption=$(iptc_create_caption "$photoid" "$2")
+        sidecar_set_property "$1" "IPTC" "Caption" "$caption"
+        reprotect_check_file "$1"
+    fi
+}
+
+function set_if_jpeg() {
+    if is_output_photofile "$1"; then
+        unprotected_file_if_needed "$1"
+        local photoid=$(photoid_get_from_file "$1")
+        local caption=$(iptc_create_caption "$photoid" "$2")
+        jpeg_set_iptc "$1" "Caption" "Caption" "$caption"
+        reprotect_check_file "$1"
+    fi
+}
+
+shift 1
 set -o pipefail
-if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
+
+if [[ $# = 0 ]]; then
     collect_associated_files < /dev/stdin | while read -r file; do 
-        apply_set_description "$file" "$DESCRIPTION"
+        set_if_xmp "$file" "$DESCRIPTION"
+        set_if_rt_sidecar_with_iptc "$file" "$DESCRIPTION"
+        set_if_jpeg "$file" "$DESCRIPTION"
     done
 else 
-    collect_associated_files "$PHOTOS" | while read -r file; 
-        do apply_set_description "$file" "$DESCRIPTION"
+    collect_associated_files "$@" | while read -r file; do
+        set_if_xmp "$file" "$DESCRIPTION"
+        set_if_rt_sidecar_with_iptc "$file  " "$DESCRIPTION"
+        set_if_jpeg "$file" "$DESCRIPTION"
     done
 fi

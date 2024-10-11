@@ -26,28 +26,27 @@ iptc_caption_from_photofile() {
     echo "[$fullname]"
 }
 
+# $1 - photoid
+# $2 - description, optional
 iptc_caption_from() {
-    local -r photoid=$1
-    local -r description=$2
-
     # we need the linebreaks as literals here because that's the way we have to write them
-    # into sidecar files. in jpeg files, there are real linebreaks. w
-    echo "${description:+$description\n\n}[$photoid]"
+    # into sidecar files. in jpeg files, there are real linebreaks. 
+    echo "${2:+$2\n\n}[$1]"
 }
 
+# $1 - photoid
+# $2 - description, optional
 iptc_create_caption() {
-    local photoid=$1
-
     if [[ $# = 2 ]] && [[ -n $2 ]]; then
         local description=$2
-        echo -e "$description\n\n[$photoid]"
+        echo -e "$description\n\n[$1]"
     else
-        echo "[$photoid]"
+        echo "[$1]"
     fi
 }
 
+# $1 - photoid
+# $2 - the existing caption
 iptc_update_caption_photoid() {
-    local -r photoid=$1
-    local -r old_caption=$2
-    sed -r "s/\[$PHOTOID_PATTERN\]/[$photoid]/" <<<$old_caption
+    sed -r "s/\[$PHOTOID_PATTERN\]/[$1]/" <<<$2
 }
