@@ -19,4 +19,5 @@ declare -r POSTSAVEPROCESSOR_PID=$!
 
 # NOTE script will wait until rawtherapee ends and then our EXIT trap will take care of cleaning up (i.e. killing
 # the postsaveprocessor)
-rawtherapee
+shift 1
+rawtherapee $@

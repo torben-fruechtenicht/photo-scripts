@@ -10,7 +10,7 @@ source "$BASEDIR/lib/photofiles.sh"
 source "$BASEDIR/lib/photoid.sh"
 source "$BASEDIR/util/unprotect.sh"
 
-PATH="$BASEDIR:$BASEDIR/lib:$PATH"
+PATH="$BASEDIR/metadata:$BASEDIR:$BASEDIR/lib:$PATH"
 
 while getopts "fc" opt; do
     case $opt in
@@ -57,8 +57,7 @@ function apply_set_title() {
     fi
 
     unprotected_file_if_needed "$old_file"
-    # FIXME rename/move to metadata/set_photoid!
-    set_title_in_iptc "$old_file" "$new_photoid"
+    set_photoid "$old_file" "$new_photoid"
     reprotect_check_file "$old_file"
     mv "$old_file" "$newfile"
 

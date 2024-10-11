@@ -5,10 +5,10 @@ set -eu
 if [[ ${1-} == "-terminate" ]]; then
     # NB this will of course also terminate our own process :-)
     echo "[INFO] terminating any running instances" >&2
-    pkill -f rt_psp_daemon
+    pkill -e -f rt_psp_daemon
 fi
 
-# NB pgrep will also count our own process so check if there is more than
+# N.B. pgrep will also count our own process so check if there is more than one
 if [[ $(pgrep -c -f rt_psp_daemon) > 1 ]]; then
     echo "[WARNING] already running, exiting" >&2
     exit 1
@@ -17,7 +17,7 @@ fi
 
 basedir="$(dirname "$(readlink -e "$0")")/../"
 source "$basedir/lib/photofiles.sh"
-export PATH="$basedir/lib:$basedir/geolocation:$PATH"
+export PATH="$basedir/metadata:$basedir/lib:$basedir/geolocation:$PATH"
 
 
 events_file=$(mktemp)
@@ -70,7 +70,7 @@ tail -F "$events_file" | while read -r new_file; do
             echo "[INFO] Adjusting title of variant in IPTC: $new_file" >&2
             # TODO can be simplied to not rely on the actual title: just get the 
             # caption and description and update the variant number directly there
-            set_title_in_iptc "$new_file" "$(photoid "$new_file")"
+            set_photoid "$new_file" "$(photoid "$new_file")"
         fi
 
         if is_output_photofile "$new_file"; then

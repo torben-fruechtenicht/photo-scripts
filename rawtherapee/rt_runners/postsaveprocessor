@@ -6,8 +6,9 @@ declare -r APP_DIR=$(readlink -m "$HOME/.local/share/photo-scripts/")
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../../"
 
 source "$BASEDIR/lib/photofiles.sh"
+#source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 
-export PATH="$BASEDIR/lib:$PATH"
+export PATH="$BASEDIR/metadata:$BASEDIR/lib:$PATH"
 
 declare -r LOCK_FILE="$APP_DIR/rawtherapee_output_watcher.lock"
 
@@ -25,6 +26,7 @@ fi
 echo "$$" > $LOCK_FILE
 
 cleanup() {
+    echo "[INFO] Stopped watching $WATCH_DIR for new files..." >&2
     # inotifywait with "-monitor" will not exit if this script is killed so it has to be killed separately
     pkill -f "inotifywait --monitor.*$WATCH_DIR.*"
     test -e "$LOCK_FILE" && rm $LOCK_FILE
@@ -46,6 +48,9 @@ inotifywait --monitor --recursive --quiet --event create --format %w%f $WATCH_DI
         # wait a bit so that the file has been fully written
         sleep 5
         echo "[INFO] Setting title in IPTC: $new_file" >&2
-        set_title_in_iptc "$new_file" $(photoid "$new_file")     
+        # FIXME can be simplied to not rely on the actual title: just get the 
+        # caption and description and update the variant number directly there
+        set_photoid "$new_file" $(photoid "$new_file")
     fi
 done
+

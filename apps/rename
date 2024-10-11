@@ -71,7 +71,7 @@ if [[ -v add_title_as_keyword ]]; then
     fi
 fi
 
-set_title ${allow_case_change-} "$new_title" $photos 
+rename ${allow_case_change-} "$new_title" $photos 
 rc=$?
 if [[ $rc != 0 ]]; then
     notify_error "$APP_TITLE" \
