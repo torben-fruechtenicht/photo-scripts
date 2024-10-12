@@ -52,7 +52,7 @@ is_option_selected "$move_params" 3 && declare remove_old_album_name_keyword=
 is_option_selected "$move_params" 4 && declare change_photo_titles_to_album_name=
 
 if [[ -v set_target_album_name_keyword ]]; then
-    add_keywords "$target_album_name" $photos
+    update_keywords "$target_album_name" $photos
     rc=$?
     if [[ $rc != 0 ]]; then
         notify_error "$APP_TITLE" \
@@ -63,7 +63,7 @@ fi
 
 if [[ -v remove_old_album_name_keyword ]]; then
     old_album_names=$(directories_collect_albums_from_files "$photos")
-    remove_keywords "$old_album_names" $photos
+    update_keywords "-$old_album_names" $photos
     rc=$?
     if [[ $rc != 0 ]]; then
         notify_error "$APP_TITLE" \

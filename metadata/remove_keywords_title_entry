@@ -9,6 +9,6 @@ PATH="$BASE_DIR/metadata:$PATH"
 for photo in "$@"; do
     photoid=$(photoid_get_from_file "$photo")
     title=$(photoid_get_title "$photoid")
-    remove_keywords "$title" "$photo"
+    update_keywords "-$title" "$photo"
 done
 

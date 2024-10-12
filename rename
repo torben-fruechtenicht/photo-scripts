@@ -49,10 +49,10 @@ function apply_set_title() {
     unprotected_file_if_needed "$old_file"
     set_photoid "$old_file" "$new_photoid"
     if [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
-        remove_keywords "$old_title" "$old_file"
+        update_keywords "-$old_title" "$old_file"
     fi
     if [[ -v ADD_TITLE_KEYWORD ]]; then
-        add_keywords "$new_title" "$old_file"
+        update_keywords "$new_title" "$old_file"
     fi
     reprotect_check_file "$old_file"
     mv "$old_file" "$newfile"

@@ -124,7 +124,7 @@ if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]] || [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
         fi
 
         if [[ -n "$keywords_to_remove" ]]; then
-            remove_keywords "$keywords_to_remove" "$photo" > /dev/null # we're not interested in the printed files
+            update_keywords "-$keywords_to_remove" "$photo" > /dev/null # we're not interested in the printed files
         fi
 
     done
@@ -132,13 +132,13 @@ fi
 
 
 if [[ -n $KEYWORDS ]]; then
-    add_keywords "$KEYWORDS" "$files" > /dev/null # we're not interested in the printed files
-    add_keywords_rc=$?
-    if [[ $add_keywords_rc = 0 ]]; then
+    update_keywords "$KEYWORDS" "$files" > /dev/null # we're not interested in the printed files
+    update_keywords_rc=$?
+    if [[ $update_keywords_rc = 0 ]]; then
         notify_info "$APP_TITLE" "Added keywords \"$KEYWORDS\" to $PHOTOS_COUNT photo(s)"
     else
         notify_error "$APP_TITLE" \
-            "Failed adding keywords \"$KEYWORDS\" to $PHOTOS_COUNT photo(s) with return code $add_keywords_rc"
+            "Failed adding keywords \"$KEYWORDS\" to $PHOTOS_COUNT photo(s) with return code $update_keywords_rc"
         exit 1
     fi
 fi

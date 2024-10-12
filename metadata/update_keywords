@@ -86,7 +86,6 @@ function update_if_xmp_sidecar() {
     if is_xmp_sidecar "$file"; then
         unprotected_file_if_needed "$file"
 
-        set -x
         add_keywords_csv=$(filter_keywords_to_add "$keywords")
         if [[ -n $add_keywords_csv ]]; then
             xmp_add_keywords_csv "$1" "$add_keywords_csv"
@@ -95,7 +94,6 @@ function update_if_xmp_sidecar() {
         if [[ -n $remove_keywords_csv ]]; then
             xmp_remove_keywords_csv "$1" "$remove_keywords_csv"
         fi
-        set +x
 
         reprotect_check_file "$file"
     fi
