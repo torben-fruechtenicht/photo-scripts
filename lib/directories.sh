@@ -27,6 +27,5 @@ directories_collect_albums_from_files() {
 # $1 - a date in ISO format (yyyy:mm:dd)
 # $2 - album name
 directories_create_photofile_path_from_isodate_album() {
-    # FIXME replace spaces in $2
-    echo "${1%%:*}/$2/${1//:/-}"
+    echo "${1%%:*}/${2// /-}/${1//:/-}"
 }

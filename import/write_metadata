@@ -5,22 +5,22 @@ set -eu
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASEDIR/lib/photofiles.sh"
 source "$BASEDIR/lib/photoid.sh"
+source "$BASEDIR/lib/directories.sh"
 source "$BASEDIR/lib/iptc.sh"
 source "$BASEDIR/lib/exif.sh"
 source "$BASEDIR/lib/strings.sh"
 source "$BASEDIR/lib/xmp.sh"
 
-while getopts "c:k:d:or" opt; do
+while getopts "c:k:d:orta" opt; do
     case $opt in
-        c ) 
-			creator=$OPTARG;;   
+        c ) creator=$OPTARG;;   
 		k ) 
 			# CSV string, using ";". no quoting needed for keywords with blanks
 			user_keywords=$OPTARG;;
-		d )
-			description=$OPTARG;;
-        o ) 
-            overwrite=;;
+		d ) description=$OPTARG;;
+        o ) overwrite=;;
+        a ) add_album_keyword=;;
+        t ) add_title_keyword=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -65,8 +65,16 @@ for photofile in "$photofiles"; do
     if [[ -v user_keywords ]]; then 
         xmp_write_csv_keywords "$photofile" "$user_keywords"
     fi
-    photoid=$(photoid_get_from_file "$photofile")
-    xmp_add_keyword "$photofile" "$(photoid_get_title "$photoid")"
+
+    if [[ -v add_title_keyword ]]; then
+        photoid=$(photoid_get_from_file "$photofile")
+        xmp_add_keyword "$photofile" "$(photoid_get_title "$photoid")"
+    fi
+
+    if [[ -v add_album_keyword ]]; then
+        xmp_add_keyword "$photofile" "$(directories_lookup_album_from_file "$photofile")"
+    fi
+
     camera_from_exif=$(lookup_camera_from_exif "$photofile")
     xmp_add_keyword "$photofile" "$camera_from_exif"
     lens_from_exif=$(lookup_lens_from_exif "$photofile")

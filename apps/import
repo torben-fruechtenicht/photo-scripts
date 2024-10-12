@@ -11,7 +11,7 @@ source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 
-PATH="$BASE_DIR:$BASE_DIR/rawtherapee/profile-builder:$BASE_DIR/import:$PATH"
+PATH="$BASE_DIR:$BASE_DIR/import:$PATH"
 
 
 print_duration() {
@@ -32,21 +32,6 @@ count_lines() {
         wc -l <<<"$1"
     fi
 }
-
-augment_user_keywords() {
-    local keywords=$1
-
-    if [[ -v ALBUM_AS_KEYWORD ]] && ! [[ $ALBUM = $DEFAULT_ALBUM_VALUE ]]; then
-        keywords="${keywords:+$keywords;}$ALBUM"
-    fi
-
-    if [[ -v TITLE_AS_KEYWORD ]] && [[ -n $TITLE ]] && [[ $ALBUM != $TITLE ]]; then
-        keywords="${keywords:+$keywords;}$TITLE"
-    fi
-
-    echo "$keywords"
-}
-
 
 
 while getopts "c:" opt; do
@@ -106,6 +91,8 @@ if [[ -n $title_string ]]; then
     declare -r TITLE="$title_string"
     is_option_selected "$options_string" 4 && declare -r TITLE_AS_KEYWORD=
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
+else
+    declare -r TITLE=$ALBUM
 fi
 
 creator_string=$(trim_whitespace "$(get_option_at_index "$options_string" 5)")
@@ -116,22 +103,22 @@ fi
 
 keywords_string=$(trim_whitespace "$(get_option_at_index "$options_string" 6)")
 if [[ -n "$keywords_string" ]]; then
-    declare -r USER_KEYWORDS=$keywords_string
-    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
+    declare -r KEYWORDS=$keywords_string
+    memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
 fi
 
-declare -r KEYWORDS=$(augment_user_keywords "${USER_KEYWORDS-}")
 declare -r DESCRIPTION=$(get_option_at_index "$options_string" 7)
+
 declare -r FILETYPES=$(get_option_at_index "$options_string" 8)
 
 
-imported_photos=$(import_photos ${ALBUM+-a "$ALBUM"} ${TITLE+-t "$TITLE"} ${FILETYPES+-y "$FILETYPES"} "$DCIM_DIR" "$TARGET_DIR")
+imported_photos=$(import_photos ${FILETYPES+-y "$FILETYPES"} "$ALBUM" "$TITLE"  "$DCIM_DIR" "$TARGET_DIR")
 import_photos_rc=$?
 if [[ $import_photos_rc = 0 ]]; then
     imported_photos_count=$(count_lines "$imported_photos")
     notify_info "$APP_TITLE" "Imported $imported_photos_count photo(s)"
 else
-    notify_error "$APP_TITLE" "Importing photos from $DCIM_DIR failed with return code $import_photos_rc"
+    notify_error "$APP_TITLE" "Importing photos from $DCIM_DIR failed: $import_photos_rc"
     exit 1
 fi
 
