@@ -8,7 +8,9 @@ declare -r NO_TARGET_DIR_RC=102
 declare -r NO_ALBUM_RC=103
 
 
-source "$(dirname "$(readlink -e "$0")")/lib/exif.sh"
+BASE_DIR=$(dirname "$(readlink -e "$0")")
+source "$BASE_DIR/lib/exif.sh"
+source "$BASE_DIR/lib/directories.sh"
 
 declare -r TMP_DIR=$(mktemp -d)
 
@@ -169,13 +171,9 @@ build_targetpath() {
     local -r photofile=$1
 
     local -r datetimeoriginal=$(lookup_exif_datetimeorig_or_lastmod "$photofile")
-	
-    local -r year=$(cut -d':' -f 1 <<<"$datetimeoriginal")
-	local -r date=$(cut -d' ' -f 1 <<<"$datetimeoriginal" | tr ':' '-')
-    local -r date_numerical=$(cut -d' ' -f 1 <<<"$datetimeoriginal" | tr --delete ':')
-	local -r timeofday=$(cut -d' ' -f2 <<<"$datetimeoriginal" | cut -d ':' -f1-2 | tr --delete ':')
 
-    local -r target_dir="$TARGET_DIR/$year/$ALBUM/$date"
+    local date_iso=${datetimeoriginal% *}
+    local target_dir="$TARGET_DIR/$(directories_create_photofile_path_from_datetaken_album "$date_iso" "$ALBUM")"
 
     if [[ -v CAMERA ]]; then
         local -r camera=$CAMERA
@@ -189,6 +187,8 @@ build_targetpath() {
         local -r photonumber=$(build_photonumber_from_exif_camera "$photofile")
     fi
 
+    local -r date_numerical=$(cut -d' ' -f 1 <<<"$datetimeoriginal" | tr --delete ':')
+	local -r timeofday=$(cut -d' ' -f2 <<<"$datetimeoriginal" | cut -d ':' -f1-2 | tr --delete ':')
     local -r extension=${photofile##*.}
     local -r filename="${TITLE}_${date_numerical}_${timeofday}_${camera}_${photonumber}.${extension}"
 

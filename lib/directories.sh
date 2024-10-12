@@ -26,3 +26,12 @@ directories_collect_albums_from_files() {
 
 # TODO more candidates for functions here:
 # - create_photofile_path_from $year $day $album
+
+directories_create_photofile_path_from_datetaken_album() {
+    local date_taken_iso=$1
+    local album=$2
+
+    local year=${date_taken_iso%%:*}
+
+    echo "$year/$album/${date_taken_iso//:/-}"
+}

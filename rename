@@ -42,7 +42,7 @@ function apply_set_title() {
     local newfile="$(dirname "$old_file")/$new_photoid.${old_file#*.}"
 
     if [[ -e $newfile ]]; then
-        echo "[ERROR] Cannot rename $file to \"$new_title\": $newfile exists" >&2
+        echo "[ERROR] Rename $file to \"$new_title\" failed: $newfile exists" >&2
         exit 1
     fi
 
