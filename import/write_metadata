@@ -3,15 +3,13 @@
 set -eu
 
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/.."
-source "$BASEDIR/lib/photofiles.sh"
 source "$BASEDIR/lib/photoid.sh"
-source "$BASEDIR/lib/directories.sh"
 source "$BASEDIR/lib/iptc.sh"
 source "$BASEDIR/lib/exif.sh"
 source "$BASEDIR/lib/strings.sh"
 source "$BASEDIR/lib/xmp.sh"
 
-while getopts "c:k:d:orta" opt; do
+while getopts "c:k:d:orta:" opt; do
     case $opt in
         c ) creator=$OPTARG;;   
 		k ) 
@@ -19,17 +17,20 @@ while getopts "c:k:d:orta" opt; do
 			user_keywords=$OPTARG;;
 		d ) description=$OPTARG;;
         o ) overwrite=;;
-        a ) add_album_keyword=;;
+        a ) album_keyword=$OPTARG;;
         t ) add_title_keyword=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
 
+# N.B. title is a dedicated parameter to preserve whitespaces: if we took the title from the filename
+# and photoid, respectively, all original whitespace would have been replace with "-"
+title=$1
+
+shift 1
 photofiles=$*
 
 for photofile in "$photofiles"; do
-    photofile_filename=$(basename "$photofile")
-    photofile_basename=${photofile_filename%.*}
 
     # Prepare xmp file
     xmp_file=$(xmp_file_from_photofile "$photofile")
@@ -51,28 +52,27 @@ for photofile in "$photofiles"; do
     fi
     xmp_set_copyright "$photofile" "$copyright"
 
+    photoid=$(photoid_get_from_file "$photofile")
+
     # iptc caption
-    photofile_basename=${photofile_filename%.*}
-    iptc_caption=$(iptc_create_caption "$photofile_basename" "${description+$description}")
+    iptc_caption=$(iptc_create_caption "$photoid" "${description+$description}")
     xmp_set_description "$photofile" "$iptc_caption"
 
     # iptc headline
-    iptc_headline=$(iptc_headline_from_photofile "$photofile")
+    iptc_headline=$(iptc_headline_from "$title" "$(photoid_get_fullnumber "$photoid")")
     xmp_set_headline "$photofile" "$iptc_headline"
 
-   
     # iptc keywords
     if [[ -v user_keywords ]]; then 
         xmp_write_csv_keywords "$photofile" "$user_keywords"
     fi
 
     if [[ -v add_title_keyword ]]; then
-        photoid=$(photoid_get_from_file "$photofile")
-        xmp_add_keyword "$photofile" "$(photoid_get_title "$photoid")"
+        xmp_add_keyword "$photofile" "$title"
     fi
 
-    if [[ -v add_album_keyword ]]; then
-        xmp_add_keyword "$photofile" "$(directories_lookup_album_from_file "$photofile")"
+    if [[ -v album_keyword ]]; then
+        xmp_add_keyword "$photofile" "$album_keyword"
     fi
 
     camera_from_exif=$(lookup_camera_from_exif "$photofile")

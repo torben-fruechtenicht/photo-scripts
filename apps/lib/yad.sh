@@ -23,15 +23,15 @@ run_yad_selector_result_action_dialog() {
     fi
 
     local -r title=$1
-    local -r selected_photos=$2
-    local -r search_dir=$(__get_searchdir_from_selector_result "$selected_photos")
+        local -r selected_photos=$2
+        local -r search_dir=$(__get_searchdir_from_selector_result "$selected_photos")
     local -r action_text=$3
     shift 3
 
     local -r selected_photos_count=$(echo "$selected_photos" | wc -l)
     local -r selected_photos_list=$(__render_selected_photos_list \
         "$(__remove_searchdir_from_photos_list "$selected_photos" "$search_dir")")
-    # "\r" adds a linebreak (text in yad is rendered with pango)
+        # "\r" adds a linebreak (text in yad is rendered with pango)
     local -r text="$(echo -e "Selected $selected_photos_count photo(s) from $search_dir:
         \r$selected_photos_list\r${action_text:+\r$action_text}")"
 

@@ -84,6 +84,7 @@ if [[ -n $album_string ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
 else 
     declare -r ALBUM="New photos"
+    # don't check if album keyword should be added in this case, does not make sense
 fi
 
 title_string=$(trim_whitespace "$(get_option_at_index "$options_string" 3)")
@@ -93,6 +94,7 @@ if [[ -n $title_string ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
 else
     declare -r TITLE=$ALBUM
+    # don't check if title keyword should be added in this case, does not make sense
 fi
 
 creator_string=$(trim_whitespace "$(get_option_at_index "$options_string" 5)")
@@ -123,7 +125,8 @@ else
 fi
 
 
-write_metadata -o ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} ${DESCRIPTION:+-d "$DESCRIPTION"} "$imported_photos"
+write_metadata -t -a "$ALBUM" -o ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} \
+    ${DESCRIPTION:+-d "$DESCRIPTION"} "$TITLE" "$imported_photos"
 write_metadata_rc=$?
 if [[ $write_metadata_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Wrote initial metadata"
