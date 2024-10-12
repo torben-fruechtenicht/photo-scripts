@@ -24,14 +24,9 @@ directories_collect_albums_from_files() {
     done | sort -u | paste -s -d ";"
 }
 
-# TODO more candidates for functions here:
-# - create_photofile_path_from $year $day $album
-
-directories_create_photofile_path_from_datetaken_album() {
-    local date_taken_iso=$1
-    local album=$2
-
-    local year=${date_taken_iso%%:*}
-
-    echo "$year/$album/${date_taken_iso//:/-}"
+# $1 - a date in ISO format (yyyy:mm:dd)
+# $2 - album name
+directories_create_photofile_path_from_isodate_album() {
+    # FIXME replace spaces in $2
+    echo "${1%%:*}/$2/${1//:/-}"
 }

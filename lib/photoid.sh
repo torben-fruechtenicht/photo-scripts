@@ -13,13 +13,30 @@ function photoid_get_from_file() {
     echo "${filename%%.*}"
 }
 
-function photoid_create() {
-    local title=$(tr ' ' '-' <<<"$1")
-    local date=$2
-    local time=$3
-    local cameraid=$4
-    local fullnumber=$5
-    echo "$title_$date_$time_$cameraid_$fullnumber"
+# $1 - title
+# $2 - date taken in ISO format (yyyy:mm:dd hh:mm)
+# $3 - camera
+# $4 - photo number
+function photoid_create() {    
+    local date_iso=${2% *}
+    local time_iso=${2#* }
+    echo "${1// /-}_${date_iso//:/}_${time_iso//:/}_${3}_${4}"
+}
+
+# $1 The camera name (make) from exif (normally, the "Exif.Image.Make" tag)
+function photoid_camera_from_exif() {
+    case "$1" in 
+        DMC-FZ50 ) echo "fz50";;
+        CanonPowerShotG9 ) echo "g9";;
+        CanonPowerShotS70 ) echo "s70";;
+        E-M10 ) echo "e-m10";;
+        DSC-RX100M3 ) echo "rx100m3";;
+        SM-G973F ) echo "s10";;
+        NIKOND80 ) echo "d80";;
+        * )
+            echo "Unknown camera $1" >&2
+            exit 1;;
+    esac
 }
 
 function photoid_get_cameraid() {

@@ -27,7 +27,7 @@ shift $(expr $OPTIND - 1 )
 
 photofiles=$*
 
-for photofile in $photofiles; do
+for photofile in "$photofiles"; do
     photofile_filename=$(basename "$photofile")
     photofile_basename=${photofile_filename%.*}
 

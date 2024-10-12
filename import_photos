@@ -11,9 +11,9 @@ declare -r NO_ALBUM_RC=103
 BASE_DIR=$(dirname "$(readlink -e "$0")")
 source "$BASE_DIR/lib/exif.sh"
 source "$BASE_DIR/lib/directories.sh"
+source "$BASE_DIR/lib/photoid.sh"
 
 declare -r TMP_DIR=$(mktemp -d)
-
 
 cleanup() {
   test -e "$TMP_DIR" && rm -rf "$TMP_DIR"
@@ -24,13 +24,15 @@ declare -r FILETYPES_RAW_ONLY="raw"
 declare -r FILETYPES_JPG_ONLY="jpeg"
 declare -r FILETYPES_RAW_AND_JPG="raw+jpeg"
 
-while getopts "t:a:y:c:n" opt; do
+while getopts "t:a:y:c:" opt; do
     case $opt in
         a )
             declare -r ALBUM=$(tr ' ' '-' <<<"$OPTARG");;
         t )
             declare -r TITLE=$(tr ' ' '-' <<<"$OPTARG");;
         y )
+            # FIXME check is not needed here: we can check this below when determining the extensions clause, add a 
+            # default clause there
             if ! [[ $OPTARG =~ ^${FILETYPES_RAW_ONLY}|${FILETYPES_JPG_ONLY}|${FILETYPES_RAW_AND_JPG}$ ]]; then 
                 echo "[ERROR] Invalid filetypes option $OPTARG"
                 exit 1
@@ -39,8 +41,6 @@ while getopts "t:a:y:c:n" opt; do
             fi;;
         c ) 
             declare -r CAMERA=$OPTARG;;
-        n )
-            declare -r CREATE_PHOTONUMBERS=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -73,126 +73,24 @@ if [[ -z $TARGET_DIR ]]; then
     exit $NO_TARGET_DIR_RC
 fi
 
-
-build_photonumber_canon_exif_filenumber() {
-    # e.g. "100-2071"
-     exiv2 -Pt -g 'Exif.Canon.FileNumber' "$1" 2> /dev/null | tr --delete '-' 
-}
-
-build_photonumber_olympus_filename() {
-    # format of photo number: <COLORSPACE><MONTH><DAY><NUMBER>
-    # COLORSPACE is either P (for RGB) or _ (for Adobe), thrown away
-    # MONTH is 1 to 9, A, B, C for Jan to Sep + Oct, Nov, Dec
-    # DAY is a regular 1-31 day value
-    # NUMBER is a four-digit number
-
-    local -r photofile_path=$1
-    local -r photofile_name=$(basename "$photofile_path")
-    local -r without_ext=${photofile_name%%.*}
-    if [[ $without_ext =~ [P_][ABC][0-9]+ ]]; then
-        case ${without_ext:1:1} in 
-            A ) echo "10${without_ext:2}";;
-            B ) echo "11${without_ext:2}";;
-            C ) echo "12${without_ext:2}";;
-        esac
-    else 
-        echo "0${without_ext:1}"
-    fi
-}
-
-build_photonumber_from_prefixed_filename() {
-    local -r file_basename=$(basename "$1")
-    local -r prefix=$2
-    local -r prefix_removed=${file_basename#$prefix}
-    echo ${prefix_removed%%.*}    
-}
-
-camera_id() {
-    local -r photofile=$1
-    local -r manufacturer=$(lookup_manufacturer_from_exif "$photofile")
-    local -r camera=$(lookup_camera_from_exif "$photofile")
-
-    echo "$manufacturer $camera" | tr ' ' '_'
-}
-
-build_photonumber_from_exif_camera() {
-    local -r photofile=$1
-    case "$(camera_id "$photofile")" in 
-        Panasonic_DMC-FZ50 )
-             build_photonumber_from_prefixed_filename "$photofile" "P";; 
-        Canon_CanonPowerShotG9|Canon_CanonPowerShotS70 )
-            build_photonumber_canon_exif_filenumber "$photofile";;
-        OLYMPUS_IMAGING_CORP._E-M10 )
-            build_photonumber_olympus_filename "$photofile";;
-        SONY_DSC-RX100M3 )
-            build_photonumber_from_prefixed_filename "$photofile" "DSC";;    
-        * )
-            echo "Unknown camera $(camera_id "$photofile")" >&2
-            exit 1;;
-    esac
-}
-
-create_photonumber() {
-    local -r zeropad_to_n=8
-
-    local -r targetdir=$1
-    local -r title=$2
-
-    highest_number=$(find "$targetdir" -type f -name "$title*" -printf "%f\n" | cut -d'.' -f1 | cut -d'_' -f5 | sort -u | tail -n 1)
-    if [[ -n $highest_number ]]; then
-        number_of_digits=${#highest_number}
-        next_number=$(echo "$highest_number + 1" | bc)
-        printf "%0${zeropad_to_n}d" "$next_number"
-    else
-        printf "%0${zeropad_to_n}d" 1
-    fi
-}
-
-camera_name() { 
-    local -r photofile=$1
-    case "$(camera_id "$photofile")" in 
-        Panasonic_DMC-FZ50 )
-            echo "fz50";;
-        Canon_CanonPowerShotG9 )
-            echo "g9";;
-        Canon_CanonPowerShotS70 )
-            echo "s70";;
-        OLYMPUS_IMAGING_CORP._E-M10 )
-            echo "e-m10";;
-        SONY_DSC-RX100M3 )
-            echo "rx100m3";;
-        * )
-            echo "Unknown camera $(camera_id "$photofile")" >&2
-            exit 1;;
-    esac
-}
-
 build_targetpath() {
     local -r photofile=$1
 
     local -r datetimeoriginal=$(lookup_exif_datetimeorig_or_lastmod "$photofile")
 
     local date_iso=${datetimeoriginal% *}
-    local target_dir="$TARGET_DIR/$(directories_create_photofile_path_from_datetaken_album "$date_iso" "$ALBUM")"
+    local target_dir="$TARGET_DIR/$(directories_create_photofile_path_from_isodate_album "$date_iso" "$ALBUM")"
 
     if [[ -v CAMERA ]]; then
         local -r camera=$CAMERA
     else 
-        local -r camera=$(camera_name "$photofile")
+        local -r camera=$(photoid_camera_from_exif "$(lookup_camera_from_exif "$photofile")")
     fi
     
-    if [[ -v CREATE_PHOTONUMBERS ]]; then
-        local -r photonumber=$(create_photonumber "$target_dir" "$TITLE")
-    else
-        local -r photonumber=$(build_photonumber_from_exif_camera "$photofile")
-    fi
-
-    local -r date_numerical=$(cut -d' ' -f 1 <<<"$datetimeoriginal" | tr --delete ':')
-	local -r timeofday=$(cut -d' ' -f2 <<<"$datetimeoriginal" | cut -d ':' -f1-2 | tr --delete ':')
+    local -r photonumber=$(create_photonumber "$photofile")
+    local -r photoid=$(photoid_create "$TITLE" "$datetimeoriginal" "$camera" "$photonumber")
     local -r extension=${photofile##*.}
-    local -r filename="${TITLE}_${date_numerical}_${timeofday}_${camera}_${photonumber}.${extension}"
-
-    echo "$target_dir/$filename"
+    echo "$target_dir/$photoid.$extension"
 }
 
 
@@ -217,7 +115,21 @@ esac
 find "$DCIM_DIR" -regextype posix-extended -type f -iregex $EXTENSIONS ${SELECTION_PATTERN+-iname "$SELECTION_PATTERN"} \
     -exec cp --preserve=timestamps {} "$TMP_DIR" \; -printf "$TMP_DIR"'/%f\n' | while read -r photofile; do
 
-    target_filename=$(build_targetpath "$photofile")
+    datetimeoriginal=$(lookup_exif_datetimeorig_or_lastmod "$photofile")
+
+    date_iso=${datetimeoriginal% *}
+    target_dir="$TARGET_DIR/$(directories_create_photofile_path_from_isodate_album "$date_iso" "$ALBUM")"
+
+    if [[ -v CAMERA ]]; then
+        camera=$CAMERA
+    else 
+        camera=$(photoid_camera_from_exif "$(lookup_camera_from_exif "$photofile")")
+    fi
+    
+    photonumber=$(create_photonumber "$photofile")
+    photoid=$(photoid_create "$TITLE" "$datetimeoriginal" "$camera" "$photonumber")
+    extension=${photofile##*.}
+    target_filename="$target_dir/$photoid.$extension"
 
     if [[ -e $target_filename ]]; then
         echo "[WARN] $target_filename exists, skipping" >&2
@@ -232,5 +144,4 @@ find "$DCIM_DIR" -regextype posix-extended -type f -iregex $EXTENSIONS ${SELECTI
     chmod -w "$target_filename"
 
     echo "$target_filename"
-
 done
