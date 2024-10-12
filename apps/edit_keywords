@@ -27,61 +27,30 @@ else
     fi    
 fi
 
-declare -r ADD_MODE=Add
-declare -r REMOVE_MODE=Remove
-
-dialog_text="Add or remove keywords"
-keywords_label="Keyword(s)\nSeparated by \";\". No quoting required"
+dialog_text="List keywords to update separated \";\". To remove a keyword, prepend with  \"-\". No quoting required"
+keywords_label="Keywords"
 keywords_value=$(remember_list "keywords" "gn")
-mode_label="Mode, add or remove keywords"
-mode_values="$ADD_MODE!$REMOVE_MODE"
 edit_keywords_params=$(run_yad_selector_result_action_dialog \
-    "$APP_TITLE" "$photos" "" \
-    --form \
-    --field="$keywords_label:CBE" "$keywords_value" \
-    --field="$mode_label:CB" "$mode_values")
+    "$APP_TITLE" "$photos" "$dialog_text" --form \
+    --field="$keywords_label:CBE" "$keywords_value")
 yad_rc=$?
 if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r KEYWORDS=$(get_option_at_index "$edit_keywords_params" 1)
-if [[ -z $KEYWORDS ]]; then    
+keywords=$(get_option_at_index "$edit_keywords_params" 1)
+if [[ -z $keywords ]]; then    
     notify_warning "$APP_TITLE" "At least one keyword is required"  
     exit 1
 fi
-memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$KEYWORDS" 25
-declare -r MODE=$(get_option_at_index "$edit_keywords_params" 2)
+memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$keywords" 25
 
-add() {
-    local -r keywords=$1
-    local -r photos=$2
-    add_keywords "$keywords" "$photos"
-    cmd_rc=$?
-    if [[ $cmd_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Added keywords \"$keywords\" to $(wc -l <<<"$photos") photo(s)"
-    else
-        notify_error "$APP_TITLE" \
-            "Failed to add keywords \"$keywords\" to $(wc -l <<<"$photos") photo(s), return code was $cmd_rc"
-    fi
-}
-
-remove() {
-    local -r keywords=$1
-    local -r photos=$2
-    remove_keywords "$keywords" "$photos" 
-    cmd_rc=$?
-    if [[ $cmd_rc = 0 ]]; then
-        notify_info "$APP_TITLE" "Removed keywords \"$keywords\" from $(wc -l <<<"$photos") photo(s)"
-    else
-        notify_error "$APP_TITLE" \
-            "Failed to remove keywords \"$keywords\" from $(wc -l <<<"$photos") photo(s), return code was $cmd_rc"
-        exit 1
-    fi
-}
-
-if [[ $MODE = $ADD_MODE ]]; then
-    add "$KEYWORDS" "$photos"
-elif [[ $MODE = $REMOVE_MODE ]]; then
-    remove "$KEYWORDS" "$photos" 
+update_keywords "$keywords" "$photos"
+update_keywords_rc=$?
+if [[ $update_keywords_rc = 0 ]]; then
+    notify_info "$APP_TITLE" "Updated keywords \"$keywords\" in $(wc -l <<<"$photos") photo(s)"
+else
+    notify_error "$APP_TITLE" \
+        "Failed to update keywords \"$keywords\" int $(wc -l <<<"$photos") photo(s): $update_keywords_rc"
+    exit 1
 fi

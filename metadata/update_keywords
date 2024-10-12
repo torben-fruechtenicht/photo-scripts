@@ -1,0 +1,116 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/strings.sh"
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
+source "$BASE_DIR/lib/jpeg_iptc.sh"
+source "$BASE_DIR/util/unprotect.sh"
+source "$BASE_DIR/lib/xmp.sh"
+
+PATH="$BASE_DIR:$PATH"
+
+if [[ $# < 2 ]]; then
+    echo "[ERROR] Missing parameters: $@" >&2
+    exit 1
+fi
+
+# CSV string
+keywords=$1
+if [[ -f $keywords || -d $keywords ]]; then
+	echo "[ERROR] Keywords parameter seems to be a file or directory - actual keywords parameter is missing?" >&2
+	exit 1
+fi
+
+shift 1
+
+function filter_keywords_to_add() {
+    OLD_IFS=$IFS
+    IFS=";"
+    for keyword in $1; do
+        if [[ ${keyword:0:1} != "-" ]]; then
+            echo "$keyword"
+        fi
+    done | paste -s -d ';'
+    IFS=$OLD_IFS
+}
+
+function filter_keywords_to_remove() {
+    OLD_IFS=$IFS
+    IFS=";"
+    for keyword in $1; do
+        if [[ ${keyword:0:1} = "-" ]]; then
+            echo "${keyword:1}"
+        fi
+    done | paste -s -d ';'
+    IFS=$OLD_IFS
+}
+
+function update_if_rt_sidecar_with_iptc() {
+    if is_rawtherapee_sidecar "$1" && rt_sidecar_has_iptc_keywords "$1"; then
+		unprotected_file_if_needed "$1"
+        
+        add_keywords_csv=$(filter_keywords_to_add "$keywords")
+        if [[ -n $add_keywords_csv ]]; then
+            sidecar_add_iptc_keywords "$1" "$add_keywords_csv"
+        fi
+        remove_keywords_csv=$(filter_keywords_to_remove "$keywords")
+        if [[ -n $remove_keywords_csv ]]; then
+            sidecar_remove_iptc_keywords "$1" "$remove_keywords_csv"
+        fi
+
+        reprotect_check_file "$1"
+    fi    
+}
+
+function update_if_jpeg_output_file() {
+    if is_output_photofile "$file"; then	
+		unprotected_file_if_needed "$file"
+
+        add_keywords_csv=$(filter_keywords_to_add "$keywords")
+        if [[ -n $add_keywords_csv ]]; then
+            jpeg_add_iptc_keywords "$1" "$add_keywords_csv"
+        fi
+        remove_keywords_csv=$(filter_keywords_to_remove "$keywords")
+        if [[ -n $remove_keywords_csv ]]; then
+            jpeg_remove_iptc_keywords "$1" "$remove_keywords_csv"
+        fi
+
+        reprotect_check_file "$file"
+    fi
+}
+
+function update_if_xmp_sidecar() {
+    if is_xmp_sidecar "$file"; then
+        unprotected_file_if_needed "$file"
+
+        set -x
+        add_keywords_csv=$(filter_keywords_to_add "$keywords")
+        if [[ -n $add_keywords_csv ]]; then
+            xmp_add_keywords_csv "$1" "$add_keywords_csv"
+        fi
+        remove_keywords_csv=$(filter_keywords_to_remove "$keywords")
+        if [[ -n $remove_keywords_csv ]]; then
+            xmp_remove_keywords_csv "$1" "$remove_keywords_csv"
+        fi
+        set +x
+
+        reprotect_check_file "$file"
+    fi
+}
+
+if [[ $# = 0 ]]; then
+    collect_associated_files < /dev/stdin | while read -r file; do 
+        update_if_xmp_sidecar "$file" "$keywords"
+        update_if_jpeg_output_file "$file" "$keywords"
+        update_if_rt_sidecar_with_iptc "$file" "$keywords"    
+    done
+else 
+    collect_associated_files "$@" | while read -r file; do 
+        update_if_xmp_sidecar "$file" "$keywords"
+        update_if_jpeg_output_file "$file" "$keywords"
+        update_if_rt_sidecar_with_iptc "$file" "$keywords"
+    done
+fi
