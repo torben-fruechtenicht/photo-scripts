@@ -28,12 +28,13 @@ shift $(expr $OPTIND - 1 )
 title=$1
 
 shift 1
-photofiles=$*
+photofiles=$@
 
-for photofile in "$photofiles"; do
-
+for photofile in $photofiles; do
+    
     # Prepare xmp file
     xmp_file=$(xmp_file_from_photofile "$photofile")
+
     if ! [[ -v overwrite ]] && [[ -e $xmp_file ]]; then
         echo "XMP file $xmp_file exists already, exiting" >&2
         exit 1

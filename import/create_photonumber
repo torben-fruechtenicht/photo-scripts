@@ -7,6 +7,11 @@ source "$BASE_DIR/lib/exif.sh"
 
 photofile=$1
 
+get_file_basename() {
+    local filename=${1##*/}
+    echo ${filename%%.*}
+}
+
 build_from_canon_exif_filenumber() {
     # e.g. "100-2071"
     local canon_filenumber=$(exiv2 -Pt -g 'Exif.Canon.FileNumber' "$1" 2> /dev/null)
@@ -43,6 +48,12 @@ build_from_prefixed_filename() {
     echo ${prefix_removed%%.*}    
 }
 
+build_from_android_filename() {
+    # Android filename follow the "yyyymmdd_hhmmss.ext" format so we just concatenate the two parts.
+    local basename=$(get_file_basename "$1")
+    echo "${basename/_/}"
+}
+
 camera=$(lookup_camera_from_exif "$photofile")
 case "$camera" in 
         DMC-FZ50 )
@@ -52,7 +63,9 @@ case "$camera" in
         E-M10 )
             build_from_olympus_filename "$photofile";;
         DSC-RX100M3 )
-            build_from_prefixed_filename "$photofile" "DSC";;    
+            build_from_prefixed_filename "$photofile" "DSC";;   
+        SM-G973F )
+            build_from_android_filename "$photofile";; 
         * )
             echo "[ERROR] Unknown camera $camera" >&2
             exit 1;;

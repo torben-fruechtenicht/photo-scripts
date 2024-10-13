@@ -13,6 +13,12 @@ function photoid_get_from_file() {
     echo "${filename%%.*}"
 }
 
+# $1 - a string
+# $2 - max length of string
+function __truncate_to() {
+    echo ${1:0:$2}
+}
+
 # $1 - title
 # $2 - date taken in ISO format (yyyy:mm:dd hh:mm)
 # $3 - camera
@@ -20,7 +26,7 @@ function photoid_get_from_file() {
 function photoid_create() {    
     local date_iso=${2% *}
     local time_iso=${2#* }
-    echo "${1// /-}_${date_iso//:/}_${time_iso//:/}_${3}_${4}"
+    echo "${1// /-}_${date_iso//:/}_$(__truncate_to "${time_iso//:/}" 4)_${3}_${4}"
 }
 
 # $1 The camera name (make) from exif (normally, the "Exif.Image.Make" tag)
@@ -33,6 +39,7 @@ function photoid_camera_from_exif() {
         DSC-RX100M3 ) echo "rx100m3";;
         SM-G973F ) echo "s10";;
         NIKOND80 ) echo "d80";;
+        SM-G973F ) echo "s10";;
         * )
             echo "Unknown camera $1" >&2
             exit 1;;
