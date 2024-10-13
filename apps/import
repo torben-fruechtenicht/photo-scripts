@@ -125,8 +125,8 @@ else
 fi
 
 
-write_metadata -t -a "$ALBUM" -o ${CREATOR+-c "$CREATOR"} ${KEYWORDS:+-k "$KEYWORDS"} \
-    ${DESCRIPTION:+-d "$DESCRIPTION"} "$TITLE" "$imported_photos"
+write_metadata -o ${TITLE_AS_KEYWORD+-t} ${ALBUM_AS_KEYWORD+-a "$ALBUM"} ${CREATOR+-c "$CREATOR"} \
+    ${KEYWORDS:+-k "$KEYWORDS"} ${DESCRIPTION:+-d "$DESCRIPTION"} "$TITLE" "$imported_photos"
 write_metadata_rc=$?
 if [[ $write_metadata_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Wrote initial metadata"
