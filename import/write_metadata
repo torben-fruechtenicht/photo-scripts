@@ -65,7 +65,7 @@ for photofile in $photofiles; do
 
     # iptc keywords
     if [[ -v user_keywords ]]; then 
-        xmp_write_csv_keywords "$photofile" "$user_keywords"
+        xmp_add_keywords_csv "$photofile" "$user_keywords"
     fi
 
     if [[ -v add_title_keyword ]]; then

@@ -151,23 +151,14 @@ xmp_set_description() {
 }
 
 
-xmp_write_csv_keywords() {
-    local xmp_file=$(xmp_file_from_photofile "$1")    
-    local keywords_csv=$2   
-
-    if __xml_xpath_exists "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag/rdf:li" "$xmp_file"; then
-        echo "Keywords entry exists in $xmp_file" >&2
-        exit 1
-    else
-        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:subject" "$xmp_file"
-        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject" "rdf:Bag" "$xmp_file"
-        xmp_add_keywords_csv "$xmp_file" "$keywords_csv" 
-    fi
-}
-
 xmp_add_keyword() {
     local xmp_file=$(xmp_file_from_photofile "$1")    
     local keyword=$2   
+
+    if ! __xml_xpath_exists "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject" "$xmp_file"; then
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description" "dc:subject" "$xmp_file"
+        __xml_insert_node "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject" "rdf:Bag" "$xmp_file"
+    fi
 
     if ! __xml_xpath_exists "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag/rdf:li[text() ='$keyword']" "$xmp_file"; then
         __xml_insert_node_with_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag" "rdf:li" "$keyword" "$xmp_file"
