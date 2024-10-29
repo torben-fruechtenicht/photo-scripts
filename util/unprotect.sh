@@ -1,6 +1,6 @@
 __protected_file=
 
-unprotected_file_if_needed() {
+unprotect_file_if_needed() {
     local file=$1
 
     if [[ -w $file ]]; then

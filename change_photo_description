@@ -22,7 +22,7 @@ fi
 
 function set_if_xmp() {
     if is_xmp_sidecar "$1"; then
-        unprotected_file_if_needed "$1"
+        unprotect_file_if_needed "$1"
         local photoid=$(photoid_get_from_file "$1")
         local caption=$(iptc_create_caption "$photoid" "$2")
         xmp_set_description "$1" "$caption"
@@ -32,7 +32,7 @@ function set_if_xmp() {
 
 function set_if_rt_sidecar_with_iptc() {
     if is_rawtherapee_sidecar "$1" && rt_sidecar_has_iptc_keywords "$1"; then
-        unprotected_file_if_needed "$1"
+        unprotect_file_if_needed "$1"
         local photoid=$(photoid_get_from_file "$1")
         local caption=$(iptc_create_caption "$photoid" "$2")
         sidecar_set_property "$1" "IPTC" "Caption" "$caption"
@@ -42,7 +42,7 @@ function set_if_rt_sidecar_with_iptc() {
 
 function set_if_jpeg() {
     if is_output_photofile "$1"; then
-        unprotected_file_if_needed "$1"
+        unprotect_file_if_needed "$1"
         local photoid=$(photoid_get_from_file "$1")
         local caption=$(iptc_create_caption "$photoid" "$2")
         jpeg_set_iptc "$1" "Caption" "Caption" "$caption"

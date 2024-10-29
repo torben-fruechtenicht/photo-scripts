@@ -50,7 +50,7 @@ function filter_keywords_to_remove() {
 
 function update_if_rt_sidecar_with_iptc() {
     if is_rawtherapee_sidecar "$1" && rt_sidecar_has_iptc_keywords "$1"; then
-		unprotected_file_if_needed "$1"
+		unprotect_file_if_needed "$1"
         
         add_keywords_csv=$(filter_keywords_to_add "$keywords")
         if [[ -n $add_keywords_csv ]]; then
@@ -67,7 +67,7 @@ function update_if_rt_sidecar_with_iptc() {
 
 function update_if_jpeg_output_file() {
     if is_output_photofile "$file"; then	
-		unprotected_file_if_needed "$file"
+		unprotect_file_if_needed "$file"
 
         add_keywords_csv=$(filter_keywords_to_add "$keywords")
         if [[ -n $add_keywords_csv ]]; then
@@ -84,7 +84,7 @@ function update_if_jpeg_output_file() {
 
 function update_if_xmp_sidecar() {
     if is_xmp_sidecar "$file"; then
-        unprotected_file_if_needed "$file"
+        unprotect_file_if_needed "$file"
 
         add_keywords_csv=$(filter_keywords_to_add "$keywords")
         if [[ -n $add_keywords_csv ]]; then
