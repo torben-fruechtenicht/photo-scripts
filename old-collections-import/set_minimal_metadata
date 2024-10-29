@@ -4,7 +4,7 @@ set -eu
 
 basedir="${0%/*}/.."
 source "$basedir/old-collections-import/metadata_writers.sh"
-source "$basedir/lib/jpeg_iptc.sh"
+source "$basedir/metadata/lib/jpeg_iptc.sh"
 source "$basedir/lib/photofiles.sh"
 source "$basedir/lib/strings.sh"
 

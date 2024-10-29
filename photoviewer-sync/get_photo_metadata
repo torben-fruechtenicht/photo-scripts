@@ -6,7 +6,7 @@ PATH="$(dirname "$(readlink -e "$0")"):$PATH"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
-source "$BASE_DIR/lib/jpeg_iptc.sh"
+source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
 
 function print_metadata() {
     local -r file=$(readlink -m "$1")

@@ -3,7 +3,7 @@
 set -eu
 
 declare -r BASE_DIR=$(readlink -e "$(dirname "$0")/..")
-source "$BASE_DIR/lib/jpeg_iptc.sh"
+source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
 
 declare -r AUDIENCES_MAPPINGS="$HOME/.local/share/photo-scripts/audiences_iptc_keywords.map"
 
