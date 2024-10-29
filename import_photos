@@ -9,7 +9,7 @@ declare -r NO_ALBUM_RC=103
 
 
 BASE_DIR=$(dirname "$(readlink -e "$0")")
-source "$BASE_DIR/lib/exif.sh"
+source "$BASE_DIR/metadata/lib/exif.sh"
 source "$BASE_DIR/lib/directories.sh"
 source "$BASE_DIR/lib/photoid.sh"
 

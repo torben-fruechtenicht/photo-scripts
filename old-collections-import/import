@@ -6,7 +6,7 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/lib/jpeg_iptc.sh"
-source "$BASE_DIR/lib/exif.sh"
+source "$BASE_DIR/metadata/lib/exif.sh"
 source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 source "$BASE_DIR/lib/iptc.sh"
 
@@ -151,6 +151,7 @@ camera=$3
 album=$4
 creator=$5
 to_import_item_source=$6
+originals_extension=$7
 
 if ! [[ -e $to_import_item_source ]]; then
     echo "[ERROR] to_import_item source file $to_import_item_source does not exist" >&2
@@ -161,8 +162,8 @@ source "$to_import_item_source"
 start_ts=$(date +%s)
 
 find "$source_dir" -regextype posix-extended -type f  \
-    \( -iregex ".+/.+\.(orf|raw|cr2|crw|pp[23])" -or -iregex ".+/converted/.+\.(jpg|xcf)" \) |\
-collect_import_items "$camera" "$album" #|\
-# copy_import_items_to_target "$target_rootdir" | sponge |\
-# create_missing_files "$creator" | normalize_metadata "$creator" "$album" |\
-# print_finish_info "$start_ts"
+    \( -iregex ".+/.+\.$originals_extension" -or -iregex ".+/.+\.pp[23]" -or -iregex ".+/converted/.+\.(jpg|xcf)" \) |\
+collect_import_items "$camera" "$album" |\
+copy_import_items_to_target "$target_rootdir" | sponge |\
+create_missing_files "$creator" | normalize_metadata "$creator" "$album" |\
+print_finish_info "$start_ts"

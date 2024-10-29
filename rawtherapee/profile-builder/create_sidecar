@@ -10,7 +10,7 @@ declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../.."
 source "$BASEDIR/lib/strings.sh"
 source "$BASEDIR/lib/photofiles.sh"
 source "$BASEDIR/lib/iptc.sh"
-source "$BASEDIR/lib/exif.sh"
+source "$BASEDIR/metadata/lib/exif.sh"
 source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 
 while getopts "c:k:d:t:ov" opt; do

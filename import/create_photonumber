@@ -3,7 +3,7 @@
 set -eu
 
 BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
-source "$BASE_DIR/lib/exif.sh"
+source "$BASE_DIR/metadata/lib/exif.sh"
 
 photofile=$1
 
