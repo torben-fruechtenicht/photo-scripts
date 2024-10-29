@@ -45,7 +45,7 @@ if [[ -z $keywords ]]; then
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$keywords" 25
 
-change_keywords "$keywords" "$photos"
+change_photo_keywords "$keywords" "$photos"
 update_keywords_rc=$?
 if [[ $update_keywords_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Updated keywords \"$keywords\" in $(wc -l <<<"$photos") photo(s)"

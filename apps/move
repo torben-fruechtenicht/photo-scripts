@@ -49,7 +49,7 @@ is_option_selected "$move_params" 2 && declare set_target_album_name_keyword=
 is_option_selected "$move_params" 3 && declare remove_old_album_name_keyword=
 is_option_selected "$move_params" 4 && declare change_photo_titles_to_album_name=
 
-change_album ${remove_old_album_name_keyword+-o} ${set_target_album_name_keyword+-a} \
+change_photo_album ${remove_old_album_name_keyword+-o} ${set_target_album_name_keyword+-a} \
     ${change_photo_titles_to_album_name+-t} "$target_album_name" "$photos"
 rc=$?
 if [[ $rc != 0 ]]; then

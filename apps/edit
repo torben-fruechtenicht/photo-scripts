@@ -124,7 +124,7 @@ if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]] || [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
         fi
 
         if [[ -n "$keywords_to_remove" ]]; then
-            change_keywords "-$keywords_to_remove" "$photo" > /dev/null # we're not interested in the printed files
+            change_photo_keywords "-$keywords_to_remove" "$photo" > /dev/null # we're not interested in the printed files
         fi
 
     done
@@ -132,7 +132,7 @@ fi
 
 
 if [[ -n $KEYWORDS ]]; then
-    change_keywords "$KEYWORDS" "$files" > /dev/null # we're not interested in the printed files
+    change_photo_keywords "$KEYWORDS" "$files" > /dev/null # we're not interested in the printed files
     update_keywords_rc=$?
     if [[ $update_keywords_rc = 0 ]]; then
         notify_info "$APP_TITLE" "Added keywords \"$KEYWORDS\" to $PHOTOS_COUNT photo(s)"
@@ -160,7 +160,7 @@ fi
 if [[ -n $ALBUM ]]; then
     # if we changed photo titles, $files will now also contain all associated files. But we can safely pass
     # $files to change_album because it will just throw away all irrelevant files
-    change_album ${NOCASEMATCH+-c} "$ALBUM" "$files"  > /dev/null 
+    change_photo_album ${NOCASEMATCH+-c} "$ALBUM" "$files"  > /dev/null 
     change_album_rc=$?
     if [[ $change_album_rc = 0 ]]; then
         notify_info "$APP_TITLE" "Moving $PHOTOS_COUNT photos to \"$ALBUM\" done"
