@@ -66,19 +66,21 @@ tail -F "$events_file" | while read -r new_file; do
             continue
         fi
 
+        # RawTherapee does not know that we are using the filename in photo metadata (for both title and
+        # description) so we have to update that after a variant was created.
         if is_variant "$new_file"; then
             echo "[INFO] Adjusting title of variant in IPTC: $new_file" >&2
             # TODO can be simplied to not rely on the actual title: just get the 
-            # caption and description and update the variant number directly there
+            # caption and description and update the variant number directly there 
             set_photoid "$new_file" "$(photoid "$new_file")"
         fi
 
+        # Add geolocation to output files (jpegs)
         if is_output_photofile "$new_file"; then
             echo "[INFO] Adding geolocation from gpx file (if exists): $new_file" >&2
             set_jpg_geolocation_from_gpx "$new_file"
         fi
-
-        
+    
     fi      
     
 done 
