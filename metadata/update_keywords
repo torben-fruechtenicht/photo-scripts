@@ -99,16 +99,8 @@ function update_if_xmp_sidecar() {
     fi
 }
 
-if [[ $# = 0 ]]; then
-    collect_associated_files < /dev/stdin | while read -r file; do 
-        update_if_xmp_sidecar "$file" "$keywords"
-        update_if_jpeg_output_file "$file" "$keywords"
-        update_if_rt_sidecar_with_iptc "$file" "$keywords"    
-    done
-else 
-    collect_associated_files "$@" | while read -r file; do 
-        update_if_xmp_sidecar "$file" "$keywords"
-        update_if_jpeg_output_file "$file" "$keywords"
-        update_if_rt_sidecar_with_iptc "$file" "$keywords"
-    done
-fi
+for file in "$@"; do
+    update_if_xmp_sidecar "$file" "$keywords"
+    update_if_jpeg_output_file "$file" "$keywords"
+    update_if_rt_sidecar_with_iptc "$file" "$keywords"    
+done

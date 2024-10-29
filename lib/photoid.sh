@@ -54,7 +54,7 @@ function photoid_get_title() {
     cut -d'_' -f1 <<<"$1"
 }
 
-# $1 photoid
+# $1 photoid (photo filename also accepted)
 # $2 new title
 function photoid_set_title() {
     echo "${2}_$(cut -d'_' -f2- <<<$1)"

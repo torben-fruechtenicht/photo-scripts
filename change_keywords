@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+
+set -eux
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+PATH="$BASE_DIR/metada:$BASE_DIR:$PATH"
+
+keywords=$1
+
+if [[ $# = 1 ]]; then
+    collect_associated_files < /dev/stdin | while read -r file; do update_keywords "$file"; done
+else 
+    shift 1
+    collect_associated_files "$@" | while read -r file; do update_keywords "$file"; done
+fi

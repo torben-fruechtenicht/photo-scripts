@@ -13,9 +13,13 @@ __directories_locate_collection_leaf_path() {
 }
 
 directories_lookup_album_from_file() {
-    local leaf_path=$(__directories_locate_collection_leaf_path "$1")
-    local album_path=${leaf_path%/????-??-??}
+    local album_path=$(directories_get_albumpath_from_file "$1")
     echo "${album_path##*/}"
+}
+
+directories_get_albumpath_from_file() {
+    local leaf_path=$(__directories_locate_collection_leaf_path "$1")
+    echo "${leaf_path%/????-??-??}"
 }
 
 directories_collect_albums_from_files() {

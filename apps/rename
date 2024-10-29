@@ -48,7 +48,7 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$new_title"
 is_option_selected "$rename_params" 2 && declare add_title_as_keyword=
 is_option_selected "$rename_params" 3 && declare remove_old_title_keyword=
 
-rename ${add_title_as_keyword+-k} ${remove_keywords_title_entry+-r} "$new_title" $photos 
+change_title ${add_title_as_keyword+-k} ${remove_keywords_title_entry+-r} "$new_title" $photos 
 rc=$?
 if [[ $rc != 0 ]]; then
     notify_error "$APP_TITLE" \

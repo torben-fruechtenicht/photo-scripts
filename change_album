@@ -4,18 +4,17 @@ set -eu
 shopt -s nocasematch
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
-source "$BASE_DIR/lib/strings.sh"
-source "$BASE_DIR/lib/photofiles.sh"
-source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
-source "$BASE_DIR/lib/jpeg_iptc.sh"
+source "$BASE_DIR/lib/directories.sh"
+source "$BASE_DIR/lib/photoid.sh"
 
-PATH="$BASE_DIR:$PATH"
+PATH="$BASE_DIR/metadata:$BASE_DIR:$PATH"
 
-while getopts "c" opt; do
+while getopts "ctao" opt; do
     case $opt in
-        c ) 
-            shopt -u nocasematch
-        ;;
+        c ) shopt -u nocasematch;;
+        t ) CHANGE_PHOTO_TITLES_TO_ALBUM_NAME=;;
+        a ) ADD_NEW_ALBUM_KEYWORD=;;
+        o ) REMOVE_OLD_ALBUM_KEYWORD=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -28,45 +27,41 @@ elif [[ -f $ALBUM || -d $ALBUM ]]; then
 	echo "[ERROR] Album parameter is a file or directory" >&2
 	exit 1
 fi
-
 shift 1
 
-if [[ $# = 0 ]]; then
-    declare -r READ_PHOTOS_FROM_STDIN=
-else 
-    declare -r PHOTOS=$@
-fi
+set -o pipefail
+collect_associated_files "$@" | while read -r file; do 
+    
+    old_album_path=$(directories_get_albumpath_from_file "$file")
+    old_album=${old_album_path##*/}
 
-apply_change_album() {
-    local -r file=$1
-    local -r old_album_path=$(albumpath_from_file "$file")
-
-    if [[ $(basename "$old_album_path") = $ALBUM ]]; then
+    if [[ $old_album = $ALBUM ]]; then
         echo "[WARN] Cannot change album of $file to \"$ALBUM\", same as old album" >&2
-        return
+        continue
     fi
 
-    local -r relative_to_album_path=$(path_relative_to_album_from_file "$file")
-    local -r newfullpath="$(dirname "$old_album_path")/$ALBUM/$relative_to_album_path"
-
-    # this is a real error case unlike the other check above (which stems from careless user input)
-    if [[ -e $newfullpath ]]; then
-        echo "[ERROR] Cannot change album of $file, file exists already in \"$ALBUM\": $newfullpath" >&2
-        exit 1
-    fi
+    relative_to_album_path=${file#$old_album_path/}
+    new_album_parent=${old_album_path%/*}
+    newfullpath="$new_album_parent/$ALBUM/$relative_to_album_path"
 
     if ! [[ -e $(dirname "$newfullpath") ]]; then
         mkdir --parents "$(dirname "$newfullpath")"
+    elif [[ -e $newfullpath ]]; then
+        echo "[ERROR] Cannot change album of $file, file exists already in \"$ALBUM\": $newfullpath" >&2
+        continue
     fi
     
     mv "$file" "$newfullpath"
+    test -v REMOVE_OLD_ALBUM_KEYWORD && update_keywords "-$old_album" "$newfullpath"
+    test -v ADD_NEW_ALBUM_KEYWORD && update_keywords "$ALBUM" "$newfullpath"
+    if [[ -v CHANGE_PHOTO_TITLES_TO_ALBUM_NAME ]]; then
+        old_photoid=$(photoid_get_from_file "$newfullpath")
+        new_photoid=$(photoid_set_title "$old_photoid" "$ALBUM")
+        set_photoid "$newfullpath" "$new_photoid"
+        renamed_file="$(dirname "$newfullpath")/$new_photoid.${newfullpath#*.}"
+        # TODO we could do this a bit more cleverly, without an additional move
+        mv "$newfullpath" "$renamed_file"
+    fi
     
     echo "$newfullpath"
-}
-
-set -o pipefail
-if [[ -v READ_PHOTOS_FROM_STDIN ]]; then
-    collect_associated_files < /dev/stdin | while read -r file; do apply_change_album "$file"; done
-else 
-    collect_associated_files "$PHOTOS" | while read -r file; do apply_change_album "$file"; done
-fi
+done

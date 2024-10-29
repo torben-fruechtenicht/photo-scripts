@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-# FIXME move to metadata directory
-
 set -eu
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."

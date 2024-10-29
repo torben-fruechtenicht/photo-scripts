@@ -51,43 +51,13 @@ is_option_selected "$move_params" 2 && declare set_target_album_name_keyword=
 is_option_selected "$move_params" 3 && declare remove_old_album_name_keyword=
 is_option_selected "$move_params" 4 && declare change_photo_titles_to_album_name=
 
-if [[ -v set_target_album_name_keyword ]]; then
-    update_keywords "$target_album_name" $photos
-    rc=$?
-    if [[ $rc != 0 ]]; then
-        notify_error "$APP_TITLE" \
-            "Failed adding target album name as keyword with return code $rc"
-        exit 1
-    fi
-fi
-
-if [[ -v remove_old_album_name_keyword ]]; then
-    old_album_names=$(directories_collect_albums_from_files "$photos")
-    update_keywords "-$old_album_names" $photos
-    rc=$?
-    if [[ $rc != 0 ]]; then
-        notify_error "$APP_TITLE" \
-            "Failed removing old album name as keyword with return code $rc"
-        exit 1
-    fi
-fi
-
-photos_in_target_album=$(change_album "$target_album_name" "$photos")
+photos_in_target_album=$(change_album ${remove_old_album_name_keyword+-o} ${set_target_album_name_keyword+-a} \
+    ${change_photo_titles_to_album_name+-t} "$target_album_name" "$photos")
 rc=$?
 if [[ $rc != 0 ]]; then
     notify_error "$APP_TITLE" \
-        "Failed moving $(wc -l "$photos") photos to \"$target_album_name\" failed with return code $change_album_rc"
+        "Failed changing album of $(wc -l "$photos") photos to \"$target_album_name\": $change_album_rc"
     exit 1
 fi
 
-if [[ -v change_photo_titles_to_album_name ]]; then
-    set_title "$target_album_name" "$photos_in_target_album"
-    rc=$?
-    if [[ $rc != 0 ]]; then
-        notify_error "$APP_TITLE" \
-            "Changing title of $(wc -l <<<"$photos") photo(s) to \"$target_album_name\" failed with return code $rename_rc"
-        exit 1
-    fi
-fi
-
-notify_info "$APP_TITLE" "Moving $(wc -l <<<"$photos") photos to \"$target_album_name\" done"
+notify_info "$APP_TITLE" "Changed album of $(wc -l <<<"$photos") photos to \"$target_album_name\""
