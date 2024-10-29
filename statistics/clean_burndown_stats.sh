@@ -21,9 +21,15 @@ has_only_zero_entries() {
 
 cd "$STATS_REPO" && find -type f | while read -r statsfile; do
 
+    # or use all entries have the same value? that would mean there hasn't been an update for the last
+    # 365 days which is pretty obvious...
+    # NB if deletion should not have happened: does not matter because stats file will be created anew
+    # on next run of update script?
+    # TBD why don't we not really delete but only move the files into a stale stats folder? and if the
+    # update script again has data, it can recreate the statsfile from the stale one
     if has_only_zero_entries $statsfile; then
         echo "[INFO] Deleting $statsfile, has only zero value entries"
-        rm $statsfile
+        #rm $statsfile
     fi
 
 done

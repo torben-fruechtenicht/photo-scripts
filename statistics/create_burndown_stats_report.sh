@@ -33,8 +33,6 @@ print_numbers() {
         done
     ))
 
-    echo "values $album_stats_file: $current_value $previous_values" >&2
-
     if ! [[ $current_value = 0 ]] && ! [[ $previous_values =~ ^0(/0)*$ ]]; then
         echo "$current_value ($previous_values)"
     fi

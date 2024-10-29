@@ -61,7 +61,9 @@ needs_rotation() {
     local -r statsfile=$1
 
     last_rotate_ts=$(read_statsfile_entry "$LAST_ROTATE_KEY" "$statsfile")
-    new_rotate_begin=$(( $last_rotate_ts + 86400 ))
+    # new rotation should be 24 hours after previous one but let's give another 30 mins buffer for subtle timestamp
+    # variations
+    new_rotate_begin=$(( $last_rotate_ts + 86400 - 1800 )) 
     now=$(date +%s)
 
     test -z $last_rotate_ts || (( $new_rotate_begin < $now ))
