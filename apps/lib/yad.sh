@@ -23,8 +23,8 @@ run_yad_selector_result_action_dialog() {
     fi
 
     local -r title=$1
-        local -r selected_photos=$2
-        local -r search_dir=$(__get_searchdir_from_selector_result "$selected_photos")
+    local -r selected_photos=$2
+    local -r search_dir=$(__get_searchdir_from_selector_result "$selected_photos")
     local -r action_text=$3
     shift 3
 

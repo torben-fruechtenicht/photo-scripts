@@ -6,7 +6,6 @@ declare -r -x APP_TITLE="Rename photos"
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
@@ -39,7 +38,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r new_title=$(trim_whitespace "$(get_option_at_index "$rename_params" 1)")
+declare -r new_title=$(get_option_at_index "$rename_params" 1)
 if [[ -z $new_title ]]; then    
     notify_warning "$APP_TITLE" "New photo title is required"  
     exit 1

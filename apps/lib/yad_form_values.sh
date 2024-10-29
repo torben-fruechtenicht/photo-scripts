@@ -170,10 +170,17 @@ __filter_combobox_entries_exclude_value() (
     done | paste -s -d '!' -
 )
 
+__trim_whitespace() (
+    local string=$1 
+	shopt -s extglob
+    string="${string##*( )}"
+    echo "${string%%*( )}"
+)
+
 memorize_form_combobox_values() {
     local -r saved_values_file=$1
     local -r fieldname=$2
-    local -r selected_entry=$(trim_whitespace "$3")
+    local -r selected_entry=$(__trim_whitespace "$3")
     local -r max_saved=${4-10}
     
     if grep -q "$fieldname=" "$saved_values_file"; then
@@ -202,7 +209,7 @@ memorize_form_combobox_values() {
 memorize_form_value() {
     local -r saved_values_file=$1
     local -r fieldname=$2
-    local -r value=$(trim_whitespace "$3")
+    local -r value=$(__trim_whitespace "$3")
 
     if grep -q "$fieldname=" "$saved_values_file"; then
         sed -i -e 's/^'"$fieldname"'=.*/'"$fieldname"'='"$value"'/' "$saved_values_file"
