@@ -8,7 +8,7 @@ source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/metadata/lib/iptc.sh"
 source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
 source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
-source "$BASE_DIR/lib/xmp.sh"
+source "$BASE_DIR/metadata/lib/xmp.sh"
 source "$BASE_DIR/lib/photoid.sh"
 source "$BASE_DIR/util/unprotect.sh"
 

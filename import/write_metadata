@@ -7,7 +7,7 @@ source "$BASEDIR/lib/photoid.sh"
 source "$BASEDIR/metadata/lib/iptc.sh"
 source "$BASEDIR/metadata/lib/exif.sh"
 source "$BASEDIR/lib/strings.sh"
-source "$BASEDIR/lib/xmp.sh"
+source "$BASEDIR/metadata/lib/xmp.sh"
 
 while getopts "c:k:d:orta:" opt; do
     case $opt in
