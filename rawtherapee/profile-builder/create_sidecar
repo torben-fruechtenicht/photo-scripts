@@ -9,7 +9,7 @@ declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/../.."
 
 source "$BASEDIR/lib/strings.sh"
 source "$BASEDIR/lib/photofiles.sh"
-source "$BASEDIR/lib/iptc.sh"
+source "$BASEDIR/metadata/lib/iptc.sh"
 source "$BASEDIR/metadata/lib/exif.sh"
 source "$BASEDIR/rawtherapee/lib/sidecar.sh"
 

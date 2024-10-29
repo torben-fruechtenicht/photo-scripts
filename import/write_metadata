@@ -4,7 +4,7 @@ set -eu
 
 declare -r BASEDIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASEDIR/lib/photoid.sh"
-source "$BASEDIR/lib/iptc.sh"
+source "$BASEDIR/metadata/lib/iptc.sh"
 source "$BASEDIR/metadata/lib/exif.sh"
 source "$BASEDIR/lib/strings.sh"
 source "$BASEDIR/lib/xmp.sh"
