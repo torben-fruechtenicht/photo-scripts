@@ -225,7 +225,7 @@ memorize_form_value() {
 get_option_at_index() {
     local -r options=$1
     local -r index=$2
-    cut -d'|' -f "$index" <<<"$options"
+    __trim_whitespace "$(cut -d'|' -f "$index" <<<"$options")"
 }
 
 is_option_selected() {

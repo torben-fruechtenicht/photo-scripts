@@ -8,7 +8,6 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
 PATH="$BASE_DIR/metadata:$BASE_DIR:$BASE_DIR/lib:$BASE_DIR/apps:$PATH"
 
-source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
@@ -74,27 +73,27 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-declare -r ALBUM=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 1)")
+declare -r ALBUM=$(get_option_at_index "$user_edit_params" 1)
 if [[ -n $ALBUM ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "album" "$ALBUM" 25
     is_option_selected "$user_edit_params" 2 && declare -r ALBUM_AS_KEYWORD=
     is_option_selected "$user_edit_params" 3 && declare -r REMOVE_OLD_ALBUM_KEYWORD=
 fi
 
-declare -r TITLE=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 4)")
+declare -r TITLE=$(get_option_at_index "$user_edit_params" 4)
 if [[ -n $TITLE ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$TITLE" 25
     is_option_selected "$user_edit_params" 5 && declare -r TITLE_AS_KEYWORD=
     is_option_selected "$user_edit_params" 6 && declare -r REMOVE_OLD_TITLE_KEYWORD=
 fi
 
-declare -r USER_KEYWORDS=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 7)")
+declare -r USER_KEYWORDS=$(get_option_at_index "$user_edit_params" 7)
 if [[ -n $USER_KEYWORDS ]]; then
     memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$USER_KEYWORDS" 25
 fi
 declare -r KEYWORDS=$(augment_user_keywords "$USER_KEYWORDS")
 
-declare -r DESCRIPTION=$(trim_whitespace "$(get_option_at_index "$user_edit_params" 8)")
+declare -r DESCRIPTION=$(get_option_at_index "$user_edit_params" 8)
 
 files=$PHOTOS
 declare -r PHOTOS_COUNT=$(wc -l <<<"$PHOTOS")

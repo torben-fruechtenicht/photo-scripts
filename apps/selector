@@ -8,7 +8,6 @@ declare -r CANCELLED_RC=101
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 
-source "$BASE_DIR/lib/strings.sh"
 source "$BASE_DIR/apps/lib/yad.sh"
 source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/find_globs_factory.sh"
