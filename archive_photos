@@ -25,13 +25,22 @@ apply_archive() {
     local -r file=$1
     local -r target="$ARCHIVE_DIR/$(path_relative_to_sourceroot_from_file "$file")"
 
+    if [[ $file == $target ]]; then
+        echo "[ERROR] File to archive is identical to target location" >&2
+        exit 1
+    fi
+
     if ! [[ -e $(dirname "$target") ]]; then
         mkdir --parents "$(dirname "$target")"
     fi
 
-    # FIXME return if target exists already
+    if [[ -e $target ]]; then
+        echo "[WARN] Target file $target exists, only deleting $file" >&2
+        rm "$file"
+        return
+    fi
 
-    mv "$file" "$target" && chmod -w "$target" && echo "$target"
+    mv "$file" "$target" && chmod a-w "$target" && echo "$target"
 }
 
 set -o pipefail

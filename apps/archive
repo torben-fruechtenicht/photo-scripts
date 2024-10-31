@@ -14,20 +14,31 @@ source "$BASE_DIR/apps/lib/search_dirs.sh"
 
 PATH="$BASE_DIR:$PATH"
 
+declare -r SEARCH_DIRECTORIES_FILE="$HOME/.local/share/photo-scripts/archivable_directories"
+
 declare -r ARCHIVE_DIR=$(readlink -e "${1+$1}")
 if [[ -z $ARCHIVE_DIR ]]; then
     notify_error "$APP_TITLE" "No archive directory given or does not exist"
     exit 1
 fi
 
-declare -r SEARCH_DIRECTORIES_FILE=$HOME/.local/share/photo-scripts/archivable_directories
-if ! [[ -e $SEARCH_DIRECTORIES_FILE ]]; then
-    notify_error "$APP_TITLE" "Search directories file $SEARCH_DIRECTORIES_FILE does not exist"
-    exit 1
+if [[ -v 2 ]]; then
+
+    search_dir=$2
+    search_directories_value=$search_dir
+
+else
+
+    if ! [[ -e $SEARCH_DIRECTORIES_FILE ]]; then
+        notify_error "$APP_TITLE" "Search directories file $SEARCH_DIRECTORIES_FILE does not exist"
+        exit 1
+    fi
+
+    search_directories_value=$(get_search_directories_as_yad_option_keys "$SEARCH_DIRECTORIES_FILE")
 fi
 
 dialog_text="Select which photos to archive:"
-search_directories_value=$(get_search_directories_as_yad_option_keys "$SEARCH_DIRECTORIES_FILE")
+
 album_values=$(remember_list "album" "b")
 current_year=$(date +%Y)
 year_values=$(remember_list "year" "gn" "$current_year")
@@ -44,8 +55,11 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-search_dir_key=$(get_option_at_index "$options_string" 1)
-search_dir=$(lookup_search_directory_from_option_key "$SEARCH_DIRECTORIES_FILE" "$search_dir_key")
+if [[ -z $search_dir ]]; then
+    search_dir_key=$(get_option_at_index "$options_string" 1)
+    search_dir=$(lookup_search_directory_from_option_key "$SEARCH_DIRECTORIES_FILE" "$search_dir_key")
+fi
+
 album=$(get_option_at_index "$options_string" 2)
 year=$(get_option_at_index "$options_string" 3)
 month=$(get_option_at_index "$options_string" 4)
