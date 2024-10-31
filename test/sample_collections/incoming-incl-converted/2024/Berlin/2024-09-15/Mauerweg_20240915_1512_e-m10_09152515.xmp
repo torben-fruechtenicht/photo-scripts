@@ -1,0 +1,31 @@
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core 4.4.0-Exiv2">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" rdf:about="" photoshop:Headline="Mauerweg 09152515">
+      <dc:creator>
+        <rdf:Seq>
+          <rdf:li>Torben Fr&#xFC;chtenicht</rdf:li>
+        </rdf:Seq>
+      </dc:creator>
+      <dc:rights>
+        <rdf:Alt>
+          <rdf:li xml:lang="x-default">Copyright (c) Torben Fr&#xFC;chtenicht 2024</rdf:li>
+        </rdf:Alt>
+      </dc:rights>
+      <dc:description>
+        <rdf:Alt>
+          <rdf:li xml:lang="x-default">[Mauerweg_20240915_1512_e-m10_09152515]</rdf:li>
+        </rdf:Alt>
+      </dc:description>
+      <dc:subject>
+        <rdf:Bag>
+          <rdf:li>Berlin</rdf:li>
+          <rdf:li>Mauerweg</rdf:li>
+          <rdf:li>RawTherapee</rdf:li>
+          <rdf:li>E-M10</rdf:li>
+          <rdf:li>OLYMPUS M.17mm F1.8</rdf:li>
+          <rdf:li>OLYMPUS IMAGING CORP.</rdf:li>
+        </rdf:Bag>
+      </dc:subject>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>
