@@ -12,7 +12,7 @@ source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 source "$BASE_DIR/apps/lib/search_dirs.sh"
 
-PATH="$BASE_DIR:$PATH"
+PATH="$BASE_DIR/apps/lib:$BASE_DIR:$PATH"
 
 declare -r SEARCH_DIRECTORIES_FILE="$HOME/.local/share/photo-scripts/archivable_directories"
 
