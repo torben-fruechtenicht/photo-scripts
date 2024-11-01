@@ -55,7 +55,7 @@ if [[ $yad_rc = 252 ]] || [[ $yad_rc = 1 ]]; then
     exit
 fi
 
-if [[ -z $search_dir ]]; then
+if ! [[ -v search_dir ]]; then
     search_dir_key=$(get_option_at_index "$options_string" 1)
     search_dir=$(lookup_search_directory_from_option_key "$SEARCH_DIRECTORIES_FILE" "$search_dir_key")
 fi
