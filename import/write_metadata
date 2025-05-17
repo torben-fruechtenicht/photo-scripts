@@ -85,4 +85,9 @@ for photofile in $photofiles; do
     manufacturer_from_exif=$(lookup_manufacturer_from_exif "$photofile")
     xmp_add_keyword "$photofile" "$manufacturer_from_exif" 
     xmp_add_keyword "$photofile" "RawTherapee" 
+
+    # RawTherapee (or exivtool) isn't able to deal with unicode escapes (e.g. "&#xFC;"), they end up as 
+    # blank characters in the jpg IPTC data.
+    # As a brute force solution, run the file through encode
+    xmp_unescape_unicode_chars "$photofile"
 done

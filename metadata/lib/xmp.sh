@@ -196,3 +196,8 @@ xmp_remove_keywords_csv() {
     done
     IFS=$OLD_IFS
 }
+
+xmp_unescape_unicode_chars() {
+    local xmp_file=$(xmp_file_from_photofile "$1")
+    recode html..UTF-8 "$xmp_file"
+}
