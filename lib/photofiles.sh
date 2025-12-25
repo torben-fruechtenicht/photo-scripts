@@ -10,9 +10,9 @@ declare -r DATE_PATTERN="([0-9]{8})" # \2
 declare -r TIME_PATTERN="([0-9]{4})" # \3
 declare -r CAMERA_PATTERN="([a-zA-Z0-9-]+)" # \4
 # NUMBER_PATTERN includes an optional pattern for variants
-declare -r NUMBER_PATTERN="([0-9A-Z]+(-[a-zA-Z0-9-]+)?)" # \5
+declare -r NUMBER_PATTERN="([0-9A-Z]+([cr])?(-[a-zA-Z0-9-]+)?)" # \5
 # Unlike for NUMBER_PATTERN, here the variant is required
-declare -r VARIANT_NUMBER_PATTERN="([0-9A-Z]+(-[a-zA-Z0-9-]+))" # \5
+declare -r VARIANT_NUMBER_PATTERN="([0-9A-Z]+([cr])?(-[a-zA-Z0-9-]+))" # \5
 # Covers simple and multiple (e.g. "FILE.jpg.out.pp3") extensions
 declare -r FILE_EXT_PATTERN="(\.[a-ZA-Z0-9]{3})+" # \6
 

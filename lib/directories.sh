@@ -29,7 +29,7 @@ directories_collect_albums_from_files() {
 }
 
 # $1 - a date in ISO format (yyyy:mm:dd)
-# $2 - album name
+# $2 - album name, blanks will be replaced by "-"
 directories_create_photofile_path_from_isodate_album() {
     echo "${1%%:*}/${2// /-}/${1//:/-}"
 }

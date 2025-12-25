@@ -52,8 +52,18 @@ collect_associated_files "$@" | while read -r file; do
     fi
     
     mv "$file" "$newfullpath"
-    test -v REMOVE_OLD_ALBUM_KEYWORD && update_keywords "-$old_album" "$newfullpath"
-    test -v ADD_NEW_ALBUM_KEYWORD && update_keywords "$ALBUM" "$newfullpath"
+    
+    if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
+        # old_album has blanks masked with "-", remove these to get the keyword value
+        # N.B. of course this will fail if we have an album that originally had "-" in it...
+        old_album_keyword=${old_album//-/ }
+        update_keywords "-$old_album_keyword" "$newfullpath"
+    fi
+
+    if [[ -v ADD_NEW_ALBUM_KEYWORD ]]; then
+        test -v ADD_NEW_ALBUM_KEYWORD && update_keywords "$ALBUM" "$newfullpath"
+    fi    
+
     if [[ -v CHANGE_PHOTO_TITLES_TO_ALBUM_NAME ]]; then
         old_photoid=$(photoid_get_from_file "$newfullpath")
         new_photoid=$(photoid_set_title "$old_photoid" "$ALBUM")

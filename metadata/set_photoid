@@ -57,7 +57,7 @@ elif is_rawtherapee_sidecar "$FILE"; then
         sidecar_set_property "$FILE" "IPTC" "Caption" "$caption"
     fi
 
-elif is_jpeg "$FILE"; then
+elif is_output_photofile "$FILE"; then
 
     headline=$(iptc_headline_from_photofile "$PHOTOID")
     jpeg_set_iptc "$FILE" "Headline" "$headline"
