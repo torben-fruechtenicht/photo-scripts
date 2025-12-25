@@ -36,10 +36,12 @@ function photoid_camera_from_exif() {
         CanonPowerShotG9 ) echo "g9";;
         CanonPowerShotS70 ) echo "s70";;
         E-M10 ) echo "e-m10";;
+        E-M5MarkIII ) echo "e-m5mk3";;
         DSC-RX100M3 ) echo "rx100m3";;
         SM-G973F ) echo "s10";;
         NIKOND80 ) echo "d80";;
         SM-G973F ) echo "s10";;
+        DSC-RX100M3 ) echo "rx100m3";;
         * )
             echo "Unknown camera $1" >&2
             exit 1;;
