@@ -35,12 +35,7 @@ dayofmonth_glob() {
 }
 
 album_glob() {
-    local -r album=${1+$1}
-    if [[ -z $album ]]; then
-        echo "*"
-    else 
-        echo "$album"
-    fi
+    to_glob_with_blanks_masked "$1"
 }
 
 # $1 - the month as a simple one-based integer (i.e. 1-12)
@@ -67,12 +62,16 @@ date_filename_glob() {
     date_path_glob $year $month $dayofmonth | tr --delete '-'
 }
 
-title_glob() {
-    local -r title=${1+$1}
-    if [[ -z $title ]]; then
+# Use for album and title. 
+# Originally, blanks in albums and titles had been masked with "-". When blanks were allowed then, this resulted in photos
+# with blanks masked as "-", photos with unmasked blanks and photos which already had "native" dashes in them.
+# Therefore, this function will create a glob where both blanks and dashes are included as "?"
+to_glob_with_blanks_masked() {
+    local -r value=${1+$1}
+    if [[ -z $value ]]; then
         echo "*"
     else 
-        echo "$title"
+        echo "$value" | tr ' -' '?'
     fi
 }
 
@@ -95,7 +94,7 @@ photonumber_glob() {
 }
 
 filename_glob() {
-    local -r title=$(title_glob "${1+$1}")
+    local -r title=$(to_glob_with_blanks_masked "${1+$1}")
     local -r year=${2+$2}
     local -r month=${3+$3}
     local -r dayofmonth=${4+$4}

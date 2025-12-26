@@ -30,7 +30,7 @@ title=$1
 shift 1
 photofiles=$@
 
-for photofile in $photofiles; do
+while read -r photofile; do
     
     # Prepare xmp file
     xmp_file=$(xmp_file_from_photofile "$photofile")
@@ -85,4 +85,4 @@ for photofile in $photofiles; do
     manufacturer_from_exif=$(lookup_manufacturer_from_exif "$photofile")
     xmp_add_keyword "$photofile" "$manufacturer_from_exif" 
     xmp_add_keyword "$photofile" "RawTherapee" 
-done
+done <<<"$photofiles"

@@ -26,7 +26,7 @@ function __truncate_to() {
 function photoid_create() {    
     local date_iso=${2% *}
     local time_iso=${2#* }
-    echo "${1// /-}_${date_iso//:/}_$(__truncate_to "${time_iso//:/}" 4)_${3}_${4}"
+    echo "$1_${date_iso//:/}_$(__truncate_to "${time_iso//:/}" 4)_${3}_${4}"
 }
 
 # $1 The camera name (make) from exif (normally, the "Exif.Image.Make" tag)

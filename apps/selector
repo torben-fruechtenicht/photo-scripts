@@ -118,12 +118,10 @@ get_number_tail() {
 }
 
 year_dir_glob=$(year_glob $YEAR)
-album_sanitized=$(tr ' ' '-' <<<"$ALBUM")
-album_dir_glob=$(album_glob "$album_sanitized")
+album_dir_glob=$(album_glob "$ALBUM")
 month_value=$(month_value_from_name "$MONTH")
 day_dir_glob=$(date_path_glob "$YEAR" "$month_value" "$DAY_OF_MONTH")
-title_sanitized=$(tr ' ' '-' <<<"$TITLE")
-filename_glob=$(filename_glob "$title_sanitized" "$YEAR" "$month_value" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$NUMBER_TAIL")
+filename_glob=$(filename_glob "$TITLE" "$YEAR" "$month_value" "$DAY_OF_MONTH" "$TIME_OF_DAY" "$NUMBER_TAIL")
 
 # "-H" added for cases whhere $SEARCH_DIR is a symlink (-H will follow symlinks on command line but in the actual search)
 find -H "$SEARCH_DIR" -regextype posix-extended -type f \
