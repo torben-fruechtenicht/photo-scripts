@@ -5,6 +5,7 @@ xmp_file_from_photofile() {
 xmp_create_skeleton() {
     local xmp_file=$(xmp_file_from_photofile "$1")
     cat <<-EOF > "$xmp_file"
+<?xml version="1.0" encoding="UTF-8"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core 4.4.0-Exiv2">
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
         <rdf:Description rdf:about=""
@@ -21,7 +22,7 @@ __xml_insert_node() {
     local xpath=$1
     local node_name=$2
     local xmp_file=$3
-    xmlstarlet edit --inplace -O \
+    xmlstarlet edit --inplace \
             -N dc="http://purl.org/dc/elements/1.1/" -N photoshop="http://ns.adobe.com/photoshop/1.0/" \
             -N rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" \
             -s "$xpath" -t elem -n "$node_name" "$xmp_file"    
@@ -30,7 +31,7 @@ __xml_insert_node() {
 __xml_delete_node() {
     local xpath=$1
     local xmp_file=$2
-    xmlstarlet edit --inplace -O \
+    xmlstarlet edit --inplace \
             -N dc="http://purl.org/dc/elements/1.1/" -N photoshop="http://ns.adobe.com/photoshop/1.0/" \
             -N rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" \
             -d "$xpath" "$xmp_file"    
@@ -42,7 +43,7 @@ __xml_insert_node_with_value() {
     local node_name=$2
     local node_value=$3
     local xmp_file=$4
-    xmlstarlet edit --inplace -O \
+    xmlstarlet edit --inplace \
             -N dc="http://purl.org/dc/elements/1.1/" -N photoshop="http://ns.adobe.com/photoshop/1.0/" \
             -N rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" \
             -s "$xpath" -t elem -n "$node_name" -v "$node_value" "$xmp_file"
@@ -56,7 +57,7 @@ __xml_add_attribute() {
     local attr_name=$2
     local attr_value=$3
     local xmp_file=$4
-    xmlstarlet edit --inplace -O \
+    xmlstarlet edit --inplace \
             -N dc="http://purl.org/dc/elements/1.1/" -N photoshop="http://ns.adobe.com/photoshop/1.0/" \
             -N rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" \
             -s "$xpath" -t attr -n "$attr_name" -v "$attr_value" "$xmp_file"
@@ -75,7 +76,7 @@ __xml_set_value() {
     local xpath=$1
     local value=$2
     local xmp_file=$3
-    xmlstarlet edit --inplace -O \
+    xmlstarlet edit --inplace \
             -N dc="http://purl.org/dc/elements/1.1/" -N photoshop="http://ns.adobe.com/photoshop/1.0/" \
             -N rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" \
             -u "$xpath" -v "$value" "$xmp_file"
@@ -195,9 +196,4 @@ xmp_remove_keywords_csv() {
         xmp_remove_keyword "$xmp_file" "$keyword"
     done
     IFS=$OLD_IFS
-}
-
-xmp_unescape_unicode_chars() {
-    local xmp_file=$(xmp_file_from_photofile "$1")
-    recode html..UTF-8 "$xmp_file"
 }
