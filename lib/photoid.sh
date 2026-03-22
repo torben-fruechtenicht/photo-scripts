@@ -26,8 +26,16 @@ function __truncate_to() {
 function photoid_create() {    
     local date_iso=${2% *}
     local time_iso=${2#* }
+    echo "$1_${date_iso//:/}_$(__truncate_to "${time_iso//:/}" 4)_${3}_${4}"
+}
+
+function photoid_create_noblanks() {    
+    local date_iso=${2% *}
+    local time_iso=${2#* }
     echo "${1// /-}_${date_iso//:/}_$(__truncate_to "${time_iso//:/}" 4)_${3}_${4}"
 }
+
+
 
 # $1 The camera name (make) from exif (normally, the "Exif.Image.Make" tag)
 function photoid_camera_from_exif() {
@@ -36,10 +44,13 @@ function photoid_camera_from_exif() {
         CanonPowerShotG9 ) echo "g9";;
         CanonPowerShotS70 ) echo "s70";;
         E-M10 ) echo "e-m10";;
+        E-M5MarkIII ) echo "e-m5mk3";;
         DSC-RX100M3 ) echo "rx100m3";;
         SM-G973F ) echo "s10";;
         NIKOND80 ) echo "d80";;
         SM-G973F ) echo "s10";;
+        SM-S901B ) echo "s22";;
+        DSC-RX100M3 ) echo "rx100m3";;
         * )
             echo "Unknown camera $1" >&2
             exit 1;;
