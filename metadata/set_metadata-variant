@@ -1,0 +1,65 @@
+#! /usr/bin/env bash
+
+# Variant output files (RawTherapee appends "-N" to each file after the first conversion) are ofc created without the variant suffix in the 
+# photonumber (where it is used in metadata). So this has to be updated for each variant file. 
+# The script assumes that the given file is already a variant file. (What this means: we'll simply produce the uptodate photoid from the 
+# filename, take the photonumber from it and replace that in metadata).
+
+# Yes, there is no check to prevent that we are accidentially processing an original jpeg file. However, this cannot happen because 
+# variants should only be created for output files.
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/lib/photoid.sh"
+source "$BASE_DIR/metadata/lib/iptc.sh"
+source "$BASE_DIR/metadata/lib/xmp.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
+source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
+
+declare -r FILE=$(readlink -e "$1")
+if [[ -z $FILE ]]; then
+    echo "[ERROR] $1 does not exist" >&2
+    exit 1
+fi
+
+if ! [[ "$FILE" =~ \.jpg$ ]] && ! [[ "$FILE" =~ \.JPG$ ]]; then
+    echo "[ERROR] $FILE is not a jpeg file, only jpegs are processed" >&2
+    exit 1
+fi
+
+if ! [[ $(basename "$FILE") =~ -[0-9]+\....$ ]]; then
+    echo "[ERROR] $FILE is not a variant file" >&2
+    # exit with 0 even if this is like an error case: no harm done and calling script is not affected.
+    exit
+fi
+
+
+photoid=$(photoid_get_from_file "$FILE")
+photonumber=$(photoid_get_fullnumber "$photoid")
+photonumber_novariant=${photonumber%-*}
+
+function replace_photonumber() {
+    local -r text_with_photonumber=$1
+    local -r new_number=$2
+
+    if [[ "$text_with_photonumber" =~ -[0-9]+$ ]]; then
+        echo "$text_with_photonumber"
+        return
+    fi
+
+    sed -r 's/'"$photonumber_novariant"'/'"$new_number"'/' <<<"$text_with_photonumber"
+}
+
+old_headline=$(jpeg_get_iptc "$FILE" "Headline")
+new_headline=$(replace_photonumber "$old_headline" "$photonumber")
+if [[ "$new_headline" != "$old_headline" ]]; then
+    jpeg_set_iptc "$FILE" "Headline" "$new_headline"
+fi
+
+old_caption=$(jpeg_get_iptc "$FILE" "Caption")
+new_caption=$(replace_photonumber "$old_caption" "$photonumber")
+if [[ "$new_caption" != "$old_caption" ]]; then
+    jpeg_set_iptc "$FILE" "Caption" "$new_caption"
+fi
