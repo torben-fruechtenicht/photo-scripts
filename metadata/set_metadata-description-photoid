@@ -1,0 +1,67 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/metadata/lib/iptc.sh"
+source "$BASE_DIR/metadata/lib/xmp.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
+source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
+source "$BASE_DIR/lib/photoid.sh"
+
+declare -r FILE=$(readlink -e "$1")
+if [[ -z $FILE ]]; then
+    echo "[ERROR] $1 does not exist" >&2
+    exit 1
+fi
+
+declare -r PHOTOID=$2
+if [[ -z $PHOTOID ]]; then
+    echo "[ERROR] No photoid given" >&2
+    exit 1
+fi
+
+is_photoid_only_caption() {
+    local -r caption=$1
+    [[ "$caption" =~ ^\[$PHOTOID_PATTERN\]\;?$ ]]
+}
+
+
+function replace_photoid() {
+    local description=$1
+    local old_photoid=$2
+    local new_photoid=$3
+
+    if [[ -z $description ]]; then
+        echo "$(iptc_create_caption "$new_photoid")"
+    elif [[ ! "$description" =~ $old_photoid ]]; then
+        echo -e "$description\n$(iptc_create_caption "$new_photoid")"
+    else
+        sed -r 's/'"$old_photoid"'/'"$new_photoid"'/' <<<"$description"
+    fi
+}
+
+old_photoid=$(photoid_get_from_file "$FILE")
+
+if is_xmp_sidecar "$FILE"; then
+    
+    old_description=$(xmp_get_description "$FILE")
+    new_description=$(replace_photoid "$old_description" "$old_photoid" "$PHOTOID")
+    xmp_set_description "$FILE" "$(iptc_update_caption_photoid "$PHOTOID" "$old_description")"
+
+elif is_rawtherapee_sidecar "$FILE"; then
+
+    if rt_sidecar_has_property_value "$FILE" "IPTC" "Caption"; then
+        old_caption=$(sidecar_get_property "$FILE" "IPTC" "Caption")
+        new_caption=$(replace_photoid "$old_caption" "$old_photoid" "$PHOTOID")
+        sidecar_set_property "$FILE" "IPTC" "Caption" "$new_caption"
+    fi
+
+elif is_output_photofile "$FILE"; then
+
+    old_caption=$(jpeg_get_iptc "$FILE" "Caption")
+    new_caption=$(replace_photoid "$old_caption" "$old_photoid" "$PHOTOID")
+    jpeg_set_iptc "$FILE" "Caption" "$new_caption"
+
+fi

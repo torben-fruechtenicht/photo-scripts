@@ -6,6 +6,11 @@ iptc_headline_from() {
     echo "$1 $2"
 }
 
+iptc_title_from_headline() {
+    # we assume that the title is the headline without the last word (the number)
+    echo ${1% *}
+}
+
 iptc_headline_from_photofile() {
     local -r photo_filename=$(basename "$1")
     local -r fullname=${photo_filename%%.*}

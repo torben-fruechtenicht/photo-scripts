@@ -92,6 +92,9 @@ __xml_xpath_exists() {
             -t -v "$xpath" "$xmp_file")"
 }
 
+xmp_get_headline() {
+    __xml_get_value "x:xmpmeta/rdf:RDF/rdf:Description/@photoshop:Headline" "$1"    
+}
 
 xmp_set_headline() {
     local xmp_file=$(xmp_file_from_photofile "$1")    

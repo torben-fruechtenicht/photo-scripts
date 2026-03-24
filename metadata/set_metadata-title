@@ -1,0 +1,51 @@
+#! /usr/bin/env bash
+
+set -eu
+
+declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
+source "$BASE_DIR/metadata/lib/xmp.sh"
+source "$BASE_DIR/rawtherapee/lib/sidecar.sh"
+source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
+source "$BASE_DIR/lib/photoid.sh"
+source "$BASE_DIR/lib/photofiles.sh"
+source "$BASE_DIR/metadata/lib/iptc.sh"
+
+while getopts "t:" opt; do
+    case $opt in
+        t ) 
+            TITLE=;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+declare -r FILE=$(readlink -e "$1")
+if [[ -z $FILE ]]; then
+    echo "[ERROR] $1 does not exist" >&2
+    exit 1
+fi
+
+declare -r TITLE=$2
+if [[ -z $TITLE ]]; then
+    echo "[ERROR] No title given" >&2
+    exit 1
+fi
+
+set -x
+photoid=$(photoid_get_from_file "$FILE")
+photonumber=$(photoid_get_fullnumber "$photoid")
+iptc_headline=$(iptc_headline_from "$TITLE" "$photonumber")
+set +x
+
+if is_xmp_sidecar "$FILE"; then    
+    xmp_set_headline "$FILE" "$iptc_headline"
+elif is_rawtherapee_sidecar "$FILE"; then
+    # If the sidecar does not have the entry, this probably means we're using
+    # xmp here
+    if rt_sidecar_has_property_value "$FILE" "IPTC" "Headline"; then
+        sidecar_set_property "$FILE" "IPTC" "Headline" "$iptc_headline"
+    fi
+elif is_output_photofile "$FILE"; then
+    set -x
+    jpeg_set_iptc "$FILE" "Headline" "$iptc_headline"
+    set +x
+fi

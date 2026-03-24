@@ -13,19 +13,24 @@ source "$BASE_DIR/lib/photofiles.sh"
 
 PATH="$BASE_DIR:$BASE_DIR/apps:$PATH"
 
+PHOTOS_FILE=$(mktemp)
+
 if [[ $# > 0 ]]; then
-    photos=$(tr " " "\n" <<<$*)
+    tr " " "\n" <<<$* > "$PHOTOS_FILE"
 else
-    photos=$(selector)
+    selector > "$PHOTOS_FILE"
     selector_rc=$? 
     if [[ $selector_rc == 101 ]]; then
         exit
-    elif [[ -z $photos ]]; then
-        notify_warning "$APP_TITLE" "No matching photos found"
-        exit 1
     fi
 fi
 
+photos=$(cat "$PHOTOS_FILE")
+photos_count=$(echo "$photos" | wc -l)
+if [[ $photos_count -eq 0 ]]; then
+    notify_warning "$APP_TITLE" "No matching photos found"
+    exit
+fi
 
 title_field_values=$(remember_list "title" "gnl")
 rename_params=$(run_yad_selector_result_action_dialog "$APP_TITLE" "$photos" "" \
@@ -47,7 +52,8 @@ memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "title" "$new_title"
 is_option_selected "$rename_params" 2 && declare add_title_as_keyword=
 is_option_selected "$rename_params" 3 && declare remove_old_title_keyword=
 
-change_photo_title ${add_title_as_keyword+-k} ${remove_keywords_title_entry+-r} "$new_title" $photos 
+change_photo_title ${add_title_as_keyword+-k} ${remove_old_title_keyword+-r} \
+    "$new_title" "$PHOTOS_FILE"
 rc=$?
 if [[ $rc != 0 ]]; then
     notify_error "$APP_TITLE" \
@@ -56,3 +62,4 @@ if [[ $rc != 0 ]]; then
 fi
 
 notify_info "$APP_TITLE" "Changing title of $(echo "$photos" | wc -l) photo(s) to \"$new_title\" done"
+rm -f "$PHOTOS_FILE"
