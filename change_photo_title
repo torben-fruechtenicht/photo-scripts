@@ -97,13 +97,13 @@ while read -r photo; do
         set_metadata-title "$old_file" "$NEW_TITLE"
         set_metadata-description-photoid "$old_file" "$new_photoid"
 
-        if [[ -v ADD_TITLE_KEYWORD ]]; then
-            update_keywords "$NEW_TITLE" "$old_file"
+        if [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
+            update_keywords "-$old_title" "$old_file"
         fi
 
-        if [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
-            update_keywords "-$old_title" "$file"
-        fi
+        if [[ -v ADD_TITLE_KEYWORD ]]; then
+            update_keywords "$NEW_TITLE" "$old_file"
+        fi        
 
         reprotect_check_file "$old_file"
         
