@@ -30,7 +30,7 @@ title=$1
 shift 1
 photofiles=$@
 
-for photofile in $photofiles; do
+while read -r photofile; do
     
     # Prepare xmp file
     xmp_file=$(xmp_file_from_photofile "$photofile")
@@ -45,7 +45,7 @@ for photofile in $photofiles; do
     xmp_set_creator "$photofile" "$creator"
 
     # copyright
-    year_from_exif=$(exiftool -s3 -DateTimeOriginal "$photofile" | cut -d':' -f 1)
+    year_from_exif=$(exiv2 -Pt -g 'Exif.Photo.DateTimeOriginal' "$photofile" 2> /dev/null | cut -d':' -f1)
     if [[ -v creator ]]; then
         copyright="Copyright (c) $creator $year_from_exif"
     else
@@ -85,9 +85,4 @@ for photofile in $photofiles; do
     manufacturer_from_exif=$(lookup_manufacturer_from_exif "$photofile")
     xmp_add_keyword "$photofile" "$manufacturer_from_exif" 
     xmp_add_keyword "$photofile" "RawTherapee" 
-
-    # RawTherapee (or exivtool) isn't able to deal with unicode escapes (e.g. "&#xFC;"), they end up as 
-    # blank characters in the jpg IPTC data.
-    # As a brute force solution, run the file through encode
-    xmp_unescape_unicode_chars "$photofile"
-done
+done <<<"$photofiles"
