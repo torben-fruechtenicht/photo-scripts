@@ -52,6 +52,7 @@ find "$search_dir" -type f | sort -r | while read -r file; do
 
     case $camera in
         s70 ) exifFilenumberKey="Exif.Canon.FileNumber";;
+        fz50 ) exifFilenumberKey=""
     esac
 
     filenumber=$(exiv2 -Pt -K "$exifFilenumberKey" "$file")
