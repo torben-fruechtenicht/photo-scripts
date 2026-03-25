@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -eux
+set -eu
 set -o pipefail
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
@@ -14,11 +14,17 @@ function lookupOldAlbumName() {
     local photofile=$1
     
     # get album name from path (album directory)
-    old_album_path=$(directories_get_albumpath_from_file "$file")
+    old_album_path=$(directories_get_albumpath_from_file "$photofile")
     old_album=${old_album_path##*/}
 
     if [[ $old_album =~ - ]]; then
         echo "${old_album//-/ }"
+
+        # TODO the real fix for this case would to try to lookup the album from keywords, in the xmp file:
+        # 1. get keywords from xmp file
+        # 2. create a pattern from old_album where all dashes are replaced with "[- ]"
+        # 3. check if any of the keywords matches the pattern, if yes use this keyword as old album name
+        # EXTRA if nothing is found in xmp, try pp3 (same logic)
     else
         echo "$old_album"
     fi
@@ -52,19 +58,19 @@ elif ! [[ -v PHOTO_FILES ]] || [[ ${#PHOTO_FILES[@]} -eq 0 ]]; then
     exit 1
 fi
 
+echo "[INFO] Moving ${#PHOTO_FILES[@]} photos to album \"$NEW_ALBUM\"" >&2
 
 safe_new_album=$(tr ' ' '-' <<<"$NEW_ALBUM")
 for photo in "${PHOTO_FILES[@]}"; do
 
-    echo "[INFO] Moving $photo to new album \"$NEW_ALBUM\"" >&2
-
+    echo "[INFO] Moving $photo" >&2
 
     old_album_path=$(directories_get_albumpath_from_file "$photo")
-    relative_to_album_path=${photo#$old_album_path/}
-    new_album_parent=${old_album_path%/*}
-    newfullpath="$new_album_parent/$NEW_ALBUM/$relative_to_album_path"
+    photo_relative_to_album=${photo#$old_album_path/}
+    album_parent=${old_album_path%/*}
+    new_album_path="$album_parent/$safe_new_album"
 
-    if [[ -e $newfullpath ]]; then
+    if [[ -e "$new_album_path/$(dirname "$photo_relative_to_album")/$(basename "$photo")" ]]; then
         echo "[ERROR] Cannot move $photo to $NEW_ALBUM, file exists already" >&2
         continue
     fi
@@ -73,28 +79,38 @@ for photo in "${PHOTO_FILES[@]}"; do
         old_album_name=$(lookupOldAlbumName "$photo")
     fi
 
-    new_parentdir="$(dirname "$newfullpath")"
-    if ! [[ -e $new_parentdir ]]; then
-        mkdir --parents "$new_parentdir"
+    if ! [[ -e $new_album_path ]]; then
+        mkdir --parents "$new_album_path"
     fi
     collect_associated_files "$photo" | while read -r file_in_old_album; do 
+
+        file_relative_to_album=${file_in_old_album#$old_album_path/}
+        file_in_new_album="$new_album_path/$(dirname "$file_relative_to_album")/$(basename "$file_in_old_album")"
+
+        if [[ -e $file_in_new_album ]]; then
+            echo "[ERROR] Cannot move $file_in_old_album to $NEW_ALBUM, target file exists, continuing" >&2
+            continue
+        fi
+
+        if ! [[ -e $(dirname "$file_in_new_album") ]]; then
+            mkdir --parents "$(dirname "$file_in_new_album")"
+        fi
 
         if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
             echo "update_keywords \"-$old_album_name\" \"$file_in_old_album\"" >&2
         fi
 
         if [[ -v ADD_NEW_ALBUM_KEYWORD ]]; then
-            echo "update_keywords \"$NEW_ALBUM\" \"$file_in_old_album\"" >&2
+            update_keywords "$NEW_ALBUM" "$file_in_old_album"
         fi    
 
-        file_in_new_album="$new_parentdir/$(basename "$file_in_old_album")"
-        echo "mv \"$file_in_old_album\" \"$file_in_new_album\"" >&2
+        mv "$file_in_old_album" "$file_in_new_album"
         echo "$file_in_new_album"
 
     done
 
     if [[ -v CHANGE_PHOTO_TITLES_TO_ALBUM_NAME ]]; then
-        echo "change_photo_title \"$NEW_ALBUM\" \"$newfullpath\"" >&2
+        echo "change_photo_title \"$NEW_ALBUM\" \"$new_album_path/$(basename "$photo")\"" >&2
     fi
 
 done
