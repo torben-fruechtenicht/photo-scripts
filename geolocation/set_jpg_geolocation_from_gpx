@@ -4,21 +4,12 @@ set -eu
 
 jpg_file=$1
 
-function get_geotag_options_string() {
-    declare -r geotag_files_searchdir="$(dirname "$jpg_file")/.."
-    local geotag_options_string=""
-    local -r geotag_files=$(find "$geotag_files_searchdir" -type f -iname "*.gpx")
-    while read -r geotag_file; do
-        if [[ -n $geotag_file ]]; then
-            echo -n " -geotag $geotag_file"
-        fi
-    done <<<"$geotag_files"
-}
+geotag_files_searchdir="$(dirname "$jpg_file")/.."
 
-geotag_options=$(get_geotag_options_string)
-if [[ -z $geotag_options ]]; then
-    echo "[WARN] No gpx geotag file(s) found for $jpg_file" >&2
+geotag_file=$(find "$geotag_files_searchdir" -type f -iname "*.gpx" | head -n 1)
+if [[ -z $geotag_file ]]; then
+    echo "[WARN] No gpx geotag file(s) found in $geotag_files_searchdir" >&2
     exit
 fi
 
-exiftool $geotag_options "$jpg_file" 
+exiftool -overwrite_original -geotag "$geotag_file" "$jpg_file" 
