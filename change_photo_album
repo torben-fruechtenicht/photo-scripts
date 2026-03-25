@@ -79,9 +79,6 @@ for photo in "${PHOTO_FILES[@]}"; do
         old_album_name=$(lookupOldAlbumName "$photo")
     fi
 
-    if ! [[ -e $new_album_path ]]; then
-        mkdir --parents "$new_album_path"
-    fi
     collect_associated_files "$photo" | while read -r file_in_old_album; do 
 
         file_relative_to_album=${file_in_old_album#$old_album_path/}
@@ -92,18 +89,17 @@ for photo in "${PHOTO_FILES[@]}"; do
             continue
         fi
 
-        if ! [[ -e $(dirname "$file_in_new_album") ]]; then
-            mkdir --parents "$(dirname "$file_in_new_album")"
-        fi
-
         if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
-            echo "update_keywords \"-$old_album_name\" \"$file_in_old_album\"" >&2
+            update_keywords "-$old_album_name" "$file_in_old_album" >&2
         fi
 
         if [[ -v ADD_NEW_ALBUM_KEYWORD ]]; then
             update_keywords "$NEW_ALBUM" "$file_in_old_album"
         fi    
 
+        if ! [[ -e $(dirname "$file_in_new_album") ]]; then
+            mkdir --parents "$(dirname "$file_in_new_album")"
+        fi
         mv "$file_in_old_album" "$file_in_new_album"
         echo "$file_in_new_album"
 

@@ -12,19 +12,6 @@ source "$BASE_DIR/metadata/lib/xmp.sh"
 
 PATH="$BASE_DIR:$PATH"
 
-if [[ $# < 2 ]]; then
-    echo "[ERROR] Missing parameters: $@" >&2
-    exit 1
-fi
-
-# CSV string
-keywords=$1
-if [[ -f $keywords || -d $keywords ]]; then
-	echo "[ERROR] Keywords parameter seems to be a file or directory - actual keywords parameter is missing?" >&2
-	exit 1
-fi
-
-shift 1
 
 function filter_keywords_to_add() {
     OLD_IFS=$IFS
@@ -98,6 +85,17 @@ function update_if_xmp_sidecar() {
         reprotect_check_file "$file"
     fi
 }
+
+
+if [[ $# < 2 ]]; then
+    echo "[ERROR] Missing parameters: $@" >&2
+    exit 1
+fi
+
+# CSV string
+keywords=$1
+
+shift 1
 
 for file in "$@"; do
     update_if_xmp_sidecar "$file" "$keywords"

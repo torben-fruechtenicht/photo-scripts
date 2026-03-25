@@ -81,10 +81,13 @@ elif ! [[ -v PHOTO_FILES ]] || [[ ${#PHOTO_FILES[@]} -eq 0 ]]; then
 fi
 
 
+echo "[INFO] Changing titles of ${#PHOTO_FILES[@]} photos to \"$NEW_TITLE\"" >&2
+
+
 safe_new_title=$(tr ' ' '-' <<<"$NEW_TITLE")
 for photo in "${PHOTO_FILES[@]}"; do
 
-    echo "[INFO] Changing title of $photo to \"$NEW_TITLE\"" >&2
+    echo "[INFO] Changing title of $photo" >&2
 
     old_photoid=$(photoid_get_from_file "$photo")
     new_photoid=$(photoid_set_title "$old_photoid" "$safe_new_title")
