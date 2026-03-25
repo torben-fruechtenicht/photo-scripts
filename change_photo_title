@@ -73,12 +73,10 @@ fi
 shift 1
 
 
-if ! [[ -v PHOTOS_FILE ]] && [[ $# -gt 0 ]]; then
+if ! [[ -v PHOTO_FILES ]] && [[ $# -gt 0 ]]; then
     PHOTO_FILES=("$@")
-    PHOTOS_FILE=$(mktemp)
-    tr " " "\n" <<<$* > "$PHOTOS_FILE"
-elif ! [[ -v PHOTOS_FILE ]]; then
-    echo "[ERROR] Photos file parameter missing" >&2
+elif ! [[ -v PHOTO_FILES ]] || [[ ${#PHOTO_FILES[@]} -eq 0 ]]; then
+    echo "[ERROR] No photos" >&2
     exit 1
 fi
 
@@ -86,7 +84,7 @@ fi
 safe_new_title=$(tr ' ' '-' <<<"$NEW_TITLE")
 for photo in "${PHOTO_FILES[@]}"; do
 
-    echo "[INFO] Processing $photo" >&2
+    echo "[INFO] Changing title of $photo to \"$NEW_TITLE\"" >&2
 
     old_photoid=$(photoid_get_from_file "$photo")
     new_photoid=$(photoid_set_title "$old_photoid" "$safe_new_title")
@@ -107,6 +105,8 @@ for photo in "${PHOTO_FILES[@]}"; do
     fi    
 
     collect_associated_files "$photo" | while read -r old_file; do 
+
+        # TODO check if target file exists already.
 
         unprotect_file_if_needed "$old_file"
 

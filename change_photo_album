@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-set -eu
+set -eux
 set -o pipefail
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
@@ -19,106 +19,82 @@ function lookupOldAlbumName() {
 
     if [[ $old_album =~ - ]]; then
         echo "${old_album//-/ }"
-
-        
     else
         echo "$old_album"
     fi
 }
 
 
-while getopts "tao" opt; do
+while getopts "taof:" opt; do
     case $opt in
         t ) CHANGE_PHOTO_TITLES_TO_ALBUM_NAME=;;
         a ) ADD_NEW_ALBUM_KEYWORD=;;
         o ) REMOVE_OLD_ALBUM_KEYWORD=;;
+        f )
+            mapfile -t PHOTO_FILES < "$OPTARG";;
 	esac
 done
 shift $(expr $OPTIND - 1 )
 
-declare -r ALBUM=$1
-if [[ -f $ALBUM || -d $ALBUM ]]; then
+
+declare -r NEW_ALBUM=$1
+if [[ -f $NEW_ALBUM || -d $NEW_ALBUM ]]; then
 	echo "[ERROR] Album parameter is a file or directory" >&2
 	exit 1
 fi
+shift 1
 
-PHOTOS_FILE=$2
+
+if ! [[ -v PHOTO_FILES ]] && [[ $# -gt 0 ]]; then
+    PHOTO_FILES=("$@")
+elif ! [[ -v PHOTO_FILES ]] || [[ ${#PHOTO_FILES[@]} -eq 0 ]]; then
+    echo "[ERROR] No photos" >&2
+    exit 1
+fi
 
 
-while read -r photo; do
+safe_new_album=$(tr ' ' '-' <<<"$NEW_ALBUM")
+for photo in "${PHOTO_FILES[@]}"; do
 
+    echo "[INFO] Moving $photo to new album \"$NEW_ALBUM\"" >&2
+
+
+    old_album_path=$(directories_get_albumpath_from_file "$photo")
+    relative_to_album_path=${photo#$old_album_path/}
+    new_album_parent=${old_album_path%/*}
+    newfullpath="$new_album_parent/$NEW_ALBUM/$relative_to_album_path"
+
+    if [[ -e $newfullpath ]]; then
+        echo "[ERROR] Cannot move $photo to $NEW_ALBUM, file exists already" >&2
+        continue
+    fi
+
+    if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
+        old_album_name=$(lookupOldAlbumName "$photo")
+    fi
+
+    new_parentdir="$(dirname "$newfullpath")"
+    if ! [[ -e $new_parentdir ]]; then
+        mkdir --parents "$new_parentdir"
+    fi
     collect_associated_files "$photo" | while read -r file_in_old_album; do 
 
-        echo "[INFO] Processing $photo: $file_in_old_album" >&2
-
         if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
-            old_album_name=$(lookupOldAlbumName "$file_in_old_album")
-            update_keywords "-$old_album_name" "$file_in_old_album"
+            echo "update_keywords \"-$old_album_name\" \"$file_in_old_album\"" >&2
         fi
 
         if [[ -v ADD_NEW_ALBUM_KEYWORD ]]; then
-            update_keywords "$ALBUM" "$file_in_old_album"
+            echo "update_keywords \"$NEW_ALBUM\" \"$file_in_old_album\"" >&2
         fi    
 
-        if [[ -v CHANGE_PHOTO_TITLES_TO_ALBUM_NAME ]]; then
-            
-        fi
-
-        # echo "$file_in_new_album"
+        file_in_new_album="$new_parentdir/$(basename "$file_in_old_album")"
+        echo "mv \"$file_in_old_album\" \"$file_in_new_album\"" >&2
+        echo "$file_in_new_album"
 
     done
 
-done < "$PHOTOS_FILE"
+    if [[ -v CHANGE_PHOTO_TITLES_TO_ALBUM_NAME ]]; then
+        echo "change_photo_title \"$NEW_ALBUM\" \"$newfullpath\"" >&2
+    fi
 
-# album_dirname=$(tr ' ' '-' <<<"$ALBUM")
-
-
-# 
-# collect_associated_files "$@" | while read -r file; do 
-    
-#     old_album_path=$(directories_get_albumpath_from_file "$file")
-#     old_album=${old_album_path##*/}
-
-#     if [[ $old_album = $ALBUM ]]; then
-#         echo "[WARN] Cannot change album of $file to \"$ALBUM\", same as old album" >&2
-#         continue
-#     fi
-
-#     relative_to_album_path=${file#$old_album_path/}
-#     new_album_parent=${old_album_path%/*}
-#     newfullpath="$new_album_parent/$ALBUM/$relative_to_album_path"
-
-#     if ! [[ -e $(dirname "$newfullpath") ]]; then
-#         mkdir --parents "$(dirname "$newfullpath")"
-#     elif [[ -e $newfullpath ]]; then
-#         echo "[ERROR] Cannot change album of $file, file exists already in \"$ALBUM\": $newfullpath" >&2
-#         continue
-#     fi
-    
-#     mv "$file" "$newfullpath"
-    
-#     if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
-#         # old_album has blanks masked with "-", remove these to get the keyword value
-#         # N.B. of course this will fail if we have an album that originally had "-" in it...
-#         # FIXME introduce remove_keyword_regex
-#         # TBD does jq allow regexes?
-#         old_album_keyword=${old_album//-/ }
-#         update_keywords "-$old_album_keyword" "$newfullpath"
-#     fi
-
-#     if [[ -v ADD_NEW_ALBUM_KEYWORD ]]; then
-#         test -v ADD_NEW_ALBUM_KEYWORD && update_keywords "$ALBUM" "$newfullpath"
-#     fi    
-
-#     if [[ -v CHANGE_PHOTO_TITLES_TO_ALBUM_NAME ]]; then
-#         old_photoid=$(photoid_get_from_file "$newfullpath")
-#         new_photoid=$(photoid_set_title "$old_photoid" "$ALBUM")
-#         # set_photoid "$newfullpath" "$new_photoid"
-#         set_metadata-title "$newfullpath" "$ALBUM"
-#         set-metadata-photoid "$newfullpath" "$new_photoid"
-#         renamed_file="$(dirname "$newfullpath")/$new_photoid.${newfullpath#*.}"
-#         mv "$newfullpath" "$renamed_file"
-#     fi
-    
-#     echo "$newfullpath"
-# done
+done
