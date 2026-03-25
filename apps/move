@@ -13,17 +13,23 @@ source "$BASE_DIR/apps/lib/yad_form_values.sh"
 source "$BASE_DIR/apps/lib/notification.sh"
 source "$BASE_DIR/lib/photofiles.sh"
 
+PHOTOS_FILE=$(mktemp)
+
 if [[ $# > 0 ]]; then
-    photos=$(tr " " "\n" <<<$*)
+    tr " " "\n" <<<$* > "$PHOTOS_FILE"
 else
-    photos=$(selector) 
+    selector > "$PHOTOS_FILE"
     selector_rc=$? 
     if [[ $selector_rc == 101 ]]; then
         exit
-    elif [[ -z $photos ]]; then
-        notify_warning "$APP_TITLE" "No matching photos found"  
-        exit
     fi
+fi
+
+photos=$(cat "$PHOTOS_FILE")
+photos_count=$(echo "$photos" | wc -l)
+if [[ $photos_count -eq 0 ]]; then
+    notify_warning "$APP_TITLE" "No matching photos found"
+    exit
 fi
 
 album_field_value=$(remember_list "album" "gnl")
@@ -50,12 +56,13 @@ is_option_selected "$move_params" 3 && declare remove_old_album_name_keyword=
 is_option_selected "$move_params" 4 && declare change_photo_titles_to_album_name=
 
 change_photo_album ${remove_old_album_name_keyword+-o} ${set_target_album_name_keyword+-a} \
-    ${change_photo_titles_to_album_name+-t} "$target_album_name" "$photos"
+    ${change_photo_titles_to_album_name+-t} "$target_album_name" "$PHOTOS_FILE"
 rc=$?
 if [[ $rc != 0 ]]; then
     notify_error "$APP_TITLE" \
-        "Failed changing album of $(wc -l "$photos") photos to \"$target_album_name\": $change_album_rc"
+        "Failed changing album of $photos_count photos to \"$target_album_name\": $change_album_rc"
     exit 1
 fi
 
-notify_info "$APP_TITLE" "Changed album of $(wc -l <<<"$photos") photos to \"$target_album_name\""
+notify_info "$APP_TITLE" "Changed album of $photos_count photos to \"$target_album_name\""
+rm -f "$PHOTOS_FILE"
