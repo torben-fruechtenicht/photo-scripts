@@ -8,6 +8,13 @@ declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
 
+while getopts "a:" opt; do
+    case $opt in
+        a ) declare -r ALBUM="$OPTARG";;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
 function print_metadata() {
     local -r file=$(readlink -m "$1")
 
@@ -15,7 +22,13 @@ function print_metadata() {
     if [[ -z $title ]]; then
         title="$(title_from_photoid "$file") $(fullnumber_from_photoid "$file")"
     fi
-    local album=$(albumname_from_file "$file")
+
+    if [[ -v ALBUM ]]; then
+        local album="$ALBUM"
+    else
+        local album=$(albumname_from_file "$file")
+    fi
+    
     local audience=$(get_audience_from_iptc_keywords "$file")
 
     echo "$file|$title|$album|$audience"
