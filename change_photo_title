@@ -86,11 +86,12 @@ while read -r photo; do
         continue      
     fi
 
-    old_title=$(lookupTitle "$photo")
+    # Let's consider calling lookupTitle a costly operation so we only do it once if required
+    if [[ -v REMOVE_OLD_TITLE_KEYWORD ]]; then
+        old_title=$(lookupTitle "$photo")
+    fi    
 
     collect_associated_files "$photo" | while read -r old_file; do 
-
-        echo "[INFO] Processing $photo: $old_file" >&2
 
         unprotect_file_if_needed "$old_file"
 

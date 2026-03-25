@@ -154,6 +154,10 @@ xmp_set_description() {
     fi
 }
 
+xmp_get_keywords() {
+    __xml_get_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag/rdf:li" "$1" | tr '\n' ';' | sed 's/;$//'
+}
+
 
 xmp_add_keyword() {
     local xmp_file=$(xmp_file_from_photofile "$1")    
