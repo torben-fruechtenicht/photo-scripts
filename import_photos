@@ -2,7 +2,6 @@
 
 set -eu
 
-
 declare -r NO_DCIM_DIR_RC=101
 declare -r NO_TARGET_DIR_RC=102
 declare -r NO_ALBUM_RC=103
@@ -24,9 +23,10 @@ declare -r FILETYPES_RAW_ONLY="raw"
 declare -r FILETYPES_JPG_ONLY="jpeg"
 declare -r FILETYPES_RAW_AND_JPG="raw+jpeg"
 
-while getopts "y:" opt; do
+while getopts "y:b" opt; do
     case $opt in
         y ) declare -r FILETYPES=$OPTARG;;
+        b ) declare -r ALLOW_BLANKS=;;
 	esac
 done
 if ! [[ -v FILETYPES ]]; then
@@ -87,8 +87,16 @@ find "$source_dir" -regextype posix-extended -type f \
     target_dir="$collection_rootdir/$(directories_create_photofile_path_from_isodate_album "$date_iso" "$album")"
 
     camera=$(photoid_camera_from_exif "$(lookup_camera_from_exif "$photofile")")
-    photonumber=$(create_photonumber "$photofile")
-    photoid=$(photoid_create "$title" "$datetimeoriginal" "$camera" "$photonumber")
+    photonumber=$(create_photonumber -c "$photofile")
+
+    if [[ -v ALLOW_BLANKS ]]; then
+        target_dir="$collection_rootdir/$(directories_create_photofile_path_from_isodate_album "$date_iso" "$album")"
+        photoid=$(photoid_create "$title" "$datetimeoriginal" "$camera" "$photonumber")
+    else
+        target_dir="$collection_rootdir/$(directories_create_photofile_path_from_isodate_album_noblanks "$date_iso" "$album")"
+        photoid=$(photoid_create_noblanks "$title" "$datetimeoriginal" "$camera" "$photonumber")
+    fi    
+    
     extension=${photofile##*.}
     target_filename="$target_dir/$photoid.$extension"
 

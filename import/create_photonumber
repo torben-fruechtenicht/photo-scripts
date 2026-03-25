@@ -5,6 +5,15 @@ set -eu
 BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/metadata/lib/exif.sh"
 
+while getopts "c" opt; do
+    case $opt in
+        # if -c is given, a "c" or "r" will be added to the photonumber, to communicate whether this is a straight-out-of-camera photo
+        # ("c") or a raw photo ("r")
+        c ) declare -r ADD_CREATION_SIGNIFIER=;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
 photofile=$1
 
 get_file_basename() {
@@ -54,20 +63,36 @@ build_from_android_filename() {
     echo "${basename/_/}"
 }
 
+get_creation_signifier() {
+    local photo_filename=$1
+    local -r extension=${photo_filename##*.}
+    if [[ $extension == "JPG" ]] || [[ $extension == "jpg" ]]; then
+        echo "c"
+    else
+        echo "r"
+    fi
+}
+
 camera=$(lookup_camera_from_exif "$photofile")
 case "$camera" in 
         DMC-FZ50 )
-             build_from_prefixed_filename "$photofile" "P";; 
+            photonumber=$(build_from_prefixed_filename "$photofile" "P");; 
         CanonPowerShot* )
-            build_from_canon_exif_filenumber "$photofile";;
-        E-M10 )
-            build_from_olympus_filename "$photofile";;
+            photonumber=$(build_from_canon_exif_filenumber "$photofile");;
+        E-M10|E-M5MarkIII )
+            photonumber=$(build_from_olympus_filename "$photofile");;
         DSC-RX100M3 )
-            build_from_prefixed_filename "$photofile" "DSC";;   
-        SM-G973F )
-            build_from_android_filename "$photofile";; 
+            photonumber=$(build_from_prefixed_filename "$photofile" "DSC");;   
+        SM-G973F|SM-S901B )
+            photonumber=$(build_from_android_filename "$photofile");; 
         * )
             echo "[ERROR] Unknown camera $camera" >&2
             exit 1;;
 esac
+
+if [[ -v ADD_CREATION_SIGNIFIER ]]; then
+    echo "$photonumber$(get_creation_signifier "$photofile")"
+else 
+    echo "$photonumber"
+fi
 
