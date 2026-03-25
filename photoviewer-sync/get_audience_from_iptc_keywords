@@ -6,6 +6,7 @@ declare -r BASE_DIR=$(readlink -e "$(dirname "$0")/..")
 source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
 
 declare -r AUDIENCES_MAPPINGS="$HOME/.local/share/photo-scripts/audiences_iptc_keywords.map"
+! test -e $AUDIENCES_MAPPINGS && echo "[ERROR] audiences mappings file not found at $AUDIENCES_MAPPINGS" >&2 && exit 1
 
 function keywords_csv_to_egrep_pattern() {
     local -r csv_list=$1
