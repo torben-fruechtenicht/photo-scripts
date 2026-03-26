@@ -44,8 +44,8 @@ shift $(expr $OPTIND - 1 )
 
 
 declare -r NEW_ALBUM=$1
-if [[ -f $NEW_ALBUM || -d $NEW_ALBUM ]]; then
-	echo "[ERROR] Album parameter is a file or directory" >&2
+if [[ -f $NEW_ALBUM ]]; then
+	echo "[ERROR] Album parameter is a file" >&2
 	exit 1
 fi
 shift 1
@@ -63,7 +63,7 @@ echo "[INFO] Moving ${#PHOTO_FILES[@]} photos to album \"$NEW_ALBUM\"" >&2
 safe_new_album=$(tr ' ' '-' <<<"$NEW_ALBUM")
 for photo in "${PHOTO_FILES[@]}"; do
 
-    echo "[INFO] Moving $photo" >&2
+    echo "[INFO] $photo" >&2
 
     old_album_path=$(directories_get_albumpath_from_file "$photo")
     photo_relative_to_album=${photo#$old_album_path/}
@@ -89,13 +89,15 @@ for photo in "${PHOTO_FILES[@]}"; do
             continue
         fi
 
+
         if [[ -v REMOVE_OLD_ALBUM_KEYWORD ]]; then
-            update_keywords "-$old_album_name" "$file_in_old_album" >&2
+            update_keywords "-$old_album_name" "$file_in_old_album" 
         fi
 
         if [[ -v ADD_NEW_ALBUM_KEYWORD ]]; then
             update_keywords "$NEW_ALBUM" "$file_in_old_album"
         fi    
+
 
         if ! [[ -e $(dirname "$file_in_new_album") ]]; then
             mkdir --parents "$(dirname "$file_in_new_album")"
@@ -105,8 +107,15 @@ for photo in "${PHOTO_FILES[@]}"; do
 
     done
 
+    # TODO print the album-relative path of each file from the while loop. for each entry, create params for mv by concatenating
+    # with the new album path, and then after the loop mv all files at once. Also create the directory structure only now (i.e. check will be
+    # only once).
+    # This will replace copying each files separately and prevents confusion from files having already disappeared from the old album.
+    # -> with that changed, we can also add again the check from update_metadata (keywords parameter is not a file or directory - which 
+    # was the case when adding the album name as a keyword and running the script in the new album's parent directory)
+
     if [[ -v CHANGE_PHOTO_TITLES_TO_ALBUM_NAME ]]; then
-        echo "change_photo_title \"$NEW_ALBUM\" \"$new_album_path/$(basename "$photo")\"" >&2
+        change_photo_title "$NEW_ALBUM" "$new_album_path/$(dirname "$photo_relative_to_album")/$(basename "$photo")" 
     fi
 
 done

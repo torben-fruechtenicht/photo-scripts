@@ -94,6 +94,10 @@ fi
 
 # CSV string
 keywords=$1
+if [[ -f $keywords ]]; then
+	echo "[ERROR] Keywords parameter is a file" >&2
+	exit 1
+fi
 
 shift 1
 

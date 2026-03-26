@@ -66,8 +66,8 @@ declare -r NEW_TITLE=${1:-}
 if [[ -z $NEW_TITLE ]]; then
     echo "[ERROR] Title parameter missing" >&2
     exit 1
-elif [[ -f $NEW_TITLE || -d $NEW_TITLE ]]; then
-	echo "[ERROR] Title parameter is a file or directory" >&2
+elif [[ -f $NEW_TITLE ]]; then
+	echo "[ERROR] Title parameter is a file" >&2
 	exit 1
 fi
 shift 1
@@ -87,7 +87,7 @@ echo "[INFO] Changing titles of ${#PHOTO_FILES[@]} photos to \"$NEW_TITLE\"" >&2
 safe_new_title=$(tr ' ' '-' <<<"$NEW_TITLE")
 for photo in "${PHOTO_FILES[@]}"; do
 
-    echo "[INFO] Changing title of $photo" >&2
+    echo "[INFO] $photo" >&2
 
     old_photoid=$(photoid_get_from_file "$photo")
     new_photoid=$(photoid_set_title "$old_photoid" "$safe_new_title")
