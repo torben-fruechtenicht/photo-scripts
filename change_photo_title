@@ -9,39 +9,49 @@ source "$BASEDIR/lib/photofiles.sh"
 source "$BASEDIR/lib/photoid.sh"
 source "$BASEDIR/util/unprotect.sh"
 source "$BASEDIR/rawtherapee/lib/sidecar.sh"
+source "$BASEDIR/metadata/lib/xmp.sh"
 
 PATH="$BASEDIR/metadata:$BASEDIR:$BASEDIR/lib:$PATH"
 
 
 function lookupTitle() {
     local photofile=$1
-    
-    # Try to get headline from XMP file
-    local xmp_file="${photofile%.*}.xmp"
-    if [[ -f "$xmp_file" ]]; then
-        source "$BASEDIR/metadata/lib/xmp.sh"
-        local xmp_headline=$(xmp_get_headline "$xmp_file")
-        if [[ -n "$xmp_headline" ]]; then
-            echo "${xmp_headline% *}" 
-            return 0
-        fi
-    fi
-    
-    # Try to get Caption from rawtherapee sidecar
-    # TBD it might be that filename schema (only apped "ppN" and keep the original extension) was not yet used for pp2. 
-    for sidecar in "$photofile".pp3 "$photofile".pp2; do
-        if [[ -f "$sidecar" ]]; then
-            local sidecar_headline=$(sidecar_get_property "$sidecar" "IPTC" "Headline")
-            if [[ -n "$sidecar_headline" ]]; then
-                echo "${sidecar_headline% *}" 
+
+    local title_from_photoid=$(photoid_get_title "$(photoid_get_from_file "$photofile")")
+
+    if ! [[ $title_from_photoid =~ - ]]; then
+        
+        echo "$title_from_photoid"
+
+    else 
+
+        # Try to get headline from XMP file
+        local xmp_file="${photofile%.*}.xmp"
+        if [[ -f "$xmp_file" ]]; then
+            
+            local xmp_headline=$(xmp_get_headline "$xmp_file")
+            if [[ -n "$xmp_headline" ]]; then
+                echo "${xmp_headline% *}" 
                 return 0
             fi
         fi
-    done
-    
-    # Fallback: extract title from photoid (filename)
-    local photoid=$(photoid_get_from_file "$photofile")
-    photoid_get_title "$photoid"
+        
+        # Try to get Caption from rawtherapee sidecar
+        # TBD it might be that filename schema (only apped "ppN" and keep the original extension) was not yet used for pp2. 
+        for sidecar in "$photofile".pp3 "$photofile".pp2; do
+            if [[ -f "$sidecar" ]]; then
+                local sidecar_headline=$(sidecar_get_property "$sidecar" "IPTC" "Headline")
+                if [[ -n "$sidecar_headline" ]]; then
+                    echo "${sidecar_headline% *}" 
+                    return 0
+                fi
+            fi
+        done
+
+        # Fallback to title from photoid
+        echo "$title_from_photoid"
+
+    fi
 }
 
 

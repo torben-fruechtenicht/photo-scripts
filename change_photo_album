@@ -6,6 +6,7 @@ set -o pipefail
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
 source "$BASE_DIR/lib/directories.sh"
 source "$BASE_DIR/lib/photoid.sh"
+source "$BASE_DIR/metadata/lib/xmp.sh"
 
 PATH="$BASE_DIR/metadata:$BASE_DIR:$PATH"
 
@@ -17,14 +18,24 @@ function lookupOldAlbumName() {
     old_album_path=$(directories_get_albumpath_from_file "$photofile")
     old_album=${old_album_path##*/}
 
+    # if we have dashes in the album name, try to find in xmp keywords
     if [[ $old_album =~ - ]]; then
-        echo "${old_album//-/ }"
 
-        # TODO the real fix for this case would to try to lookup the album from keywords, in the xmp file:
-        # 1. get keywords from xmp file
-        # 2. create a pattern from old_album where all dashes are replaced with "[- ]"
-        # 3. check if any of the keywords matches the pattern, if yes use this keyword as old album name
-        # EXTRA if nothing is found in xmp, try pp3 (same logic)
+        local xmp_file="${photofile%.*}.xmp"
+        if [[ -f "$xmp_file" ]]; then
+            local old_album_pattern="^${old_album//-/[- ]}$"
+            xmp_list_keywords "$xmp_file" | while read -r keyword; do
+                if [[ $keyword =~ $old_album_pattern ]]; then
+                    echo "$keyword"
+                    return 0
+                fi
+            done
+        fi
+
+        # TODO add lookup in sidecar
+
+        echo "${old_album//-/ }"
+        
     else
         echo "$old_album"
     fi
