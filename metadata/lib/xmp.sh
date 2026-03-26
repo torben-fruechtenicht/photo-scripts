@@ -154,8 +154,8 @@ xmp_set_description() {
     fi
 }
 
-xmp_get_keywords() {
-    __xml_get_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag/rdf:li" "$1" | tr '\n' ';' | sed 's/;$//'
+xmp_list_keywords() {
+    __xml_get_value "x:xmpmeta/rdf:RDF/rdf:Description/dc:subject/rdf:Bag/rdf:li" "$1"
 }
 
 
