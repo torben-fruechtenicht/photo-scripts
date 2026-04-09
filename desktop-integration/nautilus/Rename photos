@@ -2,9 +2,9 @@
 
 set -eu
 
-declare -r APP_TITLE="Rename photos"
+APP_TITLE="Rename photos"
 
-declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/../.."
+BASE_DIR="$(dirname "$(readlink -e "$0")")/../.."
 
 source "$BASE_DIR/apps/lib/notification.sh"
 source "$BASE_DIR/lib/photofiles.sh"
@@ -16,14 +16,8 @@ if ! [[ -v NAUTILUS_SCRIPT_SELECTED_FILE_PATHS ]]; then
     exit 1
 fi
 
-notify_info "$APP_TITLE" "Renaming $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS"
-
 for file in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS; do
-    if ! is_original_photofile "$file"; then
-        notify_error "$APP_TITLE" "File $file is not a photo file"
-        exit 1
+    if is_original_photofile "$file"; then
+        echo "$file"
     fi
-done
-
-rename "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS" 
-
+done | xargs -r rename 
