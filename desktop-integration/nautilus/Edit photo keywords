@@ -20,4 +20,4 @@ for file in $NAUTILUS_SCRIPT_SELECTED_FILE_PATHS; do
     if is_original_photofile "$file"; then
         echo "$file"
     fi
-done | xargs -r rename 
+done | xargs -r edit_keywords 

@@ -1,0 +1,26 @@
+#! /usr/bin/env bash
+
+set -eux
+
+APP_TITLE="Variants linter"
+
+BASE_DIR="$(dirname "$(readlink -e "$0")")/../.."
+
+source "$BASE_DIR/apps/lib/notification.sh"
+source "$BASE_DIR/lib/photofiles.sh"
+
+PATH="$BASE_DIR/metadata:$PATH"
+
+if ! [[ -v NAUTILUS_SCRIPT_SELECTED_FILE_PATHS ]]; then
+    notify_error "$APP_TITLE" "Nautilus files env var missing (NAUTILUS_SCRIPT_SELECTED_FILE_PATHS)"
+    exit 1
+fi
+
+scan_dir=$(head -n 1 <<< "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS")
+
+if ! [[ "$scan_dir" =~ /converted$  ]]; then
+    notify_error "$APP_TITLE" "Nautilus files env var is not a directory (NAUTILUS_SCRIPT_SELECTED_FILE_PATHS)"
+    exit 1
+fi
+
+find "$scan_dir" -type f -iname "*.jpg" | xargs -r -I{} set_metadata-variant "{}"

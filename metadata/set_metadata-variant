@@ -44,7 +44,7 @@ function replace_photonumber() {
     local -r text_with_photonumber=$1
     local -r new_number=$2
 
-    if [[ "$text_with_photonumber" =~ -[0-9]+$ ]]; then
+    if [[ "$text_with_photonumber" =~ -[0-9]+\]+$ ]]; then
         echo "$text_with_photonumber"
         return
     fi
