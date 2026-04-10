@@ -39,11 +39,11 @@ function update_if_rt_sidecar_with_iptc() {
     if is_rawtherapee_sidecar "$1" && rt_sidecar_has_iptc_keywords "$1"; then
 		unprotect_file_if_needed "$1"
         
-        add_keywords_csv=$(filter_keywords_to_add "$keywords")
+        add_keywords_csv=$(filter_keywords_to_add "$KEYWORDS")
         if [[ -n $add_keywords_csv ]]; then
             sidecar_add_iptc_keywords "$1" "$add_keywords_csv"
         fi
-        remove_keywords_csv=$(filter_keywords_to_remove "$keywords")
+        remove_keywords_csv=$(filter_keywords_to_remove "$KEYWORDS")
         if [[ -n $remove_keywords_csv ]]; then
             sidecar_remove_iptc_keywords "$1" "$remove_keywords_csv"
         fi
@@ -56,11 +56,11 @@ function update_if_jpeg_output_file() {
     if is_output_photofile "$file"; then	
 		unprotect_file_if_needed "$file"
 
-        add_keywords_csv=$(filter_keywords_to_add "$keywords")
+        add_keywords_csv=$(filter_keywords_to_add "$KEYWORDS")
         if [[ -n $add_keywords_csv ]]; then
             jpeg_add_iptc_keywords "$1" "$add_keywords_csv"
         fi
-        remove_keywords_csv=$(filter_keywords_to_remove "$keywords")
+        remove_keywords_csv=$(filter_keywords_to_remove "$KEYWORDS")
         if [[ -n $remove_keywords_csv ]]; then
             jpeg_remove_iptc_keywords "$1" "$remove_keywords_csv"
         fi
@@ -73,11 +73,11 @@ function update_if_xmp_sidecar() {
     if is_xmp_sidecar "$file"; then
         unprotect_file_if_needed "$file"
 
-        add_keywords_csv=$(filter_keywords_to_add "$keywords")
+        add_keywords_csv=$(filter_keywords_to_add "$KEYWORDS")
         if [[ -n $add_keywords_csv ]]; then
             xmp_add_keywords_csv "$1" "$add_keywords_csv"
         fi
-        remove_keywords_csv=$(filter_keywords_to_remove "$keywords")
+        remove_keywords_csv=$(filter_keywords_to_remove "$KEYWORDS")
         if [[ -n $remove_keywords_csv ]]; then
             xmp_remove_keywords_csv "$1" "$remove_keywords_csv"
         fi
@@ -93,8 +93,8 @@ if [[ $# < 2 ]]; then
 fi
 
 # CSV string
-keywords=$1
-if [[ -f $keywords ]]; then
+KEYWORDS=$1
+if [[ -f $KEYWORDS ]]; then
 	echo "[ERROR] Keywords parameter is a file" >&2
 	exit 1
 fi
@@ -102,7 +102,7 @@ fi
 shift 1
 
 for file in "$@"; do
-    update_if_xmp_sidecar "$file" "$keywords"
-    update_if_jpeg_output_file "$file" "$keywords"
-    update_if_rt_sidecar_with_iptc "$file" "$keywords"    
+    update_if_xmp_sidecar "$file" "$KEYWORDS"
+    update_if_jpeg_output_file "$file" "$KEYWORDS"
+    update_if_rt_sidecar_with_iptc "$file" "$KEYWORDS"    
 done

@@ -62,8 +62,7 @@ while getopts "krf:" opt; do
         r )
             REMOVE_OLD_TITLE_KEYWORD=;;
         f )
-            mapfile -t PHOTO_FILES < "$OPTARG"
-            PHOTOS_FILE=$OPTARG;;
+            mapfile -t PHOTO_FILES < "$OPTARG";;
         * ) 
             echo "Usage: $0 [-k] [-r] -f <photos_file> <new_title>"
             exit 1;;    

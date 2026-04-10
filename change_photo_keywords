@@ -9,7 +9,6 @@ while getopts "f:" opt; do
     case $opt in
         f )
             mapfile -t PHOTO_FILES < "$OPTARG"
-            PHOTOS_FILE=$OPTARG;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
