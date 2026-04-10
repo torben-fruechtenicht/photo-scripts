@@ -13,17 +13,23 @@ source "$BASE_DIR/lib/photofiles.sh"
 
 PATH="$BASE_DIR/metadata:$BASE_DIR:$BASE_DIR/apps:$PATH"
 
+PHOTOS_FILE=$(mktemp)
+
 if [[ $# > 0 ]]; then
-    photos=$(tr " " "\n" <<<$*)
+    tr " " "\n" <<<$* > "$PHOTOS_FILE"
 else
-    photos=$(selector) 
+    selector > "$PHOTOS_FILE"
     selector_rc=$? 
     if [[ $selector_rc == 101 ]]; then
         exit
-    elif [[ -z $photos ]]; then
-        notify_warning "$APP_TITLE" "No matching photos found"  
-        exit 1
-    fi    
+    fi
+fi
+
+photos=$(cat "$PHOTOS_FILE")
+photos_count=$(echo "$photos" | wc -l)
+if [[ $photos_count -eq 0 ]]; then
+    notify_warning "$APP_TITLE" "No matching photos found"
+    exit
 fi
 
 dialog_text="List keywords to update separated \";\". To remove a keyword, prepend with  \"-\". No quoting required"
@@ -44,7 +50,8 @@ if [[ -z $keywords ]]; then
 fi
 memorize_form_combobox_values "$MEMORIZED_FORM_VALUES_FILE" "keywords" "$keywords" 25
 
-change_photo_keywords "$keywords" $(paste -s -d ' ' <<<"$photos")
+# use "--" to prevent that keywords starting with "-" are interpreted as options
+change_photo_keywords -f "$PHOTOS_FILE" -- "$keywords" 
 update_keywords_rc=$?
 if [[ $update_keywords_rc = 0 ]]; then
     notify_info "$APP_TITLE" "Updated keywords \"$keywords\" in $(wc -l <<<"$photos") photo(s)"
@@ -53,3 +60,5 @@ else
         "Failed to update keywords \"$keywords\" int $(wc -l <<<"$photos") photo(s): $update_keywords_rc"
     exit 1
 fi
+
+rm -f "$PHOTOS_FILE"

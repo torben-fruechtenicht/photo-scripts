@@ -1,15 +1,34 @@
 #! /usr/bin/env bash
 
-set -eux
+set -eu
 
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")"
 PATH="$BASE_DIR/metada:$BASE_DIR:$PATH"
 
-keywords=$1
+while getopts "f:" opt; do
+    case $opt in
+        f )
+            mapfile -t PHOTO_FILES < "$OPTARG"
+            PHOTOS_FILE=$OPTARG;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
 
-if [[ $# = 1 ]]; then
-    collect_associated_files < /dev/stdin | while read -r file; do update_keywords "$keywords" "$file"; done
-else 
-    shift 1
-    collect_associated_files "$@" | while read -r file; do update_keywords "$keywords" "$file"; done
+
+KEYWORDS=$1
+
+
+if ! [[ -v PHOTO_FILES ]] && [[ $# -gt 0 ]]; then
+    PHOTO_FILES=("$@")
+elif ! [[ -v PHOTO_FILES ]] || [[ ${#PHOTO_FILES[@]} -eq 0 ]]; then
+    echo "[ERROR] No photos" >&2
+    exit 1
 fi
+
+echo "[INFO] Updating keywords of ${#PHOTO_FILES[@]} photos to \"$KEYWORDS\"" >&2
+
+
+for photo in "${PHOTO_FILES[@]}"; do
+    echo "[INFO] $photo" >&2   
+    collect_associated_files "$photo" | xargs -r -I{} update_keywords "$KEYWORDS" "{}"
+done
