@@ -2,8 +2,6 @@
 
 set -eu
 
-PATH="$(dirname "$(readlink -e "$0")"):$PATH"
-
 declare -r BASE_DIR="$(dirname "$(readlink -e "$0")")/.."
 source "$BASE_DIR/lib/photofiles.sh"
 source "$BASE_DIR/metadata/lib/jpeg_iptc.sh"
@@ -28,10 +26,8 @@ function print_metadata() {
     else
         local album=$(albumname_from_file "$file")
     fi
-    
-    local audience=$(get_audience_from_iptc_keywords "$file")
 
-    echo "$file|$title|$album|$audience"
+    echo "$file|$title|$album"
 }
 
 if [[ ${1:-} == "-" ]]; then
