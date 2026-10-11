@@ -1,15 +1,28 @@
 #! /usr/bin/env bash
 
-set -eu 
+set -eu
 
 # IMAGE_VIEWER must be a program or script that accepts a list of files
 IMAGE_VIEWER=gthumb
 
-while getopts "crl" opt; do
+
+        # m ) 
+        #     newer_since_scale=${OPTARG%?}
+        #     case $newer_since_scale in 
+        #         m ) ;;
+        #         d ) ;;
+        #         * ) 
+        #             echo "[ERROR] invalid scale for -m option" >&2
+        #             exit 1;;
+        #     esac
+
+while getopts "crlit:m:" opt; do
     case $opt in
         c ) declare -r SOOC_ONLY=;;
         r ) declare -r RAW_ONLY=;;
         l ) declare -r LIST_FILES=;;
+        t ) declare -r TITLE_FILTER=$OPTARG;;
+        i ) declare -r FIND_EDITED=;;
 	esac
 done
 shift $(expr $OPTIND - 1 )
@@ -27,12 +40,10 @@ find "$converted_dir" -type f -name '*.jpg' | while read -r jpg_file; do
     photo_id=$(basename -s ".jpg" "$jpg_file")
     echo ${photo_id}
 done > "$edited_photo_ids"
-# cat "$edited_photo_ids"
 
+SOOC_TEST='-name *.JPG'
+RAW_TEST='-name *.ARW -o -name *.ORF -o -name *.RAW'
 function build_find_unedited_ext_rule() {
-    SOOC_TEST='-name *.JPG'
-    RAW_TEST='-name *.ARW -o -name *.ORF -o -name *.RAW'
-
     if ! [[ -v SOOC_ONLY ]] && ! [[ -v RAW_ONLY ]]; then
         echo "( $SOOC_TEST -o $RAW_TEST )"
     elif [[ -v SOOC_ONLY ]]; then
@@ -42,8 +53,8 @@ function build_find_unedited_ext_rule() {
     fi
 }
 
-find "$photos_dir" -type f $(build_find_unedited_ext_rule) |\
-    grep -vFf "$edited_photo_ids" | sort | paste -s -d ' ' |\
+find "$photos_dir" -type f $(build_find_unedited_ext_rule) ${TITLE_FILTER+-name "$TITLE_FILTER*"} |\
+    grep ${FIND_EDITED--v} -Ff "$edited_photo_ids" | sort | paste -s -d ' ' |\
     xargs -r ${LIST_FILES-$IMAGE_VIEWER} ${LIST_FILES+echo}
 
 rm -rf "$edited_photo_ids"
