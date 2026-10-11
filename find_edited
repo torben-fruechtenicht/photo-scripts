@@ -1,0 +1,37 @@
+#! /usr/bin/env bash
+
+set -eu
+
+# IMAGE_VIEWER must be a program or script that accepts a list of files
+IMAGE_VIEWER=gthumb
+
+while getopts "lt:m:" opt; do
+    case $opt in
+        l ) declare -r LIST_FILES=;;
+        t ) declare -r TITLE_FILTER=$OPTARG;;
+        m ) 
+            if [[ $OPTARG =~ ^[0-9]+$ ]]; then
+                 modified_since_scale="h"
+            else 
+                # https://stackoverflow.com/questions/17542892/how-to-get-the-last-character-of-a-string-in-a-shell
+                modified_since_scale=${OPTARG: -1}    
+            fi
+            case $modified_since_scale in 
+                m ) modified_since_minutes=${OPTARG%m};;
+                h ) modified_since_minutes=$(( ${OPTARG%h} * 60 ));;
+                d ) modified_since_minutes=$(( ${OPTARG%d} * 60 * 24 ));;
+                * ) 
+                    echo "[ERROR] invalid scale for -m option: $OPTARG" >&2
+                    exit 1;;
+            esac
+            MODIFIED_SINCE_TEST="! -mmin +$modified_since_minutes"
+	esac
+done
+shift $(expr $OPTIND - 1 )
+
+photos_dir=$1
+converted_dir="$photos_dir/converted"
+
+find "$converted_dir" -type f -name '*.jpg' ${TITLE_FILTER+-name "$TITLE_FILTER*"} ${MODIFIED_SINCE_TEST+$MODIFIED_SINCE_TEST} |\
+    sort | paste -s -d ' ' |\
+    xargs -r ${LIST_FILES-$IMAGE_VIEWER} ${LIST_FILES+echo}
