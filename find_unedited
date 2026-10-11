@@ -1,0 +1,49 @@
+#! /usr/bin/env bash
+
+set -eu 
+
+# IMAGE_VIEWER must be a program or script that accepts a list of files
+IMAGE_VIEWER=gthumb
+
+while getopts "crl" opt; do
+    case $opt in
+        c ) declare -r SOOC_ONLY=;;
+        r ) declare -r RAW_ONLY=;;
+        l ) declare -r LIST_FILES=;;
+	esac
+done
+shift $(expr $OPTIND - 1 )
+if [[ -v SOOC_ONLY ]] && [[ -v RAW_ONLY ]]; then
+    echo "[ERROR] -c and -r are exclusive options" >&2
+    exit 1
+fi
+
+photos_dir=$1
+converted_dir="$photos_dir/converted"
+
+edited_photo_ids=$(mktemp)
+
+find "$converted_dir" -type f -name '*.jpg' | while read -r jpg_file; do
+    photo_id=$(basename -s ".jpg" "$jpg_file")
+    echo ${photo_id}
+done > "$edited_photo_ids"
+# cat "$edited_photo_ids"
+
+function build_find_unedited_ext_rule() {
+    SOOC_TEST='-name *.JPG'
+    RAW_TEST='-name *.ARW -o -name *.ORF -o -name *.RAW'
+
+    if ! [[ -v SOOC_ONLY ]] && ! [[ -v RAW_ONLY ]]; then
+        echo "( $SOOC_TEST -o $RAW_TEST )"
+    elif [[ -v SOOC_ONLY ]]; then
+        echo "$SOOC_TEST"
+    elif [[ -v RAW_ONLY ]]; then
+        echo "( $RAW_TEST )"
+    fi
+}
+
+find "$photos_dir" -type f $(build_find_unedited_ext_rule) |\
+    grep -vFf "$edited_photo_ids" | sort | paste -s -d ' ' |\
+    xargs -r ${LIST_FILES-$IMAGE_VIEWER} ${LIST_FILES+echo}
+
+rm -rf "$edited_photo_ids"
