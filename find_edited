@@ -5,8 +5,10 @@ set -eu
 # IMAGE_VIEWER must be a program or script that accepts a list of files
 IMAGE_VIEWER=gthumb
 
-while getopts "lt:m:" opt; do
+while getopts "crlt:m:" opt; do
     case $opt in
+        c ) SOOC_ONLY_TEST='( -name *c.jpg -o -name *c-[0-9]+.jpg )';;
+        r ) RAW_ONLY_TEST='( -name *r.jpg -o -name *r-[0-9]+.jpg )';;
         l ) declare -r LIST_FILES=;;
         t ) declare -r TITLE_FILTER=$OPTARG;;
         m ) 
@@ -32,6 +34,7 @@ shift $(expr $OPTIND - 1 )
 photos_dir=$1
 converted_dir="$photos_dir/converted"
 
-find "$converted_dir" -type f -name '*.jpg' ${TITLE_FILTER+-name "$TITLE_FILTER*"} ${MODIFIED_SINCE_TEST+$MODIFIED_SINCE_TEST} |\
+find "$converted_dir" -type f -name '*.jpg' ${TITLE_FILTER+-name "$TITLE_FILTER*"} ${MODIFIED_SINCE_TEST+$MODIFIED_SINCE_TEST} \
+    ${SOOC_ONLY_TEST+$SOOC_ONLY_TEST} ${RAW_ONLY_TEST+$RAW_ONLY_TEST} |\
     sort | paste -s -d ' ' |\
     xargs -r ${LIST_FILES-$IMAGE_VIEWER} ${LIST_FILES+echo}
